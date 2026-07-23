@@ -829,6 +829,40 @@ rotation and reflection, and closure are needed by *any* of these, and `Plan`'s 
 the 6-rotation subgroup S0 measured. **What it changes is S3 onward**, which is why it surfaced
 now rather than after `rebuild` was written against the wrong grammar.
 
+## 10.5 The wall model — a triangle strip, and where it stands
+
+*"So the tops form a triangle strip of triangles that divide each hex line in 3. And the sides
+are the same triangles touching in pairs. That is your model."*
+
+**This reconciles OD-7.** The triangle subdivision (`WALLS.md`, `X10`) is the wall's **geometry**;
+the edge slot is its **storage**. Those were never competing — I read them as rival storage models
+and rejected the triangles on the grounds that the foxel has no sub-cell slot. It does not need
+one: a cell stores a wall *id*, and the `WallDef` behind it carries the body and thickness
+(`X12`). The triangles are what that body *is*.
+
+| | |
+|---|---|
+| **storage** | `wall1..3` — one edge slot, material + shape |
+| **geometry** | a band of sub-triangles, each hex edge divided in **3** |
+| **tops** | the triangles form a **strip** |
+| **sides** | the same triangles, **touching in pairs** |
+
+**Status — recorded, not verified.** What is measured: the tops band is **0.5 world units =
+0.4330 m**, exactly **half a hex edge**, on the real rasterised house, with its run/wall ratio
+`2/√3` matching `tests/house.loft` line for line. What is *not* confirmed is the arithmetic tying
+that band to a 3-way subdivision — sub-segment `1/3` wu, triangle height `√3/6` wu, giving band
+ratios of `1.5` and `√3` respectively. Neither is obviously the intended relation, so **the "3" is
+recorded as stated and left to S4b to verify**, rather than back-fitted to a number I already had.
+
+**The sides band is not measured at all**, and cannot be until corner-edge ownership is defined —
+my two `u` groups came out asymmetric (2.598 m vs 6.062 m for what must be one length) purely
+from corner misassignment. That makes the corner rule a **blocker for measurement**, not only for
+correctness.
+
+**So S4b's gate is now three things**, in order: (1) read and state `side_edges`'s corner-ownership
+rule; (2) measure both bands in loft, per family; (3) check them against the triangle
+subdivision — confirming or correcting the "3".
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |

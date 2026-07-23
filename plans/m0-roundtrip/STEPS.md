@@ -147,6 +147,13 @@ The surface a run approximates is the **exact average** of its edges (`ROUNDTRIP
 direction is the integer sum of edge vectors, mean position the rational mean of edge midpoints.
 Verified numerically: both exact, wobble ≤ 0.199 world units (0.172 m) on both families.
 
+- **BLOCKED FIRST on corner ownership.** Per-side quantities are undefined until it is stated
+  which side owns a corner edge — measuring today gives 2.598 m and 6.062 m for what must be one
+  length (`DESIGN.md` §10.5). Read `housedraw::side_edges`'s rule, state it, gate it.
+- **gate**, in order: (1) the corner rule holds; (2) both bands measured **in loft**, per family
+  — the tops band is `0.5` world units = `0.4330 m`, exactly half a hex edge, on the real
+  rasterised house; (3) the band matches the **triangle subdivision** (each hex edge in 3), which
+  is recorded but **not yet verified**.
 - **gate**: the recovered direction of a `Plan` side equals the nominal one **exactly**; the
   recovered offset is an exact rational; the wobble is reported per family.
 - **control**: fit by least squares instead → a residual appears where there should be none.
