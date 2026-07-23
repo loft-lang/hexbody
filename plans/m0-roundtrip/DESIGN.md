@@ -353,6 +353,38 @@ because three lattice vectors 120° apart sum to zero: `(1,0) + (−1,1) + (0,�
 > different headings enclose different cell counts, so raw spread conflates **size** with
 > **heading**. A census that skips this produces a confident, ranked, **inverted** table.
 
+### 8.0 The corpus — what the ladder actually produces
+
+Each rung's enumeration is not thrown away. **The entries are the deliverable**, kept permanently,
+and they accumulate into hexbody's own **T1** tier (`ROUNDTRIP` §7.1) — the thing almost no
+inherited prior art gives us.
+
+Shape of an entry, one per admitted form:
+
+```
+corpus/<rung>/<case>.t          the canonical text T          — the authored truth
+corpus/<rung>/<case>.f          draw(read(T)), or its digest  — what it rasterises to
+```
+
+and the gate over the whole corpus is one line, by **P3**/**P4**:
+
+```
+for every entry:   write(rebuild(draw(read(T))))  ==  T        byte-for-byte
+for every pair:    f(a) != f(b)                                law F, injectivity
+```
+
+**Why this is affordable exhaustively.** No golden images, no tolerance, no per-case judgement —
+the check is `diff`. That is the practical payoff of keeping `𝕋` float-free (**C1**), and it is
+why the ladder can enumerate a level *completely* instead of sampling it.
+
+**Why the entries are kept rather than regenerated.** `rt_extend` replays every prior entry after
+any grammar change and demands byte-identical output (law **A₂**). Regenerating them would make
+that gate vacuous — it would compare new output against new output and always pass. **A corpus
+that regenerates is a gate that cannot fire.**
+
+**A rung is done when** its level is exhaustively enumerated, every entry round-trips, no two
+entries collide, and any restriction found is enforceable at the door (§5.2).
+
 ### 8.1 The rungs come from the scene, not the desk
 
 §8 is the method; it is not the work-list. The current work — **a landscape with houses, trees and

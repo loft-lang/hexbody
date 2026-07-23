@@ -379,7 +379,30 @@ result without re-gating it forfeits exactly what this project is for.
 
 > **Nothing in T2–T4 is settled.** The only **T1** item here is `X19`. Everything the design
 > currently leans on — the exact rotation, the 24-direction cost, the foxel's shape — sits below
-> that line, and the census (`DESIGN.md` §8) is where it gets re-measured under our own gates.
+> that line.
+
+### 7.1 So we build our own corpus
+
+Since almost nothing inherited is **T1**, hexbody has to produce its own — and the math in §4 is
+what makes that mechanical rather than a matter of judgement:
+
+- **P3** — the check is `write(rebuild(draw(read(T)))) ≟ T`, a **text diff**.
+- **P4** — with no float in `𝕋`, that diff is **byte equality**. No tolerance, nothing to tune.
+
+So a corpus entry is **a text file and a diff**. That is what makes an exhaustive, permanent
+corpus affordable at all: no golden images to eyeball, no ε to calibrate, no judgement call per
+case. It sits cleanly under `SPEC` **L9** — these are exact texts, not validation images.
+
+**One artifact, three jobs:**
+
+| the corpus is | which gate uses it |
+|---|---|
+| the record of **what round-trips** | `rt_trip` |
+| the record of **what is distinguishable** — no two entries may share a field (law **F**) | `rt_census_a` |
+| the **extension guard** — every entry replayed byte-identically after any grammar change | `rt_extend` |
+
+It is grown by the ladder (`DESIGN.md` §8): each rung enumerates its level exhaustively, and the
+entries it produces are **kept forever**. That accumulation *is* hexbody's T1.
 
 ## 8. Relation to `SPEC.md`
 
