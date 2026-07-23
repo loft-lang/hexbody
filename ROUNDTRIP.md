@@ -12,9 +12,18 @@ seam budget, the open decisions — is in
 
 ## 1. The lattice
 
-`Λ = ℤ²`, axial coordinates `(q,r)`. Position map `π : Λ → ℝ²`,
-`π(q,r) = (κ(q,r)·√3⁄2, μ(q,r)⁄2)` in world units, where `κ, μ` are `hex_field`'s integer
-`lattice_k` / `lattice_m`. Triangular-lattice norm on `d = (a,b)`:
+`Λ = ℤ²`, **pointy-top, odd-r offset** coordinates `(q,r)` — *not axial*. Position map
+`π : Λ → ℝ²`, `π(q,r) = (κ(q,r)·√3⁄2, μ(q,r)⁄2)` in world units, where `κ, μ` are `hex_field`'s
+integer `lattice_k` / `lattice_m`:
+
+```
+κ(q,r) = 2q + (r & 1)          μ(q,r) = 3r
+```
+
+The `(r & 1)` is what makes it **offset** rather than axial (axial would give `κ = 2q + r`), and
+it matches moros's convention — crawler migrated to it deliberately (`tools/wallproto/hexoffset.py`:
+*"migrate crawler's hex geometry from AXIAL to moros's POINTY-TOP, ODD-R OFFSET"*). `nb_q`/`nb_r`
+branch on `r & 1` for the same reason. Triangular-lattice norm on `d = (a,b)`:
 
 ```
 ‖d‖  =  s · √(a² + ab + b²),        s = 1 step = 1.5 m          (SPEC L8)

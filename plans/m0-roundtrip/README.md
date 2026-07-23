@@ -144,7 +144,14 @@ than going silently ungated.
   body); the residual question is whether a *seated* building ever needs an angle outside the 12.
 - **Unmeasured constants:** `ε_seam`, the `κ ≥ 3` contention rate — both due in phase **F**.
 
+## The implementation order
+
+[`STEPS.md`](STEPS.md) — phase A broken into **nine small safe steps** (`S0`–`S8`), each with its
+file, its gate and its control. `S0`–`S2` are integer-only and convert `X1`/`X2` from inherited
+claims to our own **T1**; `S3`–`S4` cross-check the new turtle path against `housetest`'s existing
+27 cells / 38 edges; `S8` (`rebuild`) is the only M-sized step in the ladder.
+
 ## See also
 
-[`DESIGN.md`](DESIGN.md) *(the in-flight half)* · `ROUNDTRIP.md` *(settled core)* · `PLAN.md` M0 ·
+[`STEPS.md`](STEPS.md) *(the code order)* · [`DESIGN.md`](DESIGN.md) *(the in-flight half)* · `ROUNDTRIP.md` *(settled core)* · `PLAN.md` M0 ·
 `SPEC.md` · `design/FEATURES.md` · crawler `BUILDING.md` §4, `WALLS.md`, `STENCILS.md`.
