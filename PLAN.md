@@ -36,7 +36,7 @@ be left to the end.
 
 | M0 half | what it settles | gates |
 |---|---|---|
-| **representation** — `ROUNDTRIP` §1.2, §2.1, §2.1.2–3 | body = original + pose; the field is derived; frames, the seam, arbitration | **the mechanics spine** — `body.loft` cannot be written without it |
+| **representation** — `ROUNDTRIP` §2.3 · `DESIGN` §3.1, §6 | body = original + pose; the field is derived; frames, the seam, arbitration | **the mechanics spine** — `body.loft` cannot be written without it |
 | **exact recovery** — laws **D**/**E₂**, the censuses, `write`/`read` | the model is recoverable from the field, provably | **the editor / indie path**, and re-canonicalising after damage |
 
 ---
@@ -58,9 +58,10 @@ the-interface* rule.
 ## M0 — the round trip *(infrastructure — the block everything else is built on)*
 
 The exact model is drawn onto the field and **rebuilt from it exactly**. Formally:
-**[`ROUNDTRIP.md`](ROUNDTRIP.md)** — objects, maps, laws **A–K₂**. This is not "the fit": it is a
+**[`ROUNDTRIP.md`](ROUNDTRIP.md)** (settled core) + [`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md)
+(the in-flight half). This is not "the fit": it is a
 **recovery**, and the word matters, because an exact-invariant domain punishes every approximation
-you reach for instead (`ROUNDTRIP` §11.3).
+you reach for instead (`DESIGN` §11).
 
 - **produce** — the stencil census → `Cyc`; the linework census → `period`, `D`, `Sep`;
   `write`/`read` (canonical text); `fits?`/`snap` (the one chokepoint, shared with the editor);
@@ -68,21 +69,21 @@ you reach for instead (`ROUNDTRIP` §11.3).
 - **gate** — `rt_census_a` (grown by level, **reports the frontier**) · `rt_canon` · `rt_project` ·
   `rt_fits` · `rt_closure` · `rt_door` · `rt_close` · `rt_extend` · **`rt_trip`** —
   `write(rebuild(draw(read(T)))) ≟ T`, a **text diff**, no `ε` · `rt_total` · `rt_ruin` ·
-  `rt_seam` · `rt_contend` · `rt_flip` · `rt_drift`. Controls per `ROUNDTRIP` §9; the spine
+  `rt_seam` · `rt_contend` · `rt_flip` · `rt_drift`. Controls per `DESIGN` §9; the spine
   control is a non-fitting model bypassing `snap` → diff.
 - **depends on** — `hex_field`, `housedraw`. `rt_orient` (law **I**) is **already green**:
   `housetest`, 12/12 in cells *and* edges. **And on `../crawler`** — much of this is prototyped
-  there, and `ROUNDTRIP` §11.1 lists ten constraints (**X1–X10**) already measured or gated.
+  there, and `ROUNDTRIP` §7 lists ten constraints (**X1–X10**) already measured or gated.
 - **done when** — `rt_trip` is green over every primitive kind, and the census has **located the
   frontier** (the restrictions are M0's output, not a pass/fail).
 
-> **Read before starting.** `ROUNDTRIP` **§11.1** — what crawler already settled (exact rotation
+> **Read before starting.** `ROUNDTRIP` **§7** — what crawler already settled (exact rotation
 > *and reflection*; all 24 headings representable; order-free nearest-wins arbitration; the
-> refusal gate) — and **§11.2 OD-5…OD-8**, four conflicts between this spec and that prior art.
+> refusal gate) — and [`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md) **§10, OD-5…OD-8**, four conflicts with that prior art.
 > **OD-6** (is a stencil a *field* or a *generative description*?) is the deepest and probably
 > orders the rest, because it decides how much of laws **D**/**E₂** is even load-bearing.
 
-**Order inside M0 — grow, don't presuppose** (`ROUNDTRIP` §8.1). The **stencil census** is first,
+**Order inside M0 — grow, don't presuppose** (`DESIGN` §8). The **stencil census** is first,
 and it is a **ladder**: the smallest closed form (an equilateral triangle, `len 1`), then longer
 sides, more sides, unequal sides, reflex corners, features, arcs — and finally **combination**,
 where forms that round-trip alone stop doing so together. Each rung enumerates exhaustively, so
@@ -209,7 +210,7 @@ later. The first move is one thing, not two:
 **The stencil census, rung A1** — the *smallest* closed form: an equilateral triangle, `len 1`,
 `turn 4` at each of 3 corners, in both heading classes. By law **J** that is the minimum a stencil
 can be (`Σ turn = 12`, and three lattice vectors 120° apart sum to zero). Rasterize it, rebuild
-it, compare. Then grow (`ROUNDTRIP` §8.1).
+it, compare. Then grow (`DESIGN` §8).
 
 It is the right first move for four reasons: each level is **finite**, so law **F** is *decided*
 rather than sampled; it needs **no new representation** (`housedraw` already rasterizes); it is

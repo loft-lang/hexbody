@@ -12,7 +12,7 @@ the geometry itself**. Split out of `crawler` 2026-07-23; `crawler` is its first
   what each costs, a recommendation — and let the reply go wherever it goes. Several open
   questions in one message is fine.
 - **Keep working while a question is open.** Do everything that does not depend on the answer,
-  and record the fork where it belongs (`ROUNDTRIP.md` §11.2 is the pattern) rather than
+  and record the fork where it belongs (`plans/m0-roundtrip/DESIGN.md` §10 is the pattern) rather than
   stalling on it or quietly picking one.
 - **loft is upstream and consumer-only** — hexbody never fixes loft. Toolchain defects go to
   crawler's `LOFT-HANDOFF.md` / `FILING.md`, never into a hexbody plan. The
@@ -47,13 +47,14 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **formal model**: objects (`𝕄*`, `𝕋`, `𝔽`, `P`, `O`, `H₁₂`, `D`), maps (`snap`, `write`/`read`, `draw`/`rebuild`), **laws A–K₂** | **authoritative** on any object, map, or law |
+| **`ROUNDTRIP.md`** | the **settled formal core** — only what is not in dispute: the lattice, objects, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and crawler's measured constraints `X1`–`X10`. ~180 lines | **authoritative** on any object or map |
+| **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the method, the gates, and the **eight open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
 | `PLAN.md` | milestone through-line (P, M0–M7); the synthesis layer, not a plan index | — |
 | `plans/README.md` | plan conventions, lightest-workflow table, value categories | — |
 
-**Build and verify against `ROUNDTRIP` + `SPEC`.** If building needs a fact, it belongs there as
+**Build and verify against `ROUNDTRIP` + `SPEC`; design in `DESIGN.md`.** If building needs a fact, it belongs there as
 a checkable item — not in a paragraph. A gate defending no spec item, or a spec item no gate
 defends, is the thing to fix.
 
@@ -73,13 +74,13 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   0.0000`, every control fires. `make shot` reproduces the committed baseline byte-identically.
 - **Everything else is open.** No `body.loft`, no `proxy.loft`, no `rebuild`. Of the round-trip
   gates only `rt_orient` exists.
-- **Eight open decisions** (`ROUNDTRIP.md` §11.2). OD-1 the morph · OD-2 roofs · OD-3 trees ·
+- **Eight open decisions** (`plans/m0-roundtrip/DESIGN.md` §10). OD-1 the morph · OD-2 roofs · OD-3 trees ·
   OD-4 terrain · **OD-5** is the flip exact? · **OD-6** is a stencil a *field* or a *generative
   description*? · **OD-7** which wall model? · **OD-8** when do layers enter? OD-5–8 are conflicts
   with **settled crawler prior art**, and **OD-6 is the deepest — it probably orders the rest**.
-- **Established constraints from crawler are in `ROUNDTRIP.md` §11.1 (X1–X10)** — measured or
+- **Established constraints from crawler are in `ROUNDTRIP.md` §7 (X1–X10)** — measured or
   gated already; do not re-derive them.
-- **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`ROUNDTRIP.md` §8).
+- **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their
   proper home is `loft-libs-world`.
@@ -91,7 +92,7 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   signal, never a knob (law **P4**). But **R2** — recovering *arbitrary cell-authored* content
   with no grammar behind it — genuinely **is** a fit with a pinned tolerance, licensed by law
   **E₃** and prototyped in crawler's `matcher.py`. Know which regime you are in
-  (`ROUNDTRIP.md` §5.1.1); using R2's machinery where R1 applies throws away an exact answer.
+  (`ROUNDTRIP.md` §6); using R2's machinery where R1 applies throws away an exact answer.
 - **Width-normalise before ranking anything by heading** (**X9**). A fixed nominal width yields
   different cell counts per direction, so raw spread measures *width, not heading* — in crawler
   this **inverted** the conclusion before it was caught.

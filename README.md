@@ -28,12 +28,18 @@ the first brick to the derailment hero demo — is in [`PLAN.md`](PLAN.md).
 (I) and contracts (K) as short, formal, falsifiable items. **Build and verify against `SPEC.md`,
 not the prose;** the prose says *why*, the spec says *what*, checkably.
 
-**[`ROUNDTRIP.md`](ROUNDTRIP.md) is the formal model** — the objects (`𝕄*` the fitting model, `𝕋`
-its canonical text, `𝔽` the field), the maps (`snap`, `write`/`read`, `draw`/`rebuild`) and the
-laws **A–J** between them. The exact world model is drawn onto the field and **rebuilt from it
+**[`ROUNDTRIP.md`](ROUNDTRIP.md) is the settled formal core** — the objects (`𝕄*` the fitting
+model, `𝕋` its canonical text, `𝔽` the field), the maps (`snap`, `write`/`read`, `draw`/`rebuild`),
+the `D`/`E₂` contract with its **proved** propositions, and the constraints already measured in
+`../crawler`. **Only what is not in dispute.** Everything still being designed or decided — the
+grammar, the censuses, the eight open decisions — lives in
+[`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md) — a proposal or a question, never
+a fact to cite.
+
+The thesis both serve: the exact world model is drawn onto the field and **rebuilt from it
 exactly**; `snap` is the only lossy step and it reports its residual. `SPEC` says *what must be
-achieved*, `ROUNDTRIP` says *what the objects are and which equations hold* — and on any question
-about an object, a map, or a law, `ROUNDTRIP` is authoritative.
+achieved*, `ROUNDTRIP` *what the objects are* — and on any question about an object or a map,
+`ROUNDTRIP` is authoritative.
 
 ## Lineage — and the reservoir still in `../crawler`
 
@@ -56,7 +62,7 @@ about an object, a map, or a law, `ROUNDTRIP` is authoritative.
 | `WALLS.md` | the **triangle-subdivision wall model** — the exact construction, not an approximation |
 | `STENCILS.md` | layered, composable stencils → castles |
 | `FORMS.md` | a kit of exact, interlocking hex parts — no seams by construction |
-| `PROPS.md` | small detail without a library of model files *(bears on `ROUNDTRIP` OD-3, trees)* |
+| `PROPS.md` | small detail without a library of model files *(bears on `DESIGN.md` OD-3, trees)* |
 | `plans/9-canopy-trees/` | `TREES.md` — canopy-first trees *(OD-3)* |
 | `plans/8-landform-morphogenesis/` | terrain *(OD-4)* |
 | `SCALE.md` | the scale contract behind `SPEC` **L8** |

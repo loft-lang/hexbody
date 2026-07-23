@@ -8,14 +8,17 @@ issue when one exists)* · **Value:** `F` · **Effort:** `H`
 **Infrastructure — it determines the block everything else is built on**, so it precedes the
 mechanics spine rather than running beside it (decided 2026-07-23).
 
-The formal contract exists: **[`ROUNDTRIP.md`](../../ROUNDTRIP.md)** — objects, maps, laws
-**A–K₂**. No code yet. Of its twelve gates exactly one is green: `rt_orient` (law **I**) —
-`housetest`, 12/12 equivariant in cells *and* edges.
+The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** holds only the
+**settled** core — definitions, proved propositions, and crawler's measured constraints `X1`–`X10`
+— while **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar,
+`fits?`, the seam, the method, the gates, and the eight open decisions. No code yet; of the
+proposed gates exactly one is green — `rt_orient` (law **I**), `housetest` 12/12 in cells *and*
+edges.
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"
 was the wrong word for an exact-invariant domain, where the construction is **recovered**, never
-approximated. See `ROUNDTRIP` §11.3.)*
+approximated. See [`DESIGN.md`](DESIGN.md) §11.)*
 
 **Baseline:** [`shots/house12.png`](shots/house12.png) — the 12 orientations with walls drawn as
 the raw two-direction strip (zigzag and staircase). Still the valid *before*; regenerate beside it
@@ -62,11 +65,11 @@ once recovery lands.
 
 ## Phases
 
-**Phase A is a ladder, not one step** (`ROUNDTRIP` §8.1). Each rung enumerates **exhaustively** at
+**Phase A is a ladder, not one step** ([`DESIGN.md`](DESIGN.md) §8). Each rung enumerates **exhaustively** at
 its level, round-trips every form, and is a complete gated increment — so the work always has
 something green, and the boundary is *discovered* rather than assumed.
 
-**The rungs come from the scene, not the desk** (`ROUNDTRIP` §8.2). The current work — **a
+**The rungs come from the scene, not the desk** ([`DESIGN.md`](DESIGN.md) §8.1). The current work — **a
 landscape with houses, trees and a tower** — decides which rungs exist and in what order. That
 already moved arcs from the last rung to the middle, because the scene has a tower.
 
@@ -109,11 +112,11 @@ than going silently ungated.
   run to a single verdict.
 - **A collision is a result, not a failure.** The restrictions are the *output* of this plan, not
   its precondition. Defining the admitted space up front and then enumerating it would presuppose
-  exactly the bounds we are trying to find (`ROUNDTRIP` §8.1). The bounds are not the problem —
+  exactly the bounds we are trying to find ([`DESIGN.md`](DESIGN.md) §8). The bounds are not the problem —
   there is plenty of room inside them.
 - **Every restriction found lands in `fits?` immediately, on the same rung.** A rung is not done
   when the collision is understood; it is done when the limit is **enforceable at the door**
-  (`ROUNDTRIP` §5.2, law **C₂**). Otherwise the ladder accumulates known-but-unenforced limits and
+  ([`DESIGN.md`](DESIGN.md) §5.2, law **C₂**). Otherwise the ladder accumulates known-but-unenforced limits and
   the editor can still author something that breaks later.
 - **Each rung must also close under `Ops`**, not merely round-trip. A form that survives A5 alone
   but not `flip(A5)` is **refused at A5**, not discovered at rung A8 — that is `rt_closure`.
@@ -135,11 +138,12 @@ than going silently ungated.
 
 - **OD-2 — are roofs inside the exact round trip?** `src/hexroof.loft:493`
   `roof_match(..., tol: float)` is the `ε` **P4** forbids. Blocks phase **C** (freezing `⟨roof⟩`);
-  does **not** block phase A. Options in `ROUNDTRIP` §11.2.
+  does **not** block phase A. Options in [`DESIGN.md`](DESIGN.md) §10.
 - **OD-1 — the morph.** Largely dissolved by free poses (a non-12 building is simply a free-posed
   body); the residual question is whether a *seated* building ever needs an angle outside the 12.
 - **Unmeasured constants:** `ε_seam`, the `κ ≥ 3` contention rate — both due in phase **F**.
 
 ## See also
 
-`ROUNDTRIP.md` · `PLAN.md` M0 · `SPEC.md` · `design/FEATURES.md` · crawler `BUILDING.md` §4.
+[`DESIGN.md`](DESIGN.md) *(the in-flight half)* · `ROUNDTRIP.md` *(settled core)* · `PLAN.md` M0 ·
+`SPEC.md` · `design/FEATURES.md` · crawler `BUILDING.md` §4, `WALLS.md`, `STENCILS.md`.
