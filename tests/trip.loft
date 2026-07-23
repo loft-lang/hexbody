@@ -281,6 +281,64 @@ fn main() {
     println("  FAIL: the index and the scan disagree on R2 content"); ok = false;
   }
 
+  // ── 7. CONSTRUCTIVE RECOVERY — no enumeration, and it reaches further ─────
+  //
+  // Indexed recovery is fast but is BUILT BY the enumeration, so it can only ever recover what was
+  // enumerated. Constructive recovery reads (h0, lens, turns) off the field's own geometry — hull
+  // the filled cells, the hull vertices ARE the turtle's corners — in O(cells), independent of how
+  // large the admissible space is. It proposes, then VERIFIES by re-drawing, so `rho = 0` stays a
+  // measured fact.
+  println("");
+  println("7. CONSTRUCTIVE RECOVERY — reads the form off the field, enumerating nothing");
+  ncon = 0;
+  for yi in 0..n {
+    yc = hexset_chunk(Q0, R0, W, H);
+    ym = form_read(ts[yi] ?? "");
+    form_fill(ym, 0, 0, yc);
+    yname = (cases[yi] ?? "a1-00").split('-')[0] ?? "a1";
+    if rebuild_construct_text(yc, yname) != (ts[yi] ?? "") { ncon = ncon + 1; }
+  }
+  println("   {n} committed entries recovered constructively, {ncon} diffs");
+  if ncon != 0 {
+    println("  FAIL: constructive recovery does not reproduce the committed text"); ok = false;
+  }
+
+  // THE POINT OF THE EXERCISE: a form OUTSIDE the enumerated space. Today's 4-sided house
+  // [4,5,4,5] needs maxlen 5 — ~1.2M proposals to enumerate (`X43`) — so it is deliberately not a
+  // candidate. Indexed recovery must therefore MISS it, and constructive recovery must not.
+  house = form_new(0, [4, 5, 4, 5], [2, 4, 2, 4]);
+  hcells = hexset_chunk(Q0, R0, W, H);
+  nhc = form_fill(house, 0, 0, hcells);
+  hidx = rebuild_indexed(idx, cands, hcells);
+  hcon = rebuild_construct(hcells);
+  println("   the 4-sided house [4,5,4,5], {nhc} cells:");
+  println("     indexed      -> regime R{hidx.rb_regime}, rho {hidx.rb_rho}   (outside the"
+          + " enumerated space, so it CANNOT be found this way)");
+  println("     constructive -> regime R{hcon.rb_regime}, rho {hcon.rb_rho}");
+  if hidx.rb_regime != REGIME_R2 {
+    println("  FAIL: the house was found by enumeration — then it is not outside the space and"
+            + " this comparison proves nothing"); ok = false;
+  }
+  if hcon.rb_regime != REGIME_R1 || hcon.rb_rho != 0 {
+    println("  FAIL: constructive recovery did not recover the house exactly"); ok = false;
+  }
+  if rebuild_construct_text(hcells, "house") != form_canon_text(house, "house") {
+    println("  FAIL: the recovered house is not the house that was drawn"); ok = false;
+  }
+  println("     => constructive recovery reaches STRICTLY FURTHER than the enumeration");
+
+  // CONTROL: it must still refuse non-grammar content, or "reaches further" would just mean
+  // "answers anything".
+  bcon = rebuild_construct(blob);
+  println("   CONTROL the hand-drawn blob -> regime R{bcon.rb_regime}, rho {bcon.rb_rho},"
+          + " text '{rebuild_construct_text(blob, \"b\")}'");
+  if bcon.rb_regime != REGIME_R2 || bcon.rb_rho <= 0 {
+    println("  FAIL: constructive recovery returned an R1 answer for a hand-drawn blob"); ok = false;
+  }
+  if rebuild_construct_text(blob, "b") != "" {
+    println("  FAIL: an R2 guess was spelled as an authored stencil"); ok = false;
+  }
+
   println("");
   if ok { println("=== TRIP OK ==="); }
   else { println("=== TRIP BROKEN ==="); }

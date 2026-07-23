@@ -10,7 +10,7 @@ mechanics spine rather than running beside it (decided 2026-07-23).
 
 The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** holds only the
 **settled** core — definitions, the propositions that follow from them, and the constraints
-`X1`–`X44` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X44`) — while
+`X1`–`X45` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X45`) — while
 **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar, `fits?`,
 the seam, the corpus, the method, the gates, and the open decisions.
 
@@ -69,9 +69,14 @@ survives `read → draw → rebuild → write` byte-identically* — holds over 
   replaces. ⚠ It fixes the *per-lookup* cost only — §10.20's claim that it would reach the house
   was **wrong** and is corrected there.
 
-**The next step is CONSTRUCTIVE RECOVERY** — boundary → corners → turtle, O(boundary) and
-independent of the admissible space's size. That is what the 4-sided house actually needs, and it
-is `hexmatch`-shaped (`X21`). After that, **A4** (unequal sides, non-convex).
+- **§10.22 — constructive recovery.** The form is read off the field, enumerating nothing: every
+  admitted form is convex, so **the hull of the filled cells IS the turtle polygon**. 119/119
+  entries, 0 diffs — and today's house is **R2 by enumeration, R1 with `ρ = 0` constructively**.
+
+**The next rung is A4** (unequal sides, non-convex). ⚠ It cannot extend the hull: hull recovery is
+exact where it applies and **silently wrong** where it does not, smoothing a reflex corner away
+rather than rejecting it. A4 must switch to boundary **tracing** (`hexmatch`, `X21`), and its gate
+needs a control that a reflex corner is not quietly convexified.
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"

@@ -212,3 +212,181 @@ pub fn rebuild_indexed_text(idx: RecoveryIndex, cand: vector<Form>,
   if r.rb_regime != REGIME_R1 { return ""; }
   form_write(r.rb_form, name)
 }
+
+// ── CONSTRUCTIVE RECOVERY — read the form off the field, no enumeration ────
+//
+// Indexed recovery removed the per-lookup cost but is BUILT BY the enumeration, so it left the
+// 4-sided house (~1.2M proposals, `X43`) exactly as far away. This does not enumerate at all: it
+// reads `(h0, lens, turns)` off the field's own geometry, in O(cells), independent of how large
+// the admissible space is.
+//
+// THE CONSTRUCTION, and why it is exact rather than a fit:
+//
+//   1. every admitted form is CONVEX.  Law J requires the turns to be positive and to sum to 12 —
+//      all exterior angles positive, exactly one revolution — which is the definition of a convex
+//      polygon.  (A4's non-convex forms need a negative turn, so they fall outside this and want
+//      boundary TRACING instead; stated as a limit, not discovered later.)
+//   2. the turtle walks CENTRE TO CENTRE, so every polygon vertex IS a hex centre (S3), and
+//      `form_fill` takes every hex on or inside.  For a convex polygon whose vertices are lattice
+//      points, the CONVEX HULL of the contained lattice points is the polygon itself — its corners
+//      are extreme points and cannot be hulled away.
+//   3. so: hull the filled cells in exact integer (k,m); the hull vertices ARE the turtle's
+//      corners, in order.  Collinear cells along a long side are interior to an edge and drop out,
+//      which is exactly right — they are not corners.
+//   4. each side vector is an exact integer multiple of one of the 12 heading steps, found by
+//      trying all 12.  No gcd reduction: `head_step(0)` is `(2,0)`, not `(1,0)`, so a primitive
+//      reduction would land off the table.
+//
+// THE HULL IS TAKEN IN (k,m), NOT IN WORLD COORDINATES, and that is safe: `(k,m) -> (k*sqrt3/2,
+// m/2)` is linear with determinant `sqrt3/4 > 0`, so it preserves convexity AND orientation. The
+// integer arithmetic is therefore exact — no floats enter the recovery at any point.
+//
+// AND IT STILL VERIFIES. The construction PROPOSES a form; one re-draw CONFIRMS it. That keeps
+// `ρ = 0` a measured fact rather than a claim, and sends anything that does not reproduce its own
+// field to R2 — where a hand-drawn blob belongs.
+const PK_OFF = 400;
+const PK_SPAN = 1600;
+
+fn pk(k: integer, m: integer) -> integer { (k + PK_OFF) * PK_SPAN + (m + PK_OFF) }
+fn pk_k(v: integer) -> integer { ((v / PK_SPAN) ?? 0) - PK_OFF }
+fn pk_m(v: integer) -> integer { ((v % PK_SPAN) ?? 0) - PK_OFF }
+
+fn sort_pk(v: vector<integer>) -> vector<integer> {
+  out: vector<integer> = [];
+  for si in 0..len(v) {
+    out += [v[si] ?? 0];
+    ps = len(out) - 1;
+    while ps > 0 && (out[ps - 1] ?? 0) > (out[ps] ?? 0) {
+      tmp = out[ps - 1] ?? 0;
+      out[ps - 1] = out[ps] ?? 0;
+      out[ps] = tmp;
+      ps = ps - 1;
+    }
+  }
+  out
+}
+
+// Twice the signed area of the triangle o->a->b. Positive when b is left of o->a (CCW).
+fn cross3(ok2: integer, om: integer, ak: integer, am: integer,
+          bk: integer, bm: integer) -> integer {
+  (ak - ok2) * (bm - om) - (am - om) * (bk - ok2)
+}
+
+// The convex hull of the filled cells, CCW, corners only — monotone chain in exact integers.
+// Collinear points are dropped (`<= 0` pops them), which is what makes long sides come back as one
+// side instead of a run of tiny ones.
+pub fn hull_keys(cells: HexSet) -> vector<integer> {
+  pts: vector<integer> = [];
+  for hr in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for hq in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if hexset_get(cells, hq, hr) { pts += [pk(lattice_k(hq, hr), lattice_m(hq, hr))]; }
+    }
+  }
+  sp = sort_pk(pts);
+  n = len(sp);
+  out: vector<integer> = [];
+  if n < 3 { return sp; }
+  // lower hull, then upper hull
+  st: vector<integer> = [];
+  top = 0;
+  for li in 0..n {
+    p = sp[li] ?? 0;
+    while top >= 2
+          && cross3(pk_k(st[top - 2] ?? 0), pk_m(st[top - 2] ?? 0),
+                    pk_k(st[top - 1] ?? 0), pk_m(st[top - 1] ?? 0),
+                    pk_k(p), pk_m(p)) <= 0 { top = top - 1; }
+    if top < len(st) { st[top] = p; } else { st += [p]; }
+    top = top + 1;
+  }
+  lower = top - 1;
+  for ui in 0..n {
+    p2 = sp[n - 1 - ui] ?? 0;
+    while top >= lower + 2
+          && cross3(pk_k(st[top - 2] ?? 0), pk_m(st[top - 2] ?? 0),
+                    pk_k(st[top - 1] ?? 0), pk_m(st[top - 1] ?? 0),
+                    pk_k(p2), pk_m(p2)) <= 0 { top = top - 1; }
+    if top < len(st) { st[top] = p2; } else { st += [p2]; }
+    top = top + 1;
+  }
+  for oi in 0..top - 1 { out += [st[oi] ?? 0]; }
+  out
+}
+
+// Which heading, and how many steps, is the vector (dk, dm)?  Tries all 12 — a constant — because
+// the heading table's steps are not primitive vectors and a gcd reduction would miss them.
+// Returns the heading, or -1 when the vector is not a whole number of steps in any heading.
+pub fn side_heading(dk: integer, dm: integer) -> integer {
+  for sh in 0..HEAD_N {
+    st = head_step(sh);
+    if st.0 == 0 {
+      if dk == 0 && st.1 != 0 && dm % st.1 == 0 && ((dm / st.1) ?? 0) > 0 { return sh; }
+    } else {
+      if dk % st.0 == 0 {
+        q = (dk / st.0) ?? 0;
+        if q > 0 && q * st.1 == dm { return sh; }
+      }
+    }
+  }
+  -1
+}
+
+pub fn side_len(dk: integer, dm: integer, h: integer) -> integer {
+  st = head_step(h);
+  if st.0 != 0 { return (dk / st.0) ?? 0; }
+  if st.1 != 0 { return (dm / st.1) ?? 0; }
+  0
+}
+
+// THE ROUTINE: recover the form from the field, then verify by re-drawing it.
+pub fn rebuild_construct(cells: HexSet) -> Rebuilt {
+  hk = hull_keys(cells);
+  nh = len(hk);
+  if nh < 3 {
+    return Rebuilt { rb_regime: REGIME_R2, rb_form: form_new(0, [], []),
+                     rb_rho: hexset_count(cells), rb_matches: 0 };
+  }
+  lens: vector<integer> = [];
+  hs: vector<integer> = [];
+  bad = false;
+  for ci in 0..nh {
+    ak = pk_k(hk[ci] ?? 0);
+    am = pk_m(hk[ci] ?? 0);
+    bk = pk_k(hk[(ci + 1) % nh] ?? 0);
+    bm = pk_m(hk[(ci + 1) % nh] ?? 0);
+    sh = side_heading(bk - ak, bm - am);
+    if sh < 0 { bad = true; }
+    else {
+      hs += [sh];
+      lens += [side_len(bk - ak, bm - am, sh)];
+    }
+  }
+  if bad || len(hs) != nh {
+    return Rebuilt { rb_regime: REGIME_R2, rb_form: form_new(0, [], []),
+                     rb_rho: hexset_count(cells), rb_matches: 0 };
+  }
+  turns: vector<integer> = [];
+  for ti in 0..nh {
+    d = head_norm((hs[(ti + 1) % nh] ?? 0) - (hs[ti] ?? 0));
+    if d == 0 { d = 12; }
+    turns += [d];
+  }
+  cf = form_canon(form_new(hs[0] ?? 0, lens, turns));
+  if !form_closes(cf) {
+    return Rebuilt { rb_regime: REGIME_R2, rb_form: form_new(0, [], []),
+                     rb_rho: hexset_count(cells), rb_matches: 0 };
+  }
+  // VERIFY by re-drawing. The construction proposes; this confirms, so `rho = 0` stays measured.
+  chk = hexset_chunk(FQ0, FR0, FW, FH);
+  form_fill(cf, 0, 0, chk);
+  d2 = sym_diff(field_norm(cells), field_norm(chk));
+  if d2 == 0 {
+    return Rebuilt { rb_regime: REGIME_R1, rb_form: cf, rb_rho: 0, rb_matches: 1 };
+  }
+  Rebuilt { rb_regime: REGIME_R2, rb_form: cf, rb_rho: d2, rb_matches: 0 }
+}
+
+pub fn rebuild_construct_text(cells: HexSet, name: text) -> text {
+  r = rebuild_construct(cells);
+  if r.rb_regime != REGIME_R1 { return ""; }
+  form_write(r.rb_form, name)
+}

@@ -456,6 +456,58 @@ is exactly as far out of reach as before. Reaching it needs **constructive recov
 `(h0, lens, turns)` off the field's own geometry (boundary → corners → turtle) — which is
 `hexmatch`-shaped work (`X21`), not a faster table.
 
+## Constructive recovery ✅ · read the form off the field — `src/formfit.loft` · M · **DONE**
+
+Indexed recovery removed the per-lookup cost but is **built by** the enumeration, so it could only
+ever recover what was enumerated. This enumerates **nothing**: it reads `(h0, lens, turns)` off the
+field's own geometry in O(cells), independent of how large the admissible space is.
+
+### The construction, and why it is exact
+
+1. **Every admitted form is CONVEX.** Law J requires the turns to be positive and to sum to 12 —
+   all exterior angles positive, exactly one revolution, which *is* convexity. Not an assumption
+   about the corpus; a consequence of the admission rule.
+2. **Every polygon vertex is a hex centre** (S3), and `form_fill` takes every hex on or inside. For
+   a convex polygon whose vertices are lattice points, the **convex hull of the contained lattice
+   points is the polygon itself** — the corners are extreme and cannot be hulled away.
+3. So hull the filled cells; the hull vertices **are** the turtle's corners, in order. Collinear
+   cells along a long side are interior to an edge and drop out — exactly right, they are not
+   corners.
+4. Each side vector is an exact integer multiple of one of the 12 heading steps, found by trying
+   all 12 (a constant). **No gcd reduction**: `head_step(0)` is `(2,0)`, not `(1,0)`, so a
+   primitive reduction would land off the table.
+
+**The hull is taken in `(k,m)`, not in world coordinates**, and that is safe rather than lucky:
+`(k,m) → (k√3/2, m/2)` is linear with determinant `√3/4 > 0`, so it preserves convexity *and*
+orientation. No float enters the recovery at any point.
+
+**It proposes, then VERIFIES by re-drawing.** That keeps `ρ = 0` a measured fact rather than a
+claim, and sends anything that does not reproduce its own field to R2.
+
+### Measured
+
+- **119 of 119** committed corpus entries recovered constructively, **0 diffs**.
+- **The house.** Today's 4-sided `[4,5,4,5]` needs `maxlen 5` (~1.2 M proposals, `X43`), so it is
+  deliberately *not* a candidate — and the gate asserts that indexed recovery **misses** it, or the
+  comparison would prove nothing:
+
+  | recovery | the house `[4,5,4,5]`, 30 cells |
+  |---|---|
+  | indexed (enumerated space) | **R2**, `ρ = 22` — cannot be found this way |
+  | constructive | **R1**, `ρ = 0`, canonical text identical |
+
+  **Constructive recovery reaches strictly further than the enumeration.** That is the whole point
+  of the exercise, and it is now gated rather than argued.
+- **control**: a hand-drawn blob still lands in **R2** with `ρ = 5` and an **empty** text — so
+  "reaches further" does not mean "answers anything".
+
+### The limit, stated rather than discovered later
+
+The hull argument holds **only for convex forms**. A non-convex form (**A4**'s L-shaped house)
+needs a negative turn, which law J's turn condition does not currently produce and the hull would
+silently smooth away. Reaching those wants boundary **tracing** rather than hulling — `hexmatch`'s
+shape (`X21`) — and that is the next real piece of work, not an extension of this one.
+
 ## Order, and where it can go wrong
 
 ```
