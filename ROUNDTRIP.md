@@ -223,6 +223,32 @@ second is a hard requirement:
   **bounded region** and nothing more. `I7` states this for the proxy; the in-world editor extends
   it to all of layer 2, and turns it from a correctness rule into a **latency** one.
 
+### 2.4.3 The dirty unit is the chunk — and it already exists
+
+**32×32 chunks are not net-new.** The world is already held in memory as chunks, layer 2 is
+derived per chunk, and rendering draws everything in a chunk at once as separate meshes — which
+is what makes moving through the world affordable.
+
+| piece | where |
+|---|---|
+| the chunk grid + addressing — `chunk_idx_32(v) = floor(v/32)`, `hex_idx_32(v) = v mod 32`, **sparse storage + GC of empty chunks** | `loft-libs-world/hex_world.loft` |
+| 32×32 chunks with **height + multi-layer** — `Layer{x, y (mult of 32), layer, tiles}` | moros `wall.loft` |
+| the chunked **batched-mesh pipeline** — `SegMesh`, `seg_mesh_append`, **one VBO per render-group** | `gridmesh` (loft-libs-graphics) |
+| the runtime chunk itself — `Chunk{ck_cx, ck_cy, ck_cz, ck_hexes}`, 32×32 | moros `moros_map/types.loft` |
+
+So the "bounded region" of §2.4.2 is not a mechanism to invent: **an edit dirties the chunks it
+touches, and their layer-2 meshes rebuild.** What still needs care is an edit on a **chunk
+boundary**, which dirties the neighbour too — a wall slot is owned by one cell but bounds two.
+
+> **Chunk seams are EXACTLY ZERO — they are not a jank site.** crawler gates this already as its
+> own **`I-SEAM`**: *"integer-metre bases ⇒ globally-aligned grid ⇒ **watertight**"*, `d = 0`, green
+> in its `make test`. Achieved by **construction** (aligned addressing), not by tolerance.
+>
+> **Name collision, worth keeping straight.** crawler's **`I-SEAM`** is the **chunk** seam and is
+> exact. This project's seam law — renamed here to **`I-FSEAM`**, law **K₁** — is the **frame** seam: a posed
+> body against the world — and is the *only* place `ε > 0` is permitted. Reading one for the other
+> would license cracks between chunks, which is already forbidden and gated.
+
 **Layer 2 is `SPEC` L3's rule, generalised.** L3 wrote it for the patch-atlas; the same rule
 covers the whole layer — *derived on demand, never persisted, never a branch in a hot-path op*.
 So the patch-atlas is one member of layer 2, not a special case, and **`K-PROXY`'s collision

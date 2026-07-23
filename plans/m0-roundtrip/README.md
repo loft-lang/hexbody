@@ -32,7 +32,7 @@ once recovery lands.
 
 - **[`ROUNDTRIP.md`](../../ROUNDTRIP.md)** — authoritative on every object, map and law here.
 - `SPEC` items advanced: **G2**; defended: **I-RT**, **I-TOTAL**, **I-EXACT**, **I-CLOSE**,
-  **I-DOMAIN**, **I-POSE**, **I-SEAM**, **I-ARBIT**, **K-FIT**; honoured: **L8** (metres), **L3**
+  **I-DOMAIN**, **I-POSE**, **I-FSEAM**, **I-ARBIT**, **K-FIT**; honoured: **L8** (metres), **L3**
   (scoped — the field is the *world's* truth; a body's is its original + pose).
 - `src/housedraw.loft` (the rasterizer that already exists), `src/houseshot.loft` (the visual).
 - **`../crawler` holds prototypes for much of this plan — read before building, not after.**
