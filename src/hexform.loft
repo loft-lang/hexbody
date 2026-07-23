@@ -178,3 +178,30 @@ pub fn perp_m(k: integer, m: integer) -> integer { 3 * k }
 
 // 4 * the squared world length of an arbitrary doubled-coordinate vector.
 pub fn vec_n2_4(k: integer, m: integer) -> integer { 3 * k * k + m * m }
+
+// ── THE INSIDE TEST, EXACT — NO HEX EVER LIES ON THE BOUNDARY (S3) ──────────
+//
+// A hex must be unambiguously INSIDE or OUTSIDE; a wall never runs through a hex, only along
+// its edges.  That is only true by construction if no cell centre can sit ON the boundary
+// line — and with the boundary placed AT |k| = wid it can, systematically: `housedraw`'s own
+// note records that "a strict comparison sits on the last bit of a float for a whole column",
+// which is why `draw_floor` carries an EPS.
+//
+// Placing the boundary BETWEEN cell centres removes the tie rather than tolerating it, and
+// both axes then become exact integer tests that CANNOT tie, for two different reasons:
+//
+//     u:  2|k| <= 2*wid + 1        EVEN vs ODD — equality is impossible by parity
+//     v:  m^2  <= 3 * dep^2        m^2 = 3*dep^2 would make sqrt(3) rational
+//
+// No epsilon, no tolerance, no tie-break rule to remember.  Verified to reproduce the gated
+// cell counts exactly (5x4 -> 27, 4x4 -> 23, 6x4 -> 33).
+fn iabs(v: integer) -> integer { if v < 0 { -v } else { v } }
+
+// Is the cell at doubled offset (k, m) from the plan's centre inside a wid x dep plan?
+pub fn plan_holds(wid: integer, dep: integer, k: integer, m: integer) -> boolean {
+  2 * iabs(k) <= 2 * wid + 1 && m * m <= 3 * dep * dep
+}
+
+// Can a cell centre ever lie exactly ON the boundary?  No — and this returns the reason as a
+// checkable fact rather than a comment: the u test compares an even to an odd number.
+pub fn plan_u_can_tie(wid: integer, k: integer) -> boolean { 2 * iabs(k) == 2 * wid + 1 }

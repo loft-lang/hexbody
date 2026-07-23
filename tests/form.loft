@@ -16,6 +16,8 @@ use hex_field;
 use hexform;
 
 // The doubled-coordinate delta from (q,r) to its neighbour in direction d.
+fn iabs2(v: integer) -> integer { if v < 0 { -v } else { v } }
+
 fn nb_delta_k(q: integer, r: integer, d: integer) -> integer {
   lattice_k(nb_q(q, r, d), nb_r(q, r, d)) - lattice_k(q, r)
 }
@@ -325,6 +327,60 @@ fn main() {
   if LATTICE2_64 < APPROX_LIMIT {
     println("  FAIL: control did not fire — the rejected model passes too,"
             + " so the criterion separates nothing"); ok = false;
+  }
+
+  // ── 11. NO HEX ON THE BOUNDARY — INSIDE/OUTSIDE IS ALWAYS CLEAR (S3) ──────
+  //
+  // "With 12 directions a hex on the boundary line should not be possible."  True only if
+  // the boundary sits BETWEEN cell centres.  Placed at |k| = wid it ties for a whole column,
+  // which is what draw_floor's EPS is absorbing.
+  println("");
+  println("11. NO HEX ON THE BOUNDARY — inside/outside is decided by exact integers");
+  bad_tie = 0;
+  n_tie = 0;
+  for tw in 1..9 {
+    for tk in -20..21 {
+      if plan_u_can_tie(tw, tk) { bad_tie = bad_tie + 1; }
+      n_tie = n_tie + 1;
+    }
+  }
+  println("   {n_tie} (wid,k) pairs: cell centres exactly on the boundary = {bad_tie}"
+          + "   (2|k| is even, 2*wid+1 is odd — impossible by parity)");
+  if bad_tie != 0 { println("  FAIL: a hex can lie on the boundary line"); ok = false; }
+
+  // the v axis cannot tie either, for a different reason: m^2 = 3*dep^2 would make sqrt(3)
+  // rational.  Checked over the same range.
+  bad_v = 0;
+  for vd in 1..9 {
+    for vm in -30..31 { if vm * vm == 3 * vd * vd { bad_v = bad_v + 1; } }
+  }
+  println("   v axis: m^2 == 3*dep^2 occurrences = {bad_v}   (would make sqrt(3) rational)");
+  if bad_v != 0 { println("  FAIL: the v axis can tie"); ok = false; }
+
+  // and the exact test reproduces the gated cell counts
+  for pw in 0..3 {
+    cw = if pw == 0 { 5 } else if pw == 1 { 4 } else { 6 };
+    cd = 4;
+    cnt = 0;
+    for cr in -12..13 {
+      for cq in -20..21 {
+        if plan_holds(cw, cd, 2 * cq + (cr & 1), 3 * cr) { cnt = cnt + 1; }
+      }
+    }
+    want = if pw == 0 { 27 } else if pw == 1 { 23 } else { 33 };
+    println("   plan {cw}x{cd}: {cnt} cells   expected {want}");
+    if cnt != want { println("  FAIL: the exact test does not reproduce the gated count"); ok = false; }
+  }
+
+  // CONTROL: the OLD boundary placement (at |k| = wid) does tie — so the fix is real.
+  old_ties = 0;
+  for ow in 1..9 {
+    for ok2 in -20..21 { if iabs2(ok2) == ow { old_ties = old_ties + 1; } }
+  }
+  println("   CONTROL boundary AT |k|=wid instead of between: ties = {old_ties}");
+  if old_ties == 0 {
+    println("  FAIL: control did not fire — the old placement never tied,"
+            + " so there was nothing to fix"); ok = false;
   }
 
   println("");
