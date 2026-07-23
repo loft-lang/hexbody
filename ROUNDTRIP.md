@@ -202,14 +202,26 @@ not a height, an edge, or an occupant. **Thickness is *not* foreclosed** — it 
 | | **layer 1 — stored** | **layer 2 — derived** |
 |---|---|---|
 | what | the **foxel**: compact, uniform, everywhere | collision structures, **meshes**, water flow, air flow, sound |
-| who | **the editor** works on this, and *only* this | **the game**, at runtime |
+| who | the editor **writes** this, and *only* this | the game runs on it; the editor **reads** it to render |
 | authored? | yes | **never** — derived from layer 1 on demand |
 | persisted? | yes | **never** |
 
-> **No second representation inside the editor.** One compact form, written everywhere, so
-> working on distant parts of the world needs no swap between representations and no conversion
-> step. That is the editor's whole requirement, and it is a *constraint on layer 1*: the stored
-> form must be good enough to edit directly.
+> **The editor WRITES only layer 1; it READS layer 2 to render.** The rule is about authoring and
+> storage, not display. One compact form, written everywhere, so working on distant parts of the
+> world needs no swap between representations and no conversion step — a *constraint on layer 1*:
+> the stored form must be good enough to edit directly.
+
+**It is an *in-world* editor — the game is running all the time.** You edit inside the live world,
+so layer 2 already exists and the editor simply sees through it. Two consequences follow, and the
+second is a hard requirement:
+
+- **Editing and destruction are the same operation** — mutate layer 1, re-derive layer 2, check
+  the invariants survive. `ARCHITECTURE` says this already (*"collision, destruction, editor — the
+  same operation"*); the in-world editor is what makes it literal rather than an analogy.
+- **Layer 2 derivation must be LOCAL and INCREMENTAL.** With the game never stopping, an edit
+  cannot re-derive collision, meshes, flow and sound globally — a single cell change must dirty a
+  **bounded region** and nothing more. `I7` states this for the proxy; the in-world editor extends
+  it to all of layer 2, and turns it from a correctness rule into a **latency** one.
 
 **Layer 2 is `SPEC` L3's rule, generalised.** L3 wrote it for the patch-atlas; the same rule
 covers the whole layer — *derived on demand, never persisted, never a branch in a hot-path op*.
