@@ -15,7 +15,7 @@ cite it by law letter.
 
 **Every item has a CHECK** — the gate or control that makes it falsifiable. An item without a
 check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate and in each
-`src/*test.loft` gate, so a test names the spec item it defends.
+`tests/*.loft` gate, so a test names the spec item it defends.
 
 ---
 
@@ -99,7 +99,7 @@ items marked ⚠ below depend on one.
 
 1. **A plan's Blueprint gate names the spec items it touches** — the invariants it must preserve
    (`I*`), the limits it must not cross (`L*`), the goal it advances (`G*`).
-2. **Every `src/*test.loft` gate maps to a spec item** and asserts its control. A gate that
+2. **Every `tests/*.loft` gate maps to a spec item** and asserts its control. A gate that
    defends no spec item, or a spec item no gate defends, is the thing to fix.
 3. **The prose docs become reference-only** — read for *why*, never the build input. If building
    needs a fact, it belongs here as a checkable item, not in a paragraph.

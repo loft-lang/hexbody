@@ -51,7 +51,7 @@ Say so in one line if a phase has no exact-invariant surface. Silence reads as "
 ## Phases (REQUIRED if multi-phase)
 
 *(delete)* One row per phase. **Verify** is how you see it works — name the gate: `make test`
-(a `src/<x>test.loft` case), `make shot` (a rendered PNG to eyeball), or a blueprint plot.
+(a `tests/<x>.loft` case), `make shot` (a rendered PNG to eyeball), or a blueprint plot.
 
 | Phase | Effort | Verify | Status |
 |---|---|---|---|

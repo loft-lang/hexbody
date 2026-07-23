@@ -101,7 +101,7 @@ A probe is graduation-ready only when **all** hold:
 A probe that passes its assertions but fails another gate **stays in `probes/`** with a
 status note; graduate a representative sibling from the same cluster instead.
 
-Graduated probes become `src/<x>test.loft` cases (wired into `make test`) or
+Graduated probes become `tests/<x>.loft` cases (wired into `make test`) or
 `probes/*.probe` pixel assertions (`make probe`).
 
 **Upstream defects found on the way out** go to LOFT-HANDOFF.md → FILING.md, never into

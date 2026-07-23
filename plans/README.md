@@ -30,7 +30,7 @@ and must not grow one; the tracker is the index (below).
 
 | Work shape | Path |
 |---|---|
-| **Bug fix** (one root cause, one commit) | Fix + a `src/<x>test.loft` case + commit. No plan. |
+| **Bug fix** (one root cause, one commit) | Fix + a `tests/<x>.loft` case + commit. No plan. |
 | **Upstream (loft) defect** | crawler's `LOFT-HANDOFF.md` → file per `FILING.md`. **Never a hexbody plan.** |
 | **Tiny deliverable** | Nothing, or one line in the relevant doc. |
 | **Light TODO** *(the default)* | An `## Open work` section in the reference doc that owns the area. Same lifecycle as a plan, one row — row and design share a file. |
