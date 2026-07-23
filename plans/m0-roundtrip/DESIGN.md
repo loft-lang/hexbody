@@ -377,6 +377,11 @@ for every pair:    f(a) != f(b)                                law F, injectivit
 the check is `diff`. That is the practical payoff of keeping `𝕋` float-free (**C1**), and it is
 why the ladder can enumerate a level *completely* instead of sampling it.
 
+**Where the corpus lives, and where it does not.** These inputs are **stored for testing only**.
+The editor does not store `𝕋` — it writes layer 1, the foxel (`ROUNDTRIP` §2.4.2), and `𝕋` is
+explicitly not a second editor representation. The corpus is a *test* artifact; nothing at runtime
+reads it.
+
 **Why the entries are kept rather than regenerated.** `rt_extend` replays every prior entry after
 any grammar change and demands byte-identical output (law **A₂**). Regenerating them would make
 that gate vacuous — it would compare new output against new output and always pass. **A corpus
@@ -384,6 +389,59 @@ that regenerates is a gate that cannot fire.**
 
 **A rung is done when** its level is exhaustively enumerated, every entry round-trips, no two
 entries collide, and any restriction found is enforceable at the door (§5.2).
+
+### 8.0.1 Where two forms touch — the hardest part of distinguishability
+
+Rung **A8** is not just "more cases". Two forms **touching** is where distinguishability is
+genuinely hard, and it is where crawler has made its biggest inroad — `FORMS.md`, *"a kit of
+exact, interlocking hex parts (no seams by construction)"*, which owns *"the seam-exactness
+property — no gap, no angle — and the matcher."*
+
+Its acceptance criterion is stated as the user's own test:
+
+> *a composite of stitched parts reads as **one continuous structure**, never a chain of joints —
+> **no visible gap** (position) **and no visible angle / kink** (direction) at any seam, except
+> where an angle is intended.*
+
+**FORMS also argues our R1/R2 split from the other side**, independently, which is worth noting as
+convergence rather than coincidence: trig-and-round-to-hex *"draws fine"*, but leaves **no exact,
+enumerable form**, so the matcher *"would be reverse-engineering an approximation"*. Its answer —
+an **exact predefined cell-form is the source of truth (matchable)**, with trig still rendering it
+smoothly downstream — is `R1` reached from the matcher's end instead of the round trip's.
+
+**Status: T3.** `FORMS.md` says of itself *"DESIGN SESSION — requirements only. No implementation,
+no geometry pinned yet."* So it is **input, not authority** — usable, and to be **revalidated
+against our own corpus inputs** before anything rests on it.
+
+#### The tension it exposes, which is new
+
+**Seam exactness and distinguishability pull against each other.** FORMS wants a composite to read
+as *one continuous structure*. Law **F** wants two distinct models to draw to *distinct fields*.
+The better the seam, the more nearly a composite of A and B is field-identical to some single form
+C — and then `rebuild` cannot recover which was authored.
+
+| property | what it wants | where it lives |
+|---|---|---|
+| **seam exactness** | parts merge with no gap (`G⁰`) and no kink (`G¹`) | a *construction* property — FORMS |
+| **distinguishability** | distinct models → distinct fields | an *injectivity* property — law **F** |
+
+**Likely resolution — needs confirming at A8, not assuming now.** The two are only in conflict if
+part identity has to survive in the *fabric*, and it does not:
+
+- **Seated fabric may merge.** Two adjacent seated stencils genuinely *become* one fabric, and
+  that is correct — `rebuild` returns a **canonical representative** (P1: `𝕄* = im(rebuild)`), not
+  the authoring history. Which of several field-identical models was authored is not recoverable
+  and does not need to be.
+- **Identity lives elsewhere** — in the placement records and the mechanism graph (§10.3), neither
+  of which is fabric. A wagon coupled to a car is two bodies because they are two *frames*, not
+  because their fields differ.
+- **Free-posed bodies never share a field at all** (`ROUNDTRIP` §2.3), so the question does not
+  arise for them.
+
+**What must still not collide,** and this is A8's real gate: two composites that need to
+*behave differently in the fabric* — different passability, different destruction fragmentation,
+different material — must not be field-identical. That is a narrower and checkable claim than
+"all composites are distinguishable", which is false and should not be attempted.
 
 ### 8.1 The rungs come from the scene, not the desk
 
