@@ -96,6 +96,13 @@ than going silently ungated.
   the editor can still author something that breaks later.
 - **Each rung must also close under `Ops`**, not merely round-trip. A form that survives A5 alone
   but not `flip(A5)` is **refused at A5**, not discovered at rung A8 — that is `rt_closure`.
+- **Phase A is the window where restrictions are free.** `𝕄*` grows, never shrinks (law **A₂**),
+  so once texts exist in the wild, tightening `fits?` is a **breaking change** with no migration —
+  nobody can re-derive geometry a person hand-placed. Run the whole ladder, A8 included, *before*
+  the editor ships content. Discovering the combination limits afterwards is the expensive order.
+- **Each rung keeps its fixtures forever.** `rt_extend` replays every prior fixture against the
+  current grammar and demands **byte-identical** output, so a later rung that adds a verb cannot
+  silently re-spell an earlier rung's texts.
 - **Its output is not a throwaway probe.** `Cyc` and `period` are the **shared artifact** that
   `rt_trip` *and* the editor's `fits?` both consume (`K-FIT`: `authorable ⊆ fits?`). Building them
   twice — once for the gate, once for the editor — is the `N > 1` silent-divergence failure.

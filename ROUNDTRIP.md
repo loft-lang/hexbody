@@ -313,9 +313,14 @@ Normative rules — a model has **exactly one** spelling:
 
 1. **C1 integers only** — every numeric token is `⟨int⟩`, `⟨nat⟩` or reduced `⟨rat⟩` (§3).
 2. **C2 fixed order** — elements sorted by `(kind, index, t)`; fields in declaration order.
+   **`kind` orders by a fixed registry position, never alphabetically** — new kinds are *appended*,
+   so adding one never interleaves and never re-spells an existing text (§4.1).
 3. **C3 reduced forms** — `⟨dir⟩` and `⟨rat⟩` in lowest terms; `⟨dir⟩` in the canonical sign
    representative of `Λ/±`.
 4. **C4 fixed layout** — single space separators, one element per line, no trailing space.
+5. **C5 defaults are omitted** — an optional field is written **only when it differs from its
+   default**, and the default must reproduce the pre-existing behaviour exactly. So adding a
+   parameter leaves every existing text byte-identical (§4.1).
 
 *Illustrative* (rules C1–C4 are normative; the token spellings are not):
 
@@ -341,6 +346,41 @@ Law **J** on this stencil: `Σ turn = 3+3+3+3 = 12` ✓, and `4·e(0) + 5·e(3) 
 
 **Consequence:** equality on `𝕋` is **byte equality**. No tolerance parameter exists anywhere in
 the round-trip gate, because there is no float to compare (Prop. 4).
+
+### 4.1 Growing the language — new verbs and parameters, without breaking the old ones
+
+This is **infrastructure, built out like a programming language**: `⟨tower⟩`, `⟨bridge⟩`, `⟨prop⟩`
+and new parameters on existing verbs get added over years. A language stays usable only if adding
+a keyword never changes the meaning of a program already written. Same contract here:
+
+> **Law A₂ · monotone extension.** For grammar versions `n → n+1` with `𝕋ₙ ⊆ 𝕋ₙ₊₁`, every existing
+> `T ∈ 𝕋ₙ` satisfies
+> `readₙ₊₁(T) = readₙ(T)` · `drawₙ₊₁(…) = drawₙ(…)` · **`writeₙ₊₁(readₙ₊₁(T)) = T`**
+> — same model, same field, and **the same bytes**.
+
+The third clause is the one that bites, and it is why **C2** and **C5** are worded as they are:
+
+| adding | the trap | the rule that prevents it |
+|---|---|---|
+| a **verb** (`⟨tower⟩`) | sorting `kind` alphabetically makes `tower` interleave, renumbering and **re-spelling every existing text** | **C2** — registry order, new kinds appended |
+| a **parameter** (`⟨feature⟩ … "bevel" ⟨nat⟩`) | writing it always adds a token to every existing element | **C5** — omitted at default; the default reproduces old behaviour |
+
+A re-spelling is not a cosmetic problem: `𝕋` **is** the stored truth for a body (§2.1), so
+re-spelling every text at once invalidates every stored original and every fixture in one commit.
+
+**`𝕄*` grows; it must never shrink.** A new verb may *admit* more; it must never *un-admit*
+something already authorable — that would break content already made, and there is no migration
+for geometry someone hand-placed.
+
+> **Therefore the census window matters.** Restrictions can be added to `fits?` **freely while
+> phase A is running and nothing has been authored against it**. Once texts exist in the wild,
+> tightening `fits?` is a **breaking change**. Run the whole ladder before the editor ships
+> content — the alternative is discovering rung A8's combination limits after people have built
+> with the tool.
+
+**Enforced by the gates being enumeration-driven** (§9): a new verb without `write`/`draw`/
+`rebuild` coverage fails `rt_trip` rather than going silently ungated — the language equivalent of
+not being able to add a keyword without a test.
 
 ## 5. `fits?` — two layers, both decidable, both forward
 
@@ -433,7 +473,8 @@ Let `m` range over `𝕄*`, `f` over `𝔽`, `T` over `𝕋`, `v` over `Λ`.
 
 | # | law | statement |
 |---|---|---|
-| **A** | canonicity | `∀m. read(write(m)) = m`  ∧  `∀T. write(read(T)) = T` |
+| **A₁** | canonicity | `∀m. read(write(m)) = m`  ∧  `∀T. write(read(T)) = T` |
+| **A₂** | monotone extension | `𝕋ₙ ⊆ 𝕋ₙ₊₁`, and `∀T ∈ 𝕋ₙ`: `readₙ₊₁(T) = readₙ(T)`, `drawₙ₊₁ = drawₙ`, `writeₙ₊₁(readₙ₊₁(T)) = T`. A new verb or parameter never re-spells an existing text; `𝕄*` grows, never shrinks (§4.1) |
 | **B** | projection | `∀m ∈ 𝕄. σ(σ(m)) = σ(m)`  ∧  `ρ(σ(m)) = 0` |
 | **C₁** | fitting = fixed point | `∀m ∈ 𝕄. m ∈ 𝕄* ⟺ σ(m) = m` |
 | **C₂** | closure under operations | `∀m ∈ 𝕄*, ∀op ∈ Ops. op(m) ∈ 𝕄*` — where `Ops = {flip, place, combine, damage, seat}`. What is admitted must survive **everything that will later be done to it** (§5.2) |
@@ -449,7 +490,7 @@ Let `m` range over `𝕄*`, `f` over `𝔽`, `T` over `𝕋`, `v` over `Λ`.
 | **K₁** | seam containment | error `= 0` in any frame interior; error `≤ ε_seam` and **deterministic** on the seam `Σ` (§2.1.2) |
 | **K₂** | seam arbitration | exact for `κ ≤ 1`; **deterministic** pairwise arbitration at `κ = 2` over a total order on frames; total, deterministic, **conservative and counted** for `κ ≥ 3` (§2.1.3) |
 
-*Naming.* Laws are always written **law A**…**law K₂**; `SPEC` items always carry a suffix (`I3`,
+*Naming.* Laws are always written **law A₁**…**law K₂**; `SPEC` items always carry a suffix (`I3`,
 `L8`, `K-PROXY`). The two namespaces do not collide.
 
 **D and E₂ are the Moore–Penrose pair.** On `im(draw)` — undamaged geometry — `draw` and `rebuild`
@@ -468,13 +509,13 @@ an invertible transform of a house, and no amount of care makes it one.
 |---|---|---|
 | **P1** | `𝕄* = im(σ) = im(rebuild)` — the fitting set need not be axiomatised; it *is* the image | B, C₁, E₁ |
 | **P2** | `draw│𝕄*` is injective (law F) | D |
-| **P3** | `write(rebuild(draw(read(T)))) = T` — **the round-trip gate is a text `diff`** | A, D |
+| **P3** | `write(rebuild(draw(read(T)))) = T` — **the round-trip gate is a text `diff`** | A₁, D |
 | **P4** | round-trip equality is byte equality; no `ε` exists in the gate | C1, P3 |
 | **P5** | `σ│𝕄* = id` — re-snapping an authored model is a no-op; the editor cannot jitter under repeated edit | B, C₁ |
-| **P6** | `write, read` are mutually inverse bijections `𝕄* ≅ 𝕋` | A |
+| **P6** | `write, read` are mutually inverse bijections `𝕄* ≅ 𝕋` | A₁ |
 
 *Proof of P2.* `draw(m₁) = draw(m₂)` ⟹ `m₁ = rebuild(draw(m₁)) = rebuild(draw(m₂)) = m₂`. ∎
-*Proof of P3.* `read(T) = m ∈ 𝕄*` (P6); `rebuild(draw(m)) = m` (D); `write(m) = T` (A). ∎
+*Proof of P3.* `read(T) = m ∈ 𝕄*` (P6); `rebuild(draw(m)) = m` (D); `write(m) = T` (A₁). ∎
 
 > **An `ε` appearing in a round-trip comparison is a defect signal, never a tuning knob**: by P4 it
 > can only mean `𝕄*` was drawn wider than `draw` is injective on — i.e. law F is false and `𝕄*`
@@ -546,7 +587,8 @@ work always has something green rather than one long red run to a single verdict
 
 | gate | law | domain | test | control |
 |---|---|---|---|---|
-| `rt_canon` | A | — | text diff | reorder a field (violate C2) → diff |
+| `rt_canon` | A₁ | — | text diff | reorder a field (violate C2) → diff |
+| **`rt_extend`** | **A₂** | — | replay every prior fixture against the current grammar; bytes must be **identical** | sort `kind` alphabetically instead of by registry → every text with a later-added verb re-spells |
 | `rt_project` | B | — | equality + `ρ = 0` | perturb by ½ step → `ρ ≠ 0` |
 | `rt_fits` | C₁ | — | `fits?` vs `σ(m) = m` | **A:** a cycle in the collision set → `fits?` false · **B:** `n < period(d)` → `fits?` false |
 | **`rt_closure`** | **C₂** | both | `∀m ∈ 𝕄*, ∀op ∈ Ops. fits?(op(m))` — over the census output | admit a form whose `flip` leaves `𝕄*` → fires at the door, not after the flip |

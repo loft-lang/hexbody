@@ -75,6 +75,8 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 | **I-FLIP** | the flip commutes with the round trip and does not drift under repetition | **G**, **H** | inject a rounding step → `φ¹²` diverges from the original |
 | **I-EXACT** | round-trip equality is **byte equality**; no `ε` exists in the comparison | **P4** | an `ε` in the comparator means `𝕄*` is wider than `draw` is injective on |
 | **I-CLOSE** | a stencil boundary is a closed turtle cycle over `H₁₂`, exact in `ℤ²` | **J** | drop one turn → the vector sum is non-zero |
+| **I-EXTEND** | the model is **built out like a language**: new verbs and parameters are added without breaking the old ones. An existing canonical text keeps the **same bytes**, model and field across a grammar extension; `𝕄*` grows, never shrinks | **A₂** | sort `kind` alphabetically instead of by registry position → adding one verb re-spells every existing text, invalidating every stored original at once |
+| **I-CLOSED-OPS** | what is admitted survives **everything later done to it** — `Ops = {flip, place, combine, damage, seat}` | **C₂** | admit a form whose `flip` leaves `𝕄*` → it breaks after placement, not at the door |
 | **I-DOMAIN** | `O` (placing a stencil), `H₁₂` (a stencil's sides), `D` (world linework) are three distinct sets; no grammar production crosses them | §1.1 | a stencil placed at one of the 24 → unparseable |
 
 ## K — Contracts (interfaces that must not change shape)
