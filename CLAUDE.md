@@ -28,12 +28,20 @@ of work**. Far more design and prototyping is still in crawler than has been mov
 > characterised there already, and often prototyped. Specifying from scratch what already exists
 > is the most likely way to waste effort in this repo.
 
-**Two siblings, two levels of trust — do not confuse them.**
+**Trust is by EVIDENCE KIND, not by repo** (`ROUNDTRIP.md` §7). The distinction that matters:
+crawler's prototypes and design docs are **design tries** — input, not authority.
 
-| repo | status | how to use it |
+| tier | what it is | how to use it |
 |---|---|---|
-| **`../crawler`** | introduced the **rigor layer** — measured, prototyped, gated | **cite as settled prior art** (`ROUNDTRIP.md` §7.1) |
-| **`../moros`** | a working engine, but **mostly untested** | the **shape** is real, the **behaviour** is not verified. **Cherry-pick a layer where applicable, then gate it here to our standard** (§7.2) |
+| **T1 · gated** | a green gate **with a control that must fire**, in a repo's `make test` | **authoritative** |
+| **T2 · measured by a try** | a prototype produced a number | indicative — **re-measure here** |
+| **T3 · designed** | a doc argues a construction | **input to design, never truth** |
+| **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
+
+**Exactly one prior-art item is T1.** Everything else the design leans on is a try or a schema,
+and the census is where it gets re-measured under our own gates. Citing a T2 number as settled is
+the specific mistake to avoid — in either direction: re-deriving what is genuinely gated wastes
+effort, and trusting a try forfeits what this project is for.
 
 hexbody is the **strictest** of the three: every gate carries a control that must fire, every
 constant is measured, every claim is falsifiable. **Adopting moros code without re-gating it

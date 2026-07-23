@@ -339,45 +339,47 @@ roughly the hex corner offset."*
 > **The trap:** using R2's machinery where R1 applies — fitting a line to a stencil whose turtle
 > description we hold throws away an exact answer and reintroduces a tolerance nothing needs.
 
-## 7. Constraints from the sibling repos — and how far each is trustworthy
+## 7. Prior art from the siblings — and how far each is trustworthy
 
-Prior art, in **two tiers**. Re-deriving the first tier is waste; adopting the second tier
-without re-gating it is the mistake this project exists to avoid.
+Tiered by **evidence kind, not by repo**. The distinction that matters: a **design try** — a
+prototype or a design doc — is *input*, not authority. Its numbers are indicative and **must be
+re-measured here** before anything load-bearing rests on them.
 
-| tier | source | status | how to use it |
+| tier | what it is | how to use it |
+|---|---|---|
+| **T1 · gated** | a green gate **with a control that must fire**, running in a repo's `make test` | **authoritative** |
+| **T2 · measured by a try** | a prototype produced a number | indicative — **re-measure here** before it carries weight |
+| **T3 · designed** | a doc argues a construction | **input to design, never truth** |
+| **T4 · schema** | a shape read from **untested** code (`../moros`) | the *shape* is real; the *behaviour* is unverified — cherry-pick, then gate here |
+
+**hexbody is the strictest of the three**, and that is the whole point: adopting a sibling's
+result without re-gating it forfeits exactly what this project is for.
+
+| # | constraint | tier | source |
 |---|---|---|---|
-| **measured** | `../crawler` — `X1`–`X10`, `X16`–`X17` | **measured, prototyped or gated** — crawler introduced the rigor layer | **cite as settled** |
-| **schema** | `../moros` — `X11`–`X15` | **read from code; the implementation is mostly untested** | the *shape* is real; the *behaviour* is not verified. **Cherry-pick where applicable, then gate it here to our standard** |
+| **X1** | 60° rotation is an exact integer map, `k' = (k−m)/2`, `m' = (3k+m)/2`; six rotations are the identity — *claimed verified over 625 cells* | **T2** | crawler `EXTRACTION.md` |
+| **X2** | reflection is exact (`k → −k`) — the stated source of the 12 orientations | **T2** | crawler `EXTRACTION.md` |
+| **X3** | **all 24 headings representable** — *"representability was never the question, only cost"*; width-normalised edge `1.00×`, off-axis `≈3.5×` | **T2** | `5-geometry/directions.py` |
+| **X4** | arbitration nearest-wins and **order-free**; different levels never contest | **T3** | crawler `EXTRACTION.md` |
+| **X5** | **refusal, not rounding** — *"a stencil rotated by a non-multiple of 60° must be refused"* | **T3** | crawler `EXTRACTION.md` |
+| **X6** | a traced boundary **zigzags** — no two consecutive edges collinear | **T2** | `5-geometry/matcher.py` |
+| **X7** | footprints chosen by best **collision** match, not best **shape** match | **T3** | `roundness.py`, `collision_fit.py` |
+| **X8** | a way is an exact **centreline plus offsets**, never a rasterised band | **T3** | `5-geometry/ways.py` |
+| **X9** | **width-normalise before ranking by heading**, or the table inverts — a conclusion actually reversed in crawler | **T2** | `directions.py` METHOD NOTE |
+| **X10** | the triangle-subdivision wall band, *"validated in 2D, corner tests pass"* | **T2** | `WALLS.md`, `tools/wallproto/` |
+| **X16** | **a graph is not a field and cannot be fitted like one** — a cone is five parameters; a skeleton has a variable node count | **T3** | crawler `hexskel` |
+| **X17** | the part representation: *"two levels, no more: an anchor, and parts in the anchor's frame"* + the granularity rule | **T3** | crawler `hexpart` |
+| **X11** | the foxel **exists**: `Hex`/`HexAddress`/`Chunk`; layers are `cy`; walls are the three owned edges | **T4** | moros `moros_map/types.loft` |
+| **X12** | wall shape vocabulary `WallDef.wd_body`; **thickness in the palette** (`wd_thickness`) | **T4** | moros `palette.loft` |
+| **X13** | **trees are items**, **roofs are materials** | **T4** | moros `palette.loft` |
+| **X14** | items carry a **5-bit rotation, 0–23** | **T4** | moros `types.loft` |
+| **X15** | the Map↔`hex_field` round trip is **lossy**, and its test is **green for the wrong reason** | **T4**, but trustworthy **as a warning** — it is moros's own written admission | moros `moros_map.loft` |
+| **X18** | 32×32 chunks are **not net-new** — grid, addressing, sparse storage + GC; the batched-mesh pipeline (`gridmesh`, one VBO per render-group) | **T2/T4** | `hex_world.loft`, `gridmesh`, moros `wall.loft` |
+| **X19** | **chunk seams are exactly `d = 0`** — *"integer-metre bases ⇒ globally-aligned grid ⇒ watertight"*, green in crawler's `make test` | **T1** | crawler `chunktest` |
 
-`X15` is the exception inside its tier: it is moros's own written admission of a defect, so it is
-trustworthy **as a warning** even though the surrounding code is unverified.
-
-### 7.1 Measured in `../crawler`
-
-| # | constraint | source |
-|---|---|---|
-| **X1** | 60° rotation is an exact integer map; six rotations are the identity (verified, 625 cells) | `EXTRACTION.md` |
-| **X2** | reflection is exact (`k → −k`) — the source of the 12 orientations | `EXTRACTION.md` |
-| **X3** | **all 24 headings are representable** — *"representability was never the question, only cost"*. Width-normalised: edge (6) `1.00×`, vertex (6) between, off-axis (12) `≈3.5×` — *"bounded, not catastrophic"* | `5-geometry/directions.py` |
-| **X4** | arbitration is solved and **order-free**: same level → `cut_arb` nearest-wins; different levels → no contest (the bridge guarantee) | `EXTRACTION.md` |
-| **X5** | **refusal, not rounding**, is already a gate: *"a stencil rotated by a non-multiple of 60° must be refused, not silently rounded"* | `EXTRACTION.md` |
-| **X6** | a traced boundary **zigzags** — no two consecutive edges collinear (measured) | `5-geometry/matcher.py` |
-| **X7** | footprints are chosen by best **collision** match, not best **shape** match | `roundness.py`, `collision_fit.py` |
-| **X8** | a way is an exact **centreline plus offsets**, never a rasterised band | `5-geometry/ways.py` |
-| **X9** | **width-normalise before ranking by heading**, or the table inverts — this reversed a conclusion in crawler before it was caught | `directions.py` METHOD NOTE |
-| **X10** | the triangle-subdivision **wall band model is validated in 2D**; corner tests pass — *"rect corners exactly 90°, rhombus 60°/120°, miter offsets correct"*. The reference is in-workspace and checkable | `WALLS.md` + `tools/wallproto/` (`walltri.py`, `hexoffset.py`, `hexdungeon.py`) |
-| **X16** | **a graph is not a field and cannot be fitted like one** — *"the roof matcher recovers a cone by solving for five parameters, but a skeleton has a variable number of nodes and no amount of least-squares will produce one"*. This is why mechanism is authored/derived, never recovered | `hexskel` |
-| **X17** | the part representation exists: *"two levels, no more: an **anchor**, and parts in the anchor's frame"*, with the granularity rule — *split where something moves independently, merge where it does not* | `hexpart` |
-
-### 7.2 Schema read from `../moros` — the shape is real, the behaviour is untested
-
-| # | constraint | source |
-|---|---|---|
-| **X11** | the foxel **exists**: `Hex`/`HexAddress`/`Chunk`, layers are `cy`, walls are the three owned edges | moros `moros_map/src/types.loft` |
-| **X12** | the **wall shape vocabulary** is `WallDef.wd_body` (`SOLID…THICK_CURVED…`), and **thickness lives in the palette** (`wd_thickness`), not the cell | moros `moros_map/src/palette.loft` |
-| **X13** | **trees are items** (`ItemDef.id_kind = TREE`) and **roofs are materials** (`MaterialDef.md_category = roof`) — OD-3 and OD-2 confirmed against code, not inferred | moros `palette.loft` |
-| **X14** | items carry a **5-bit rotation, 0–23** — the 24-set is already in the storage | moros `types.loft` |
-| **X15** | **a Map↔`hex_field` round trip already exists and is lossy**: *"What crosses today: occupancy, height, material. Items, item rotation and the three wall bytes do NOT."* Its test is **green for the wrong reason** — see `DESIGN.md` §11 | moros `moros_map.loft` § *the shared document format* |
+> **Nothing in T2–T4 is settled.** The only **T1** item here is `X19`. Everything the design
+> currently leans on — the exact rotation, the 24-direction cost, the foxel's shape — sits below
+> that line, and the census (`DESIGN.md` §8) is where it gets re-measured under our own gates.
 
 ## 8. Relation to `SPEC.md`
 
