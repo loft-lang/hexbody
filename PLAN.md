@@ -60,18 +60,27 @@ the-interface* rule.
 The exact model is drawn onto the field and **rebuilt from it exactly**. Formally:
 **[`ROUNDTRIP.md`](ROUNDTRIP.md)** — objects, maps, laws **A–K₂**. This is not "the fit": it is a
 **recovery**, and the word matters, because an exact-invariant domain punishes every approximation
-you reach for instead (`ROUNDTRIP` §11.2).
+you reach for instead (`ROUNDTRIP` §11.3).
 
 - **produce** — the stencil census → `Cyc`; the linework census → `period`, `D`, `Sep`;
   `write`/`read` (canonical text); `fits?`/`snap` (the one chokepoint, shared with the editor);
   `rebuild`.
-- **gate** — `rt_census_a` (collisions **must be 0**, exhaustive) · `rt_canon` · `rt_project` ·
-  `rt_fits` · `rt_close` · **`rt_trip`** — `write(rebuild(draw(read(T)))) ≟ T`, a **text diff**,
-  no `ε` · `rt_total` · `rt_ruin` · `rt_seam` · `rt_contend` · `rt_flip` · `rt_drift`.
-  Controls per `ROUNDTRIP` §9; the spine control is a non-fitting model bypassing `snap` → diff.
+- **gate** — `rt_census_a` (grown by level, **reports the frontier**) · `rt_canon` · `rt_project` ·
+  `rt_fits` · `rt_closure` · `rt_door` · `rt_close` · `rt_extend` · **`rt_trip`** —
+  `write(rebuild(draw(read(T)))) ≟ T`, a **text diff**, no `ε` · `rt_total` · `rt_ruin` ·
+  `rt_seam` · `rt_contend` · `rt_flip` · `rt_drift`. Controls per `ROUNDTRIP` §9; the spine
+  control is a non-fitting model bypassing `snap` → diff.
 - **depends on** — `hex_field`, `housedraw`. `rt_orient` (law **I**) is **already green**:
-  `housetest`, 12/12 in cells *and* edges.
-- **done when** — `rt_trip` is green over every primitive kind, and `Cyc` closes at 0 collisions.
+  `housetest`, 12/12 in cells *and* edges. **And on `../crawler`** — much of this is prototyped
+  there, and `ROUNDTRIP` §11.1 lists ten constraints (**X1–X10**) already measured or gated.
+- **done when** — `rt_trip` is green over every primitive kind, and the census has **located the
+  frontier** (the restrictions are M0's output, not a pass/fail).
+
+> **Read before starting.** `ROUNDTRIP` **§11.1** — what crawler already settled (exact rotation
+> *and reflection*; all 24 headings representable; order-free nearest-wins arbitration; the
+> refusal gate) — and **§11.2 OD-5…OD-8**, four conflicts between this spec and that prior art.
+> **OD-6** (is a stencil a *field* or a *generative description*?) is the deepest and probably
+> orders the rest, because it decides how much of laws **D**/**E₂** is even load-bearing.
 
 **Order inside M0 — grow, don't presuppose** (`ROUNDTRIP` §8.1). The **stencil census** is first,
 and it is a **ladder**: the smallest closed form (an equilateral triangle, `len 1`), then longer

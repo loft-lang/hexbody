@@ -236,6 +236,15 @@ Two requirements fall straight out, and both are easy to omit silently:
 > falsifiable claim, so it is **measured** — a histogram of `κ`, with the `κ ≥ 3` rate reported.
 > An assumed-rare case that silently becomes common is how a seam budget quietly stops holding.
 
+> **Prior art — crawler already has an arbitration rule, and a stronger requirement than K₂.**
+> `EXTRACTION.md` § *Stencils*: merging two fields is *"a problem already solved: same level →
+> `cut_arb`'s **nearest-wins** arbitration; different levels → **no contest at all** (the bridge
+> guarantee)."* Its gate demands overlapping stencils arbitrate *"deterministically **and
+> order-freely**"* — **order-free is stronger than K₂'s "deterministic over a total order"**: it
+> requires the result not to depend on order at all, rather than on a fixed one. Adopt the
+> stronger form where it is achievable, and note that the **level separation** does the work `κ`
+> would otherwise have to: two objects on different levels never contend.
+
 **Where to measure it, honestly.** `κ` rises with query volume: a **point** query rarely finds 3
 frames meeting at once, but a **swept volume** straddles frames far more easily. And the scenario
 that maximises `κ` is **`G★` itself** — a pile of tumbled wagons resting on each other on terrain
@@ -284,7 +293,7 @@ world terrain and linework, and the maps between them.
 ⟨rat⟩      ::= ⟨int⟩ "/" ⟨nat⟩                      (* reduced; never a decimal *)
 ⟨int⟩,⟨nat⟩ ::= decimal integer
 ⟨name⟩,⟨kind⟩,⟨layer⟩ ::= DEFERRED                  (* §8 constants must land before these freeze *)
-⟨roof⟩     ::= OPEN DECISION                        (* domain C — height recovery; see §11.1 *)
+⟨roof⟩     ::= OPEN DECISION                        (* domain C — height recovery; see §11.2 *)
 ```
 
 > **`⟨dir⟩` is unreachable from `⟨stencil⟩`.** A stencil's side directions are determined by its
@@ -425,6 +434,33 @@ to mutate by approximation (§6 **G**, **H**), so transfer across the flipped ha
 free — it is what `rt_drift` measures. Should it fail, the census must be run over all 12 of `O`
 rather than over 6 and transferred.
 
+### 5.1.1 Two recovery regimes — and why `matcher.py` needs a tolerance while we forbid one
+
+`P4` says an `ε` in recovery is a defect signal. crawler's `plans/5-geometry/matcher.py` exists
+precisely **to pin a tolerance**: *"the matcher must absorb a known amount of quantisation noise
+while still refusing to swallow a real corner."* Both are right, because they solve different
+problems — and the spec must name the split, or `P4` reads as forbidding what `matcher.py` is for.
+
+| regime | input | prior | recovery | residual |
+|---|---|---|---|---|
+| **R1 · grammar-guided** | a stencil **we authored** — the turtle cycle is in `𝕋` | the **grammar** (§3) constrains the answer to a finite set | **exact match**, integer, no fitting | `ρ = 0` |
+| **R2 · trace** | arbitrary **cell-authored** content — a hand-drawn footprint, a stamped region with no `𝕋` behind it | **none** — no grammar to constrain it | **fit**: total-least-squares line, Kasa circle, with a pinned tolerance | `ρ > 0`, reported |
+
+**`P4` governs R1 only.** In R1 the grammar is the prior that makes the answer a lookup rather
+than a fit — there is nothing to tune, so a tolerance can only mean `𝕄*` was drawn too wide.
+**R2 is already licensed by law E₃** (approximation with a reported residual), and it is the
+harder problem: crawler measures that a traced boundary **zigzags** — *"no two consecutive edges
+are collinear (measured), so every run wanders around the true line by roughly the hex corner
+offset."*
+
+R2 is not a corner case. It is reached by **damage** (§2.1.1), by an **in-world editor** that
+paints cells directly, and by any content authored before a grammar existed. `matcher.py` is the
+prototype for it and should be ported rather than re-derived.
+
+> **The trap this names:** using R2's machinery where R1 applies. Fitting a line to a stencil we
+> have the turtle description of throws away an exact answer and reintroduces a tolerance the
+> model does not need.
+
 ### 5.2 The limit sits at the doorstep
 
 **The bounds are not the problem.** There is a great deal of room inside them, and a restriction
@@ -466,6 +502,10 @@ constructs a model. That is what makes the guarantee enforceable rather than asp
 alternative with its residual `ρ` — the `K-SEAT` shape, `(z₀, T′, residual)`. Never silently snap
 (that hides the limit and the author never learns it), never reject blankly (that hides the
 reason). A limit the author can see is a limit they can design within.
+
+> **Prior art — this is already a crawler gate.** `EXTRACTION.md` § *Stencils*, negative control:
+> *"a stencil rotated by a non-multiple of 60° must be **refused, not silently rounded**."* The
+> doorstep principle was settled there; §5.2 generalises it from rotation to all of `Ops`.
 
 ## 6. Laws
 
@@ -526,9 +566,9 @@ an invertible transform of a house, and no amount of care makes it one.
 | constant | domain | signature | produced by | status |
 |---|---|---|---|---|
 | `Cyc` | **A** | the admitted boundary cycles **up to the discovered frontier**, and the first form that fails | the **stencil census** — grown by level (§8.1) | **OPEN** |
-| `period` | **B** | `D → ℕ` — least `p` with `σ_strip(ℓ_d)` invariant under `τ_{p·d}` | the **linework census** | **OPEN** |
-| `Sep` | **B** | `⊆ ℕ × ℚ` — `(rad, span)` where an arc strip differs from every line strip | the arc sweep | **OPEN** |
-| `D` | **B** | which 24 reduced vectors are admitted | follows from `period` | **OPEN** |
+| `period` | **B** | `D → ℕ` — least `p` with `σ_strip(ℓ_d)` invariant under `τ_{p·d}` | the **linework census** | **OPEN — and probably the wrong instrument**, see below |
+| `Sep` | **B** | `⊆ ℕ × ℚ` — `(rad, span)` where an arc strip differs from every line strip | the arc sweep | **OPEN** — and aimed at a *different objective* than crawler's (§11.1) |
+| `D` | **B** | which 24 reduced vectors are admitted | **MEASURED — all 24** (§11.1) | **CLOSED** |
 | `ε_seam` | **frames** | the crack budget at a frame crossing, **in metres** (`L8`) | measured at the chokepoint | **OPEN** |
 | `κ≥3` rate | **frames** | the fraction of queries with 3+ contending frames, measured in the `G★` pile | `rt_contend` histogram | **OPEN** — asserted low, not yet measured |
 
@@ -541,16 +581,12 @@ collision is not a defect to eliminate; it is the **boundary of `𝕄*` being lo
 threshold that is expected to be satisfiable; the census produces the table and the minimum length
 in metres that `L8` requires.
 
-> **Read `../crawler` before running either.** Much of this is already prototyped there, in
-> `crawler/plans/5-geometry/`: **`directions.py`** answers the 24-direction question directly
-> (a hex grid has **12** natural directions — 6 edge, 6 vertex, 30° apart — so **12 of the 24 are
-> off-axis by 15°**, which is where `H₁₂` in §1 comes from); **`matcher.py`** prototypes
-> *recovering straights and arcs from a traced boundary loop*, i.e. `rebuild` for domain A;
-> **`deviation.py`** measures `ρ`. Crawler also frames the tower/road fit on a **different
-> objective** than `Sep` assumes — `roundness.py` and `collision_fit.py` choose a footprint by
-> **best collision match, not best shape match**, and `ways.py` insists a way is an exact
-> centreline plus offsets, *never* derived from a rasterised band. Reconcile with those before
-> treating the constants here as unmeasured.
+> **`period` is probably measuring the wrong thing.** crawler's `directions.py` already ran this
+> question and concluded that **representability was never the issue**: *"All 24 headings produce
+> a VALID vector map — representability was never the question, only cost."* A minimum-length
+> threshold is therefore the wrong instrument; the quantity that actually varies is
+> **width-normalised deviation**, and it is bounded (§11.1). Reconcile before running the domain-B
+> census — the census may reduce to *porting a measurement that exists*.
 
 ### 8.1 How the constants are found — grow, don't presuppose
 
@@ -588,6 +624,17 @@ exactly because three lattice vectors 120° apart sum to zero — e.g. `(1,0) + 
 **reports the frontier** — the largest level that round-trips, and the exact form that first
 fails. Both outcomes are results. And because every level is a complete, gated increment, the
 work always has something green rather than one long red run to a single verdict.
+
+> **Method warning, earned in crawler — normalise for width or you will measure the wrong axis.**
+> `directions.py` carries this note: *"before width-normalising, this table appeared to show the
+> VERTEX directions as the worst of all. That was an artefact — a fixed nominal halfwidth yields
+> 17/29/19 cells by direction, so the raw spread was measuring width, not heading. Fitting `W` per
+> direction **reversed the conclusion**."*
+>
+> The census here has the identical hazard: forms at different headings enclose different cell
+> counts, so any raw error spread conflates **size** with **heading**. Fit the per-form scale
+> first, then measure the deviation about it. A census that skips this will produce a confident,
+> ranked, **inverted** table — the worst kind of result, because it looks like a finding.
 
 ### 8.2 Where the rungs come from — the scene, not the desk
 
@@ -674,7 +721,25 @@ laws D and E exist to remove.
 
 ## 11. Open decisions and known conflicts
 
-### 11.1 Open decisions — these change what the model *is*, and block the grammar freeze
+### 11.1 Established constraints from `../crawler` — prior art this model must respect
+
+Measured, prototyped or gated in crawler already. **Not open** — these bound the design, and
+re-deriving them is waste. Cited so a reader can tell settled fact from our open questions.
+
+| # | constraint | source |
+|---|---|---|
+| **X1** | **60° rotation is an exact integer map**: `k' = (k−m)/2`, `m' = (3k+m)/2`. Verified over 625 cells — *zero non-integer images, six rotations exactly the identity*. Stencils rotate with **no resampling and no drift** | `EXTRACTION.md` § *Stencils* |
+| **X2** | **Reflection is exact too** — `k → −k` — which is what gives **12 orientations** for free. *(Bears directly on **OD-5**: our laws **G**/**H** assume the flip approximates)* | `EXTRACTION.md` § *Stencils* |
+| **X3** | **All 24 headings are representable.** *"Representability was never the question, only cost."* Width-normalised worst-case error is three-tiered: **edge (6) 1.00×**, **vertex (6)** between, **off-axis (12) ≈ 3.5×** — *"bounded, not catastrophic"* | `plans/5-geometry/directions.py` |
+| **X4** | **Arbitration is solved and is order-free**: same level → `cut_arb` **nearest-wins**; different levels → **no contest at all** (the bridge guarantee). Gate: stencils overlap *"deterministically **and order-freely**"* | `EXTRACTION.md` § *Stencils* |
+| **X5** | **Refusal, not rounding**, is already a gate: *"a stencil rotated by a non-multiple of 60° must be refused, not silently rounded"* — §5.2's doorstep, pre-dating it | `EXTRACTION.md` § *Stencils* |
+| **X6** | **A traced boundary zigzags** — *"no two consecutive edges are collinear (measured); every run wanders around the true line by roughly the hex corner offset."* This is why **R2** (§5.1.1) must fit and cannot match | `plans/5-geometry/matcher.py` |
+| **X7** | **Footprints are chosen by best *collision* match, not best *shape* match** — the objective is *"the best circle a collision query can experience"*, not reproducing a radius. Our `Sep` is aimed at recovery separation instead; the two are different optimisations | `roundness.py`, `collision_fit.py`, `road_arcs.py` |
+| **X8** | **A way is an exact centreline plus offsets** — *"Do NOT derive a way from a rasterised band. Author ONE exact centreline; everything else is an OFFSET of it"* | `plans/5-geometry/ways.py` |
+| **X9** | **Width-normalise before ranking**, or the table inverts (§8.1) | `directions.py` METHOD NOTE |
+| **X10** | **The wall band model is validated in 2D** — rectangle, rhombus, thin→thick, and a door; *"Corner tests pass: rect corners exactly 90°, rhombus 60°/120°, miter offsets correct"* | `WALLS.md` § *Validated* |
+
+### 11.2 Open decisions — these change what the model *is*, and block the grammar freeze
 
 **OD-1 · the morph — dead, or moved into `snap`?**
 [`design/EDITOR.md`](design/EDITOR.md) §2 makes orientation a *minimal affine morph*, explicitly
@@ -731,7 +796,76 @@ the exact round trip and is never recovered, or it is a **domain C** with an exa
 Answering OD-2 and OD-4 together is likely — they are the same question about `Heights` asked
 twice. **Prior art:** crawler `plans/8-landform-morphogenesis/`.
 
-### 11.2 Known conflicts in the current tree
+---
+
+The four below were surfaced by inspecting `../crawler` against this spec. Each is a **conflict
+with settled prior art**, not a gap — so each has a position already argued somewhere, and the
+question is which one this model adopts. **OD-6 is the deepest and probably orders the rest.**
+
+**OD-5 · is the flip exact?** *(contradicts **X2**)*
+This model treats the flip as *mutating by approximation* — laws **G** (commutation) and **H**
+(no drift under `φ¹²`), with `rt_drift` built to measure the drift, and `SPEC` **L4** superseded
+on that basis. But **X2** says reflection is `k → −k`, **exact**, and that is where the 12
+orientations come from. If X2 holds, `flip∘flip = id` by construction, `rt_drift` is trivially
+green, and law **H** is a theorem rather than a measurement.
+
+Three different things are currently conflated under "the flip", and separating them likely
+dissolves this: the **lattice reflection** (exact, X2); the **morph** (`EDITOR.md` §2, genuinely
+approximate — **OD-1**); and the **handedness residual** (backwards text, hinges on the wrong
+side — a *content* problem, not a geometry one, and the reason `EDITOR.md` wants no mirror at
+all). Worth checking against what "the flip that mutates by approximation" was meant to name.
+
+**OD-6 · is a stencil a *field* or a *generative description*?** *(the foundational one)*
+crawler: `stencil = (extent, HexSet, Labels?, Heights?, EdgeSet?, Features?, props?)` — *"a small
+**field**, not a bitmap"*, and its round-trip gate is *"a stamp then an un-stamp restores the
+target field **bit-for-bit**"*. This model: `⟨stencil⟩` is a **turtle polygon**, a generative
+description, and the round trip is `𝕋 → 𝔽 → 𝕋`.
+
+These are different objects and different round trips:
+
+| | crawler — stencil-as-field | here — stencil-as-description |
+|---|---|---|
+| stored | the field itself | the canonical text `𝕋` |
+| round trip | stamp → un-stamp restores `𝔽` bit-for-bit | `write(rebuild(draw(read(T)))) = T` |
+| gives you | placement and removal, exactly | **parametric editing** — change a length, re-derive |
+| recovery needed? | no — nothing was ever lost | yes — that is the whole contract |
+
+Both can coexist (a description that *generates* a field which is then stamped), but the spec
+must say which is the **stored truth**, because §2.1 currently answers `𝕋` and crawler answers
+the field. Note this also decides how much of laws **D**/**E₂** is load-bearing: if the field is
+stored, `rebuild` is only needed for **R2** (§5.1.1).
+
+**OD-7 · which wall model?** *(contradicts **SPEC I3**; **X10** is validated)*
+Two models, both designed, one prototyped:
+
+| | `SPEC` **I3** — boundary of a filled region | `WALLS.md` — triangle-subdivision band |
+|---|---|---|
+| storage | `EdgeSet` — edges between in-cell and out-cell | triangles: each hex edge = **3 sub-segments** |
+| thickness | none — a wall is an edge | **free**, one triangle → two hexes |
+| interior walls | not expressible | *"just more wall-bands inside the footprint"* |
+| 24 directions | needs the fit | *"straight + sharp + 24-direction **for free**"* |
+| a door | **annotates**, never deletes (`FEATURES.md`) | *"**remove** a span of the band's triangles"* |
+| status | shipping in `housedraw`, gated | validated in a 2D prototype, corner tests pass (**X10**) |
+
+The door row is a **direct contradiction** between `design/FEATURES.md` and `WALLS.md`. It may
+dissolve — deleting an *edge* fragments a run (the doored-tower defect), while deleting *band
+triangles* need not, because the band is not a run — but the spec cannot hold both rules at once.
+Deciding this decides **rung A5/A7**, the `⟨side⟩` production, and whether `𝕄*` needs a thickness
+parameter at all.
+
+**OD-8 · when do layers enter?** *(gap, and `STENCILS.md` says "not bolted on")*
+`⟨layer⟩` is marked DEFERRED here. `STENCILS.md`: stencils are *"multi-layer — a vertical stack of
+hex planes, with ladders/stairs connecting adjacent layers... Layers are part of the model **from
+the start**, not bolted on"* — with a gameplay pillar on it (climb tower → traverse rampart →
+drop into a keep sealed at ground level; *"the route is the lock"*). By law **A₂** a deferred
+axis is not free: adding one later must not re-spell existing texts, and a layer axis is exactly
+the kind of addition that touches every element. Cheaper to admit now, even unused.
+
+*(Related, and folded in rather than numbered separately: the grammar has no **wall thickness**
+and no **interior walls** (OD-7 decides both), and `X4`'s level separation is the mechanism
+layers would use for arbitration.)*
+
+### 11.3 Known conflicts in the current tree
 
 | site | conflict | law |
 |---|---|---|

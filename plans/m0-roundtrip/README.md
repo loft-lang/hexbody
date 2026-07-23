@@ -15,7 +15,7 @@ The formal contract exists: **[`ROUNDTRIP.md`](../../ROUNDTRIP.md)** — objects
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"
 was the wrong word for an exact-invariant domain, where the construction is **recovered**, never
-approximated. See `ROUNDTRIP` §11.2.)*
+approximated. See `ROUNDTRIP` §11.3.)*
 
 **Baseline:** [`shots/house12.png`](shots/house12.png) — the 12 orientations with walls drawn as
 the raw two-direction strip (zigzag and staircase). Still the valid *before*; regenerate beside it
@@ -135,7 +135,7 @@ than going silently ungated.
 
 - **OD-2 — are roofs inside the exact round trip?** `src/hexroof.loft:493`
   `roof_match(..., tol: float)` is the `ε` **P4** forbids. Blocks phase **C** (freezing `⟨roof⟩`);
-  does **not** block phase A. Options in `ROUNDTRIP` §11.1.
+  does **not** block phase A. Options in `ROUNDTRIP` §11.2.
 - **OD-1 — the morph.** Largely dissolved by free poses (a non-12 building is simply a free-posed
   body); the residual question is whether a *seated* building ever needs an angle outside the 12.
 - **Unmeasured constants:** `ε_seam`, the `κ ≥ 3` contention rate — both due in phase **F**.

@@ -8,7 +8,7 @@ say *why*; this says *what*, checkably. On disagreement, the spec is authoritati
 — reconcile the prose to it.
 
 **[`ROUNDTRIP.md`](ROUNDTRIP.md) is the formal peer** — the objects (`𝕄`, `𝕄*`, `𝕋`, `𝔽`), the maps
-(`snap`, `write`/`read`, `draw`/`rebuild`) and the laws **A–I** that hold between them. This file
+(`snap`, `write`/`read`, `draw`/`rebuild`) and the laws **A₁–K₂** that hold between them. This file
 says *what must be achieved*; `ROUNDTRIP` says *what the objects are and which equations hold*. On
 disagreement about an object, a map, or a law, **`ROUNDTRIP` is authoritative**; the items below
 cite it by law letter.
@@ -40,7 +40,7 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 | **L1** | **bounded simulation** — derive the consequence, never simulate the impulse. Full rigid-body dynamics **only** where a feature earns it; earned set = {**G★** derailment} | Newtonian response added anywhere outside the earned set |
 | **L2** | **dynamics scope** — simulate to a *plausible rest*, not frame-perfect physics | chasing joule-accuracy or a general constraint solver |
 | **L3** | **efficiency preservation** *(gap-fill)* — the 2.5-D field is the **stored truth** *(for the **world**; a **body**'s truth is its original + pose — [`ROUNDTRIP.md`](ROUNDTRIP.md) §2.1)*; the tiltable/complex (patch-atlas) model is a **derived, on-demand overlay**: never persisted, never a branch in a hot-path op | the atlas is stored, or a field/proxy/collision op branches on "tiltable" |
-| **L4** | ~~**no mirror**~~ — **SUPERSEDED** by [`ROUNDTRIP.md`](ROUNDTRIP.md) laws **G**/**H**. The flip exists (`hex_field::stencil_mirror`; `housetest`'s 12 = 6 × 2) and mutates by approximation; it is governed by *commutation* and *no drift under repetition*, not forbidden. What survives L4: beyond tolerance a plot is **flagged**, never silently stretched | a flip that fails to commute, drifts under `φ¹²`, or a silent over-tolerance stretch |
+| **L4** ⚠ | ~~**no mirror**~~ — **SUPERSEDED** by [`ROUNDTRIP.md`](ROUNDTRIP.md) laws **G**/**H**. The flip exists (`hex_field::stencil_mirror`; `housetest`'s 12 = 6 × 2) and is governed by *commutation* + *no drift under repetition*, not forbidden. **PENDING OD-5** — crawler measured lattice reflection as **exact** (`k → −k`, **X2**), so "mutates by approximation" likely names the *morph* (OD-1) or the *handedness residual*, not the flip. What survives regardless: beyond tolerance a plot is **flagged**, never silently stretched | a flip that fails to commute, drifts under `φ¹²`, or a silent over-tolerance stretch |
 | **L5** | **compute boundary** — hexbody computes only what is *derivable from the model*; authored motion tracks and feel-tuning stay the consumer's | hexbody authors gaits, or claims to validate "feel" |
 | **L6** | **the seam** — hexbody owns the geometry/body/seating **mechanism**; the world/consumer owns placement and content; the seam runs one way | settlement/world/placement logic inside hexbody |
 | **L7** | **determinism** — all simulation is deterministic (fixed timestep, reproducible math): same input → **byte-identical** result. Built from line one | any frame-rate-dependent or non-reproducible step |
@@ -53,7 +53,7 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 |---|---|---|
 | **I1** | a door/window is an interval on the **analytic surface**; the 2/3-direction edge strip is storage the feature never indexes | select edges by strip order → clear width wobbles between the zigzag and staircase sides |
 | **I2** | placement is `(side, t)`, which is **affine-invariant** → a feature survives orientation-morph exactly | store the raw opened edges → the morphed house's feature moves |
-| **I3** | a wall is the **boundary of a filled region**, closed by construction *(gap-fill)* | the buffer-band rule → 2 components, 0 enclosed (a wall with a hole), yet still "12/12 equivariant" |
+| **I3** ⚠ | a wall is the **boundary of a filled region**, closed by construction *(gap-fill)*. **PENDING OD-7** — crawler's `WALLS.md` models a wall as a **triangle-subdivision band** instead (free thickness, interior walls, 24 directions for free), validated in 2D (**X10**); the two models also disagree on whether a door **annotates** or **deletes** | the buffer-band rule → 2 components, 0 enclosed (a wall with a hole), yet still "12/12 equivariant" |
 | **I4** | a proxy **⊇** its shape (never misses an overlap) **and** overshoot `≤ ε` metres | shrink the proxy below the footprint → a real overlap is missed |
 | **I5** | two bodies interact **iff** swept volumes cross, `dt`-independent, through **one** function | an instantaneous-position test → a fast pass tunnels |
 | **I6** | a part's pose is a **pure function of its joint values**; wheel angle `= travel/radius` | spin a wheel off-travel → it skids |
@@ -64,6 +64,9 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 | **I11** | the forward trailer-follow is **stable** — a drifted wagon returns to the drawbar, does not snake | overshoot gain → it oscillates (and isolates that reverse is the only unstable case) |
 
 **Round-trip items** — defined formally in [`ROUNDTRIP.md`](ROUNDTRIP.md); the law letter is the definition.
+**Prior art:** [`ROUNDTRIP.md`](ROUNDTRIP.md) **§11.1** lists ten constraints (`X1`–`X10`) already
+measured or gated in `../crawler` — do not re-derive them. **§11.2** lists eight open decisions;
+**OD-5**–**OD-8** are conflicts between this spec and that prior art, and items marked ⚠ depend on them.
 
 | ID | invariant | law | control that must fire |
 |---|---|---|---|
@@ -72,8 +75,8 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 | **I-POSE** | a body is `⟨original, pose, joints⟩` — original and pose **stored**, local field **derived**, and a body is **never stamped into the world field**. A robot's limb and a derailed wagon are the same case: an exact original at an arbitrary continuous pose | §1.2 | stamp a free-posed body into the world lattice → it can only land on one of the 12 |
 | **I-SEAM** | collision reads many frames at once (base world + each posed body). Imprecision — cracks, jank — is allowed **only on the seam between frames**, bounded by `ε_seam` metres and **deterministic**; inside any frame the error is **exactly 0** | **K₁** | "fix" a crack by snapping a body's wall onto the world lattice → interior error ≠ 0, and law **D** is void for that body |
 | **I-ARBIT** | frames that disagree are arbitrated **deterministically over a total order**, failing safe toward *solid*. Exact at `κ ≤ 1`, arbitrated at `κ = 2`, conservative **and counted** at `κ ≥ 3` — the "3+ is rare" claim is a measured rate, never an assumption | **K₂** | tie-break on iteration order instead of frame identity → replay diverges (`I9`) |
-| **I-FLIP** | the flip commutes with the round trip and does not drift under repetition | **G**, **H** | inject a rounding step → `φ¹²` diverges from the original |
-| **I-EXACT** | round-trip equality is **byte equality**; no `ε` exists in the comparison | **P4** | an `ε` in the comparator means `𝕄*` is wider than `draw` is injective on |
+| **I-FLIP** ⚠ | the flip commutes with the round trip and does not drift under repetition. **PENDING OD-5** — crawler measured reflection as **exact** (`k → −k`, constraint **X2**), which would make this a theorem rather than a measurement | **G**, **H** | inject a rounding step → `φ¹²` diverges from the original |
+| **I-EXACT** | round-trip equality is **byte equality**; no `ε` in the comparison — **for regime R1** (recovering a stencil *we authored*, where the grammar is the prior). **R2** (recovering arbitrary cell-authored content, no grammar) is genuinely a fit with a pinned tolerance, licensed by **E₃** ([`ROUNDTRIP.md`](ROUNDTRIP.md) §5.1.1) | **P4** | an `ε` in an **R1** comparator means `𝕄*` is wider than `draw` is injective on |
 | **I-CLOSE** | a stencil boundary is a closed turtle cycle over `H₁₂`, exact in `ℤ²` | **J** | drop one turn → the vector sum is non-zero |
 | **I-EXTEND** | the model is **built out like a language**: new verbs and parameters are added without breaking the old ones. An existing canonical text keeps the **same bytes**, model and field across a grammar extension; `𝕄*` grows, never shrinks | **A₂** | sort `kind` alphabetically instead of by registry position → adding one verb re-spells every existing text, invalidating every stored original at once |
 | **I-CLOSED-OPS** | what is admitted survives **everything later done to it** — `Ops = {flip, place, combine, damage, seat}` | **C₂** | admit a form whose `flip` leaves `𝕄*` → it breaks after placement, not at the door |
