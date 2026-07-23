@@ -126,6 +126,12 @@ it live in every orientation it will ship in, side by side, single-authored, wit
 flagged as a correctable punch-list — the mantra delivered (*seal the mechanism, expose the
 outcome*). Full design: **[`design/EDITOR.md`](design/EDITOR.md).**
 
+**Seating on terrain is the *second* morph** — the first morphs the building to the lattice
+angle, this morphs the *hill* to seat the building on uneven ground: an exact best-height solve
+(the earthwork minimiser) plus a repose-bounded, draining terrain morph. Cellars are a clean
+special case (a storey designed below grade — not hard to model; the work is presenting the
+hidden part in the editor). Full design: **[`design/PLACEMENT.md`](design/PLACEMENT.md).**
+
 ## Destruction models — derived, field-native, mass-aware
 
 Destruction is *field mutation + re-derivation*, and each model is **derived from the intact
