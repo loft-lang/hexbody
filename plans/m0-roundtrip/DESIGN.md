@@ -169,6 +169,37 @@ invalidate every stored original and every fixture at once.
 > **breaking change** with no migration — nobody can re-derive geometry a person hand-placed. Run
 > the whole ladder, **A8 included**, before the editor ships content.
 
+### 4.1 Worked example — adding `octagon` to the slot shape vocabulary
+
+*"There will be octagon wall types too, for octagonal towers and bay-windows — but that is an
+example of how we extend our grammar."* It is the **cheapest** shape of extension, and worth
+walking because it shows both what A₂ protects and what it does not.
+
+**A new value in an existing vocabulary**, not a new production: `straight | rounded | octagon`.
+It serves two scales at once — an octagonal tower and a bay window are the same chamfer.
+
+| A₂ obligation | why `octagon` satisfies it |
+|---|---|
+| **C2** kind ordering | a *shape value* is not a new element kind, so nothing re-sorts |
+| **C5** defaults omitted | `straight` is the default and is written nowhere, so no existing text gains a token |
+| bytes unchanged | existing texts contain no shape token at all → **byte-identical**, trivially |
+| `𝕄*` grows, never shrinks | it only admits more; nothing already authorable is withdrawn |
+
+> **But A₂ is not sufficient — and this is the rule the example exposes.** A₂ protects the *text*
+> layer. It says nothing about **law F**, injectivity. A newly admitted form can **collide with an
+> existing one**: at small sizes an `octagon` run and a `rounded` run may rasterise to the same
+> cells, and then `rebuild` cannot tell which was authored, even though every existing text still
+> has identical bytes.
+>
+> **So every vocabulary extension re-opens the census** over the enlarged space — and when a new
+> form collides with an admitted one, it is **the new form that is refused**, never the old.
+> `𝕄*`-grows-never-shrinks decides the tie: the old form may already have content depending on
+> it, the new one cannot.
+
+This gives the extension procedure, in order: add the value → re-run `rt_census_a` over the
+enlarged space → refuse whatever new form collides → confirm `rt_extend` still byte-matches every
+prior fixture. Three of those four steps are gates that already exist.
+
 ## 5. `fits?`, and the doorstep
 
 ```

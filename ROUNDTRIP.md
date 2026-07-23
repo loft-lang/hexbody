@@ -105,8 +105,10 @@ this schema exactly**.
 - **`layer*`** — layers are part of the model, at the top, not an axis added later.
 - **`wall1..3`** — the three edges a point *owns*; the other three belong to its neighbours. This
   is the `EdgeSet` shape, and matches the `h_wall_n/ne/se` storage `WALLS.md` cites in moros.
-  A slot carries a **material**, and a slot may be **straight or rounded** — which is how an arc
-  (a round tower, a curved wall) is stored without any sub-cell geometry.
+  A slot carries a **material** and a **shape** — `straight`, `rounded` (an arc: a round tower, a
+  curved wall), `octagon` (a chamfer: octagonal towers, bay windows), and more as they are needed.
+  This is how curved and chamfered forms are stored **without any sub-cell geometry**, and the
+  shape vocabulary is the model's designed **extension point** (`DESIGN.md` §4.1).
 - **`height`** — terrain, floors, roofs: all one scalar per point per layer.
 - **`item`** — props, trees, and anything that is an occupant rather than the fabric.
 
