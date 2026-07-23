@@ -79,9 +79,11 @@ the cheapest available round-trip: a **write** we authored, evaluated by an emit
   - `X26` — a **private corner table** beside `hex_field`'s neighbours misfiled **five of six**
     edges. A consistently wrong edge is still written once, still idempotent, still non-empty:
     sections 1–5 cannot see it. Now `SPEC` **L11** and gate §2b.
-  - `X28` — `wall_crosses_edge` selects the edges the band **crosses**, i.e. the roughly
-    *perpendicular* ones, so a due-east wall evaluates to a **comb of pickets** straying `6×` the
-    wall's own half-width. **OD-12, still open** — this is the next thing to fix.
+  - `X28`/`X32` — `wall_crosses_edge` first selected the edges the band **crosses** (the
+    perpendicular ones), so a due-east wall was a **comb of pickets**. **Fixed (OD-12 resolved,
+    DESIGN 10.12):** `wall_write` now marks the edges that **separate** the wall's two sides — the
+    boundary between two half-planes, one connected chain **along** the line. §6 asserts every wall
+    is one chain (2 ends, 0 branches) against the picket comb as control.
 - **what it settled** (`DESIGN.md` §10.9): all 24 can be exactly straight and exactly equally wide
   **iff** a wall is a line primitive with a constant width and the cells are its rasterisation.
   Counting lattice rows provably cannot equalise them (`X30`), and no lattice vector points at 15°

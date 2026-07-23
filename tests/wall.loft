@@ -7,7 +7,7 @@
 //   3b  the field contains the wall, so every count below is over a window that clips nothing
 //   4   writing is idempotent — an edge is stored once, by its owner
 //   5   walls in all 24 directions all write, and none is empty
-//   6   the marks evaluate back to a mesh through moros' own rule, and the stray is measured
+//   6   the marks run ALONG the wall, not across it (OD-12): one connected chain, not a comb
 //   7   equal width provably cannot come from counting lattice rows
 //   8   where a line may START and END — the editor's doorstep, per direction and class
 //   9   an arbitrary plane point snapped to a legal line, checked against brute force
@@ -31,6 +31,13 @@ const BQ = 45;
 const BR = 45;
 const BQ0 = -22;
 const BR0 = -22;
+
+// A window sized to the short vertex-anchored runs of section 6 (the longest, an N=21
+// in-between run of three periods, reaches ~12 m ~ 8 hexes from the origin).
+const SGQ = 29;
+const SGR = 29;
+const SQ0 = -14;
+const SR0 = -14;
 
 fn fabsf(v: float) -> float { if v < 0.0 { -v } else { v } }
 
@@ -189,40 +196,115 @@ fn main() {
   }
   if nempty != 0 { println("  FAIL: {nempty} directions wrote nothing"); ok = false; }
 
-  // ── 6. EVALUATE THE MARKS BACK TO THE MESH (moros' own rule) ──────────────
+  // ── 6. THE MARKS RUN ALONG THE WALL, AND FORM ONE CHAIN (OD-12) ───────────
   //
-  // moros already turns the three wall slots into geometry — `emit_hex_walls` emits the
-  // quad standing on the segment between the edge's two corners, and `hex_edge_corners`
-  // IS that segment.  So the mesh a marked field produces is fully determined, and we can
-  // measure it without a renderer.
+  // OD-12: `wall_write` first marked the edges the band CROSSES — the roughly perpendicular
+  // ones — so a wall evaluated to a comb of pickets across itself. The fix marks the edges
+  // that SEPARATE the wall's two sides (`wall_separates`), which is the boundary between two
+  // half-planes: one connected chain running ALONG the line. This section proves both
+  // properties, because the perpendicular STRAY cannot tell them apart — a comb and a zigzag
+  // both swing ~1 hex off the line.
   //
-  // WHAT WE EXPECT TO SEE, AND WHY IT IS NOT A FAILURE.  The mesh is the SAWTOOTH: the
-  // chain of hex edges the band crossed, not the straight line we drew.  The stray below
-  // is therefore NOT an error to drive to zero here — it is the quantity `rebuild` has to
-  // undo, measured for the first time.  crawler's `wallgeo` undoes it approximately
-  // (Laplacian smoothing + snapping to known room side-lines, with tolerances); ours has
-  // to undo it exactly, and this number is what it must account for.
-  println("");
-  println("6. MESH — evaluate the marks back through moros' emit_hex_walls rule");
-  println("   d24   segs    stray(wu)   stray/halfwidth   exact");
-  worst_ratio = 0.0;
-  for dm in 0..24 {
-    gm = edgeset_new(Q0, R0, GQ, GR);
-    wm = wall_new(dm, 0.0, 0.0, 8.0, 7);
-    wall_write(wm, gm, Q0, R0, GQ, GR);
-    nseg = wall_mesh_segments(gm, Q0, R0, GQ, GR);
-    stray = wall_mesh_stray(wm, gm, Q0, R0, GQ, GR);
-    ratio = (stray / (WALL_W * 0.5)) ?? 0.0;
-    if ratio > worst_ratio { worst_ratio = ratio; }
-    println("   {dm:>3} {nseg:>6} {stray:>11.4} {ratio:>17.3}   {wall_is_exact(dm)}");
-    if nseg <= 0 { println("  FAIL: d24={dm} evaluated to an empty mesh"); ok = false; }
+  // Walls are anchored on a VERTEX and run a legal number of periods (`wall_from_run`), so the
+  // chain terminates cleanly at both ends. The window is sized to the run.
+  //
+  // THE INVARIANT IS CONNECTIVITY. A picket comb and an along-chain both swing ~1 hex off the
+  // line, so the perpendicular stray cannot tell them apart. What can: the chain is ONE
+  // connected path (exactly two ends, no branch), where the comb is k disjoint edges (2k ends).
+  // The `|C->N . dir|` column is secondary — it shows the marked edges point ACROSS the wall
+  // (C->N along it would be a picket) — but a shallow in-between wall zigzags, so its worst
+  // single edge can run steep; connectivity is what is asserted, not a dot threshold.
+  //
+  // First, the ACROSS reference: a hand-built picket comb (vertical edges along a horizontal
+  // wall). Every check below is measured against it, so the numbers are not free-floating.
+  cpick = edgeset_new(SQ0, SR0, SGQ, SGR);
+  for cy in -4..5 {
+    edge_set_mat(cpick, cy, 0, nb_q(cy, 0, 0), nb_r(cy, 0, 0), 7);   // dir 0 = E, a vertical edge
   }
-  println("   worst stray is {worst_ratio:5.2}x the wall half-width");
-  // CONTROL: the stray must be non-zero, or we would be claiming the foxel already stores
-  // the straight line and `rebuild` has nothing to do.
-  if worst_ratio < 0.001 {
-    println("  FAIL: control did not fire — the mesh is claimed to sit ON the line,"
-            + " which would make the recovery step vacuous"); ok = false;
+  whoriz = wall_from_run(0, 3, 0, wall_min_p(0, 3, 0) * 3, 7);
+  pick_along = wall_along_max(whoriz, cpick, SQ0, SR0, SGQ, SGR);
+  pick_ends = wall_chain_ends(cpick, SQ0, SR0, SGQ, SGR);
+
+  println("");
+  println("6. ALONG NOT ACROSS — the marks run along the wall and form ONE connected chain");
+  println("   the ACROSS reference (a picket comb): |C->N.dir| {pick_along:4.2}, "
+          + "chain-ends {pick_ends}");
+  println("   d24  edges  |C->N.dir|  chain-ends  branches  stray/halfw   one-chain?");
+  worst_along = 0.0;
+  worst_ratio = 0.0;
+  nnotchain = 0;
+  for dm in 0..24 {
+    gm = edgeset_new(SQ0, SR0, SGQ, SGR);
+    pm = wall_min_p(dm, 3, 0);
+    wm = wall_from_run(dm, 3, 0, pm * 3, 7);
+    ne6 = wall_write(wm, gm, SQ0, SR0, SGQ, SGR);
+    alng = wall_along_max(wm, gm, SQ0, SR0, SGQ, SGR);
+    ends = wall_chain_ends(gm, SQ0, SR0, SGQ, SGR);
+    brn = wall_chain_branches(gm, SQ0, SR0, SGQ, SGR);
+    stray = wall_mesh_stray(wm, gm, SQ0, SR0, SGQ, SGR);
+    ratio = (stray / (WALL_W * 0.5)) ?? 0.0;
+    if alng > worst_along { worst_along = alng; }
+    if ratio > worst_ratio { worst_ratio = ratio; }
+    ischain = ends == 2 && brn == 0;
+    if !ischain { nnotchain = nnotchain + 1; }
+    println("   {dm:>3} {ne6:>6} {alng:>11.3} {ends:>12} {brn:>9} {ratio:>12.2}   {ischain}");
+    if ne6 <= 0 { println("  FAIL: d24={dm} wrote nothing"); ok = false; }
+  }
+  println("   worst |C->N.dir| = {worst_along:5.3}  (the picket reference is {pick_along:4.2})");
+  println("   worst stray = {worst_ratio:5.2}x the wall half-width (rebuild must undo this)");
+
+  // THE ASSERTION: every wall is ONE simple chain — exactly two ends, no branch. This is the
+  // whole of OD-12: a chain runs along the line, a comb sits across it.
+  if nnotchain != 0 {
+    println("  FAIL: {nnotchain} of 24 walls are not a single connected chain (OD-12)"); ok = false;
+  }
+  // and every wall must be strictly LESS across than a pure picket comb.
+  if worst_along >= pick_along {
+    println("  FAIL: a wall is as across as a picket comb — the marks are not along the line");
+    ok = false;
+  }
+
+  // CONTROL A: the measurements must be able to SEE across/disconnected, or the passes above
+  // prove nothing. The picket reference must read |dot| ~ 1 and many ends.
+  println("   CONTROL the picket comb reads |dot| {pick_along:4.2} and {pick_ends} ends"
+          + " (want ~1.0 and >> 2)");
+  if pick_along < 0.99 {
+    println("  FAIL: control did not fire — the along-test cannot see an across edge"); ok = false;
+  }
+  if pick_ends <= 2 {
+    println("  FAIL: control did not fire — the chain check cannot see a disconnected comb");
+    ok = false;
+  }
+  // CONTROL B: breaking one INTERIOR edge of a real chain must split it, 2 ends -> 4. An END
+  // edge would only shorten it (still 2), so the removed edge is chosen at the middle of the run.
+  cbrk = edgeset_new(SQ0, SR0, SGQ, SGR);
+  wbrk = wall_from_run(1, 3, 0, wall_min_p(1, 3, 0) * 3, 7);
+  tot_edges = wall_write(wbrk, cbrk, SQ0, SR0, SGQ, SGR);
+  ends_whole = wall_chain_ends(cbrk, SQ0, SR0, SGQ, SGR);
+  // the edge nearest the run's CENTRE — guaranteed interior, so removing it splits the chain
+  rmq = 0; rmr = 0; rmd = -1; bestd2 = 1.0e30;
+  for br in SR0..SR0 + SGR {
+    for bq in SQ0..SQ0 + SGQ {
+      for bd in 0..3 {
+        (bnq, bnr) = hex_neighbor(bq, br, bd);
+        if edge_mat(cbrk, bq, br, bnq, bnr) != 0 {
+          mx = (cell_x_w(bq, br) + cell_x_w(bnq, bnr)) * 0.5 - wbrk.wa_ox;
+          my = (cell_y_w(bq, br) + cell_y_w(bnq, bnr)) * 0.5 - wbrk.wa_oy;
+          d2 = mx * mx + my * my;
+          if d2 < bestd2 { bestd2 = d2; rmq = bq; rmr = br; rmd = bd; }
+        }
+      }
+    }
+  }
+  if rmd >= 0 {
+    edge_set_mat(cbrk, rmq, rmr, nb_q(rmq, rmr, rmd), nb_r(rmq, rmr, rmd), 0);
+  }
+  ends_broken = wall_chain_ends(cbrk, SQ0, SR0, SGQ, SGR);
+  println("   CONTROL break the centre edge (of {tot_edges}): chain-ends {ends_whole} -> "
+          + "{ends_broken} (want 2 -> 4)");
+  if !(ends_whole == 2 && ends_broken == 4) {
+    println("  FAIL: control did not fire — removing an interior edge did not split the chain");
+    ok = false;
   }
 
   // ── 7. EXACTLY STRAIGHT, EXACTLY THE SAME WIDTH — what is and is not possible ──

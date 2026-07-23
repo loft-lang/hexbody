@@ -18,9 +18,10 @@
 //              not have to close a shape or meet a corner.
 //
 // THE STORAGE IS THE FOXEL AND NOTHING ELSE: three wall slots per hex.  `EdgeSet` already is
-// that model — an edge is stored once, by the cell that owns it — so `wall_write` marks every
-// hex edge the wall's band crosses and stores nothing else.  No direction, no offset, no
-// triangles: recovering the line from the marks is `rebuild`'s job, not storage's.
+// that model — an edge is stored once, by the cell that owns it — so `wall_write` marks the
+// chain of hex edges lying ALONG the wall (the boundary between the half-planes it divides,
+// `wall_separates`) and stores nothing else.  No direction, no offset, no triangles: recovering
+// the line from the marks is `rebuild`'s job, not storage's.
 use hex_field;
 use hex_grid;
 use hexform;
@@ -92,45 +93,59 @@ pub fn wall_angle_actual(d24: integer) -> float {
   if a < 0.0 { a + 360.0 } else { a }
 }
 
-// ── writing into the foxel ──────────────────────────────────────────────────
+// ── writing into the foxel — ALONG the wall, not ACROSS it (OD-12) ─────────
 //
-// The band is a rectangle in the wall's own frame: |offset| <= WALL_W/2 along the normal,
-// |along| <= wa_half down the run.  A hex edge is a segment; it crosses the band iff the
-// segment survives clipping against those four half-planes.  Slab clipping, so no sampling
-// and no tolerance.
-fn clip_slab(p: float, q: float, t0: float, t1: float) -> (float, float, boolean) {
-  // keeps the sub-interval of [t0,t1] where p + t*q stays within [-1, 1] after scaling
-  lo = t0;
-  hi = t1;
-  if q == 0.0 {
-    if p < -1.0 || p > 1.0 { return (lo, hi, false); }
-    return (lo, hi, true);
-  }
-  ta = ((-1.0 - p) / q) ?? 0.0;
-  tb = (( 1.0 - p) / q) ?? 0.0;
-  if ta > tb { tc = ta; ta = tb; tb = tc; }
-  if ta > lo { lo = ta; }
-  if tb < hi { hi = tb; }
-  (lo, hi, lo <= hi)
+// THE FIRST TRY MARKED THE WRONG EDGES.  The band model asked "does the wall's thin
+// rectangle overlap this hex edge?" — and the edges a thin band overlaps are the ones lying
+// ACROSS it, roughly perpendicular.  A due-east wall came out as a comb of vertical pickets
+// (`X28`), because a hex has edges on only three lines (30/90/150) and none runs east, so a
+// wall going east cannot BE a run of hex edges pointing east.
+//
+// THE WALL IS A BOUNDARY, NOT A BAND.  A straight line divides the plane into two
+// half-planes.  The hex edges that lie ALONG the line are exactly the ones that SEPARATE a
+// cell on one side from a cell on the other — the boundary between the two half-planes, which
+// for any direction is a single connected chain, straight in the three edge directions and an
+// alternating wobble otherwise.  This is `housedraw::draw_walls`' own rule (an edge between an
+// inside cell and an outside one), applied to a half-plane instead of a filled region — so it
+// inherits `I3`'s "closed by construction, one wide" for free.
+//
+// Signed perpendicular offset of a world point from the wall's centre line.  Positive on the
+// side the normal (-dy, dx) points to; the sign is all that matters for separation.
+pub fn wall_offset_signed(w: Wall, px: float, py: float) -> float {
+  (px - w.wa_ox) * (0.0 - w.wa_dy) + (py - w.wa_oy) * w.wa_dx
 }
 
-pub fn wall_crosses_edge(w: Wall, ax: float, ay: float, bx: float, by: float) -> boolean {
-  // both endpoints in the wall's frame
-  a_off = (ax - w.wa_ox) * (-w.wa_dy) + (ay - w.wa_oy) * w.wa_dx;
-  a_alo = (ax - w.wa_ox) * w.wa_dx    + (ay - w.wa_oy) * w.wa_dy;
-  b_off = (bx - w.wa_ox) * (-w.wa_dy) + (by - w.wa_oy) * w.wa_dx;
-  b_alo = (bx - w.wa_ox) * w.wa_dx    + (by - w.wa_oy) * w.wa_dy;
-  // scale each axis so the band is [-1,1] on both, then clip the segment
-  hw = WALL_W * 0.5;
-  p1 = (a_off / hw) ?? 0.0;
-  q1 = ((b_off - a_off) / hw) ?? 0.0;
-  p2 = (a_alo / w.wa_half) ?? 0.0;
-  q2 = ((b_alo - a_alo) / w.wa_half) ?? 0.0;
-  (lo1, hi1, ok1) = clip_slab(p1, q1, 0.0, 1.0);
-  if !ok1 { return false; }
-  (lo2, hi2, ok2) = clip_slab(p2, q2, lo1, hi1);
-  ok2
+// Signed distance along the run from its centre — in [-wa_half, +wa_half] over the segment.
+fn wall_along(w: Wall, px: float, py: float) -> float {
+  (px - w.wa_ox) * w.wa_dx + (py - w.wa_oy) * w.wa_dy
 }
+
+// Does the wall's centre line SEPARATE the two cell centres — and does it cross between them
+// WITHIN the run?  A hex edge is marked iff its two owning cells answer yes.
+//
+// The tie-break (offset == 0 counts as the positive side) makes the test total and
+// deterministic (`I9`); for a wall anchored on a vertex it never fires, because a vertex is
+// never at the same offset as a cell centre — but a wall centred on a hex CENTRE (the bare
+// `wall_new(d, 0, 0, …)` form) can put a whole row of centres on the line, and then the
+// tie-break places the boundary just to one side of them rather than through them.
+pub fn wall_separates(w: Wall, cx: float, cy: float, nx: float, ny: float) -> boolean {
+  oc = wall_offset_signed(w, cx, cy);
+  on = wall_offset_signed(w, nx, ny);
+  pc = oc >= 0.0;
+  pn = on >= 0.0;
+  if pc == pn { return false; }
+  // where the segment C->N crosses the line, and whether that point is within the run
+  t = (oc / (oc - on)) ?? 0.5;
+  ax = cx + t * (nx - cx);
+  ay = cy + t * (ny - cy);
+  al = wall_along(w, ax, ay);
+  al >= (0.0 - w.wa_half) - WALL_EPS && al <= w.wa_half + WALL_EPS
+}
+
+// The endpoint edges sit exactly at along = +-wa_half; include them so the chain reaches its
+// vertices.  A rasterisation tie-break, not a geometric fudge — the same role `draw_floor`'s
+// EPS plays, and it never moves a mark off its edge.
+const WALL_EPS = 0.000000001;
 
 // ── THE EDGE TABLE IS hex_grid's, NOT OURS ─────────────────────────────────
 //
@@ -183,23 +198,48 @@ pub fn wall_edge_gap(q: integer, r: integer, dir: integer) -> float {
   sqrt((mx - hx) * (mx - hx) + (my - hy) * (my - hy)) ?? 0.0
 }
 
+// Triangle-lattice coordinates of a hex corner — EXACT integers, because every hex corner is
+// a vertex of the triangle lattice.  The centre of (q,r) is (3k, 3(m-k)/2) with k = lattice_k,
+// m = lattice_m; the six corner deltas are constant.  Used to key the edge chain by its shared
+// vertices when checking connectivity (`tests/wall.loft` §6b).
+fn corner_da(ci: integer) -> integer {
+  c = ((ci % 6) + 6) % 6;
+  if c == 0 { 0 } else if c == 1 { -3 } else if c == 2 { -3 }
+  else if c == 3 { 0 } else if c == 4 { 3 } else { 3 }
+}
+
+fn corner_db(ci: integer) -> integer {
+  c = ((ci % 6) + 6) % 6;
+  if c == 0 { 3 } else if c == 1 { 3 } else if c == 2 { 0 }
+  else if c == 3 { -3 } else if c == 4 { -3 } else { 0 }
+}
+
+pub fn hex_corner_tri_a(q: integer, r: integer, ci: integer) -> integer {
+  3 * lattice_k(q, r) + corner_da(ci)
+}
+
+pub fn hex_corner_tri_b(q: integer, r: integer, ci: integer) -> integer {
+  ((3 * (lattice_m(q, r) - lattice_k(q, r)) / 2) ?? 0) + corner_db(ci)
+}
+
+// `wall_from_run` — the principled vertex-anchored constructor — is defined further down, with
+// the endpoint machinery it depends on (`tri_x`, `wall_end_a`), so its call sites see the real
+// float return types rather than the single-pass integer default.
+
 // THE ROUTINE: draw the wall into the foxel's three wall slots per hex.
 //
-// `edge_set_mat` stores an edge once, under whichever cell owns it, so writing from both
-// sides is idempotent — which is what makes the three-slots-per-hex model hold.
+// An edge is marked iff the wall's centre line SEPARATES its two owning cells, within the run.
+// `edge_set_mat` stores an edge once, under whichever cell owns it, so writing from both sides
+// is idempotent — which is what makes the three-slots-per-hex model hold.
 pub fn wall_write(w: Wall, edges: EdgeSet, q0: integer, r0: integer,
                   wq: integer, hq: integer) -> integer {
   n = 0;
   for wr in r0..r0 + hq {
     for wqq in q0..q0 + wq {
       for wd in 0..6 {
-        (e1, e2) = hex_edge_corners(wd);
-        ax = hex_corner_x(wqq, wr, e1);
-        ay = hex_corner_y(wqq, wr, e1);
-        bx = hex_corner_x(wqq, wr, e2);
-        by = hex_corner_y(wqq, wr, e2);
-        if wall_crosses_edge(w, ax, ay, bx, by) {
-          (nq, nr) = hex_neighbor(wqq, wr, wd);
+        (nq, nr) = hex_neighbor(wqq, wr, wd);
+        if wall_separates(w, cell_x_w(wqq, wr), cell_y_w(wqq, wr),
+                             cell_x_w(nq, nr), cell_y_w(nq, nr)) {
           if edge_mat(edges, wqq, wr, nq, nr) == 0 {
             edge_set_mat(edges, wqq, wr, nq, nr, w.wa_mat);
             n = n + 1;
@@ -209,6 +249,115 @@ pub fn wall_write(w: Wall, edges: EdgeSet, q0: integer, r0: integer,
     }
   }
   n
+}
+
+// ── READING THE CHAIN BACK: is it ALONG the wall, and is it ONE chain? ─────
+//
+// These are the two properties that distinguish the fixed marking from the old picket comb,
+// and neither is visible in the perpendicular STRAY (a comb and a zigzag both swing ~1 hex off
+// the line).  They are what `tests/wall.loft` §6 asserts.
+//
+// ALONG-NESS.  For a marked edge between cells C and N, the vector C->N is PERPENDICULAR to the
+// edge.  An edge lying ALONG the wall therefore has C->N pointing ACROSS the wall — a small
+// `|C->N . wall_dir|`.  The old picket marked edges lying ACROSS the wall, whose C->N pointed
+// ALONG it — `|C->N . wall_dir| ~ 1`.  So the worst `|dot|` over the chain is the discriminator.
+pub fn wall_along_max(w: Wall, edges: EdgeSet, q0: integer, r0: integer,
+                      wq: integer, hq: integer) -> float {
+  worst = 0.0;
+  for wr in r0..r0 + hq {
+    for wqq in q0..q0 + wq {
+      for wd in 0..3 {
+        (nq, nr) = hex_neighbor(wqq, wr, wd);
+        if edge_mat(edges, wqq, wr, nq, nr) != 0 {
+          dx = cell_x_w(nq, nr) - cell_x_w(wqq, wr);
+          dy = cell_y_w(nq, nr) - cell_y_w(wqq, wr);
+          dl = sqrt(dx * dx + dy * dy) ?? 1.0;
+          dot = ((dx * w.wa_dx + dy * w.wa_dy) / dl) ?? 0.0;
+          ad = if dot < 0.0 { 0.0 - dot } else { dot };
+          if ad > worst { worst = ad; }
+        }
+      }
+    }
+  }
+  worst
+}
+
+// ONE CHAIN.  The marked edges form a connected path iff, keyed by their shared hex vertices
+// (exact triangle-lattice integers), exactly two vertices have degree 1 (the ends) and none has
+// degree > 2.  A picket comb of k disjoint edges has 2k degree-1 vertices — so this separates a
+// chain from a comb with no tolerance.  Returns the number of degree-1 vertices (2 for a single
+// chain, 0 for empty, 4 after a break, 2k for a comb).
+pub fn wall_chain_ends(edges: EdgeSet, q0: integer, r0: integer,
+                       wq: integer, hq: integer) -> integer {
+  va: vector<integer> = [];
+  vb: vector<integer> = [];
+  for wr in r0..r0 + hq {
+    for wqq in q0..q0 + wq {
+      for wd in 0..3 {
+        (nq, nr) = hex_neighbor(wqq, wr, wd);
+        if edge_mat(edges, wqq, wr, nq, nr) != 0 {
+          (e1, e2) = hex_edge_corners(wd);
+          va += [hex_corner_tri_a(wqq, wr, e1)];
+          vb += [hex_corner_tri_b(wqq, wr, e1)];
+          va += [hex_corner_tri_a(wqq, wr, e2)];
+          vb += [hex_corner_tri_b(wqq, wr, e2)];
+        }
+      }
+    }
+  }
+  ends = 0;
+  for i in 0..len(va) {
+    // count this vertex only at its first occurrence
+    first = true;
+    for k in 0..i {
+      if (va[k] ?? 0) == (va[i] ?? 0) && (vb[k] ?? 0) == (vb[i] ?? 0) { first = false; }
+    }
+    if first {
+      deg = 0;
+      for j in 0..len(va) {
+        if (va[j] ?? 0) == (va[i] ?? 0) && (vb[j] ?? 0) == (vb[i] ?? 0) { deg = deg + 1; }
+      }
+      if deg == 1 { ends = ends + 1; }
+    }
+  }
+  ends
+}
+
+// Any vertex where three or more marked edges meet — a branch, which a straight wall's boundary
+// never has.  Non-zero means the marking is not a simple path.
+pub fn wall_chain_branches(edges: EdgeSet, q0: integer, r0: integer,
+                           wq: integer, hq: integer) -> integer {
+  va: vector<integer> = [];
+  vb: vector<integer> = [];
+  for wr in r0..r0 + hq {
+    for wqq in q0..q0 + wq {
+      for wd in 0..3 {
+        (nq, nr) = hex_neighbor(wqq, wr, wd);
+        if edge_mat(edges, wqq, wr, nq, nr) != 0 {
+          (e1, e2) = hex_edge_corners(wd);
+          va += [hex_corner_tri_a(wqq, wr, e1)];
+          vb += [hex_corner_tri_b(wqq, wr, e1)];
+          va += [hex_corner_tri_a(wqq, wr, e2)];
+          vb += [hex_corner_tri_b(wqq, wr, e2)];
+        }
+      }
+    }
+  }
+  branches = 0;
+  for i in 0..len(va) {
+    first = true;
+    for k in 0..i {
+      if (va[k] ?? 0) == (va[i] ?? 0) && (vb[k] ?? 0) == (vb[i] ?? 0) { first = false; }
+    }
+    if first {
+      deg = 0;
+      for j in 0..len(va) {
+        if (va[j] ?? 0) == (va[i] ?? 0) && (vb[j] ?? 0) == (vb[i] ?? 0) { deg = deg + 1; }
+      }
+      if deg > 2 { branches = branches + 1; }
+    }
+  }
+  branches
 }
 
 // ── THE TRIANGLE LATTICE, AND WHY WIDTH CANNOT COME FROM IT ────────────────
@@ -371,6 +520,27 @@ pub fn wall_run_len(d24: integer, p: integer) -> float {
   wx = tri_x(ra, rb);
   wy = tri_y(ra, rb);
   sqrt(wx * wx + wy * wy) ?? 0.0
+}
+
+// Build a wall from an ADMISSIBLE run: anchor vertex (a0,b0) in triangle coords, `p` periods of
+// direction `d24`.  The principled constructor — endpoints are hex vertices and the run is legal
+// (`wall_run_ok`), so the boundary chain terminates cleanly at both ends.  Defined here, below
+// `tri_x`/`wall_end_a`, so their float returns are known at the call site (see the note by
+// `wall_write`).
+pub fn wall_from_run(d24: integer, a0: integer, b0: integer, p: integer, mat: integer) -> Wall {
+  fea = wall_end_a(d24, a0, p);
+  feb = wall_end_b(d24, b0, p);
+  fax = tri_x(a0, b0);
+  fay = tri_y(a0, b0);
+  fbx = tri_x(fea, feb);
+  fby = tri_y(fea, feb);
+  fox = (fax + fbx) * 0.5;
+  foy = (fay + fby) * 0.5;
+  fvx = fbx - fax;
+  fvy = fby - fay;
+  fln = sqrt(fvx * fvx + fvy * fvy) ?? 0.0;
+  Wall { wa_ox: fox, wa_oy: foy, wa_dx: (fvx / fln) ?? 1.0, wa_dy: (fvy / fln) ?? 0.0,
+         wa_half: fln * 0.5, wa_mat: mat }
 }
 
 // ── FROM AN ARBITRARY POINT IN THE PLANE TO A LEGAL LINE ───────────────────

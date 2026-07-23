@@ -527,14 +527,14 @@ already see safe; only a real scene converts an axis nobody imagined into one yo
 > and radius** recoverable exactly (R1), or is that a fit (R2)? That is `Sep` restated against the
 > real storage, and it is rung **A6**'s question.
 
-> **OD-12 · which edges IS a wall? (new, open — and the current answer is measurably wrong)**
-> The three-slot foxel can only store hex edges, and a hex has edges on **three lines only —
-> 30°, 90°, 150°** (`X28`). So "the wall" must be a **connected chain** of edges lying *along* the
-> line, which for any other heading is an alternating **wobble**. `wall_write` currently selects
-> every edge the band **crosses** — i.e. the roughly **perpendicular** ones — and the mesh
-> evaluation shows the consequence: a due-east wall becomes a comb of ten vertical pickets, straying
-> **6× the wall's own half-width**. See §10.8. The replacement rule is what rung **A2** has to
-> settle, and §6 of `tests/wall.loft` is already the check that will judge it.
+> **OD-12 · which edges IS a wall? — ✅ RESOLVED (§10.12).** The three-slot foxel can only store
+> hex edges, and a hex has edges on **three lines only — 30°, 90°, 150°** (`X28`). So "the wall" is
+> a **connected chain** of edges lying *along* the line, an alternating wobble for any other
+> heading. The first `wall_write` selected the edges the band **crossed** (the perpendicular ones),
+> giving a comb of pickets. **The fix: mark the edges that SEPARATE the wall's two sides** — the
+> boundary between two half-planes, which is one connected chain along the line. Gated by
+> `tests/wall.loft` §6 (every wall is one chain: two ends, no branch), with the picket comb as the
+> control it is measured against.
 
 **OD-1 · the morph — dead, or moved into `snap`?**
 `design/EDITOR.md` §2 makes orientation a *minimal affine morph*, *"the bridge from 6 exact
@@ -1032,17 +1032,14 @@ the **90° vertical** one. So a wall running **due east** is marking the ten *ve
 passes through — `emit_hex_walls` then stands a quad on each, and the mesh is a **comb of pickets
 across the wall**, spaced `√3` apart, rather than a wall along it. Same at 60°, rotated.
 
-The cause is that `wall_crosses_edge` selects every edge the band **crosses**, and the edges a
+The cause was that `wall_crosses_edge` selected every edge the band **crossed**, and the edges a
 straight band crosses are the ones roughly **perpendicular** to it. What the three-slot model needs
-is the opposite: a **connected chain of edges lying ALONG the line** — which, because no hex edge
-runs at 0°, must be the alternating 30°/150° **wobble**. Only walls at 30°/90°/150° get a straight
-single-family run.
+is the opposite: a **connected chain of edges lying ALONG the line**.
 
-This is the same wobble `wallgeo` exists to straighten, and the same one the triangle subdivision
-(§10.6–10.7) was chosen to beat. **`wall_write`'s selection rule is therefore still open**, and the
-mesh evaluation is the check that will confirm the replacement: a correct chain must bring the stray
-down to the order of the wall's own half-width, and must be *connected* — a property the current
-picket set does not even have.
+**This is now fixed — see §10.12.** The band model is gone; `wall_write` marks the edges that
+**separate** the wall's two sides, which is the boundary between two half-planes: one connected
+chain running along the line. The same probe now shows a due-east wall marks **no** E/W edge, only
+the diagonals it runs along.
 
 ### What the evaluation says about the round trip
 
@@ -1272,9 +1269,8 @@ how far the legal endpoint sits from where they pointed, rather than silently mo
 The endpoints are pinned; the **offset** is not. Two parallel lines a fraction of a wall-width apart
 still rasterise to the same marks, and nothing above prevents it — the anchor is quantised to
 vertices, but whether *direction plus anchor* is jointly recoverable from the marks is the level-1
-census (**S5**). And all of this assumes the corrected write rule; under today's picket rule
-(**OD-12**) the marks do not even form a chain, so §8 constrains the *model*, not yet the *stored
-result*.
+census (**S5**). The write rule this now assumes is the corrected one of §10.12: the marks form a
+connected chain along the line, so §8's endpoints are real endpoints *of that chain*.
 
 ## 10.11 The box, and the two kinds of wall
 
@@ -1347,6 +1343,50 @@ of the gate hoisted the constructor and read 27/23; sections 3 and 5 inlined it 
 `LOFT-HANDOFF.md` with the six things ruled out, worked around by hoisting, reproducer kept at
 `probes/inline_struct.loft`, and the rule added to `CLAUDE.md`'s traps. loft is consumer-only here —
 file, work around, keep moving.
+
+## 10.12 OD-12 ✅ RESOLVED — the wall marks the edges ALONG the line, not across it
+
+The first `wall_write` (§10.8) marked the edges the wall's thin **band crossed**. A band running
+along a line crosses the edges lying **across** it, so a due-east wall came out as a comb of vertical
+pickets — disconnected, and 6× the wall's own half-width off the line.
+
+**The fix is a change of question, not a tuning.** A wall is not a band to overlap against edges; it
+is a **boundary**. A straight line divides the plane into two half-planes, and the hex edges lying
+*along* the line are exactly the ones that **separate a cell on one side from a cell on the other**:
+
+> `wall_separates(w, C, N)` — the wall's centre line has the two cell centres on opposite sides, and
+> crosses between them within the run. `wall_write` marks every such edge.
+
+This is `housedraw::draw_walls`' own rule — *an edge between an inside cell and an outside one* —
+applied to a **half-plane** instead of a filled region, so it inherits `I3`'s "closed by
+construction, one wide". The boundary of a half-plane on a hex tiling is always a single connected
+chain: straight in the three edge directions (30°/90°/150°), an alternating wobble otherwise.
+
+### What the gate now proves (`tests/wall.loft` §6)
+
+The perpendicular **stray cannot tell a comb from a chain** — both swing ~1 hex off the line — so
+§6 asserts the two properties that actually distinguish them, each against the picket comb as a
+live control:
+
+| property | the fixed marking | the picket comb (control) |
+|---|---|---|
+| **one connected chain** — degree-1 vertices / branches | exactly **2 ends, 0 branches**, all 24 | **18 ends** (9 disjoint edges) |
+| **runs along** — worst `\|C→N · dir\|` | ≤ **0.945** | **1.00** (C→N parallel to the wall) |
+| break one interior edge → | **2 ends → 4** | — |
+
+The chain check keys edges by their shared hex vertices — **exact triangle-lattice integers**
+(`hex_corner_tri_a/b`), no float quantisation — so "connected" is a threshold-free integer fact.
+`probes/edge_family.loft` shows the before/after directly: a due-east wall now marks **no** E/W
+(90°) edge, only the 30°/150° diagonals it runs along.
+
+### What is left for `rebuild`
+
+The stray is still ~1 hex (the wobble amplitude), and that is **correct and expected** — it is the
+quantity `rebuild` must undo, not an error at this end. The difference from before is that the marks
+are now a faithful *chain* along the line, so recovering the straight line from them is a
+well-posed R1 problem (the endpoints of §10.10 are the endpoints *of this chain*), where the picket
+comb was not even connected. `wallgeo`'s Laplacian smoothing remains the approximate baseline to
+diff against; `P4` still forbids adopting its ε.
 
 ## 11. Known conflicts in the current tree
 

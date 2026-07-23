@@ -1,19 +1,27 @@
+// edge_family — WHICH EDGE FAMILY DOES A WALL MARK?  Before and after the OD-12 fix.
+//
+// This probe first found the picket bug (X28): the band model marked the edges the wall
+// CROSSES — perpendicular ones — so a due-east wall came out as a comb of vertical (90 deg)
+// edges across itself.  The fix marks the edges that SEPARATE the wall's two sides, which run
+// ALONG it.  This probe now shows the after: a due-east wall marks NO E/W (90 deg) edge, only
+// the diagonals it runs along.
+//
+// hex edges lie on lines at 30 / 90 / 150 degrees only (dir 0..5 = E SE SW W NW NE; E and W
+// are the 90 deg vertical family).
 use hex_field;
 use hex_grid;
 use hexwall;
 
 fn main() {
-  println("For each d24, which EDGE FAMILY do the marks land on?");
-  println("hex edges lie on lines at 30 / 90 / 150 degrees only.");
-  println("");
-  println("  d24  wall-angle   marks per edge-direction (dir 0..5 = E SE SW W NW NE)");
-  for d in 0..6 {
-    eg = edgeset_new(-12, -12, 25, 25);
-    w = wall_new(d, 0.0, 0.0, 8.0, 7);
-    wall_write(w, eg, -12, -12, 25, 25);
+  println("d24  wall-ang   marks per edge-direction   note");
+  println("               E  SE  SW   W  NW  NE");
+  for d in 0..8 {
+    eg = edgeset_new(-14, -14, 29, 29);
+    w = wall_from_run(d, 3, 0, wall_min_p(d, 3, 0) * 3, 7);
+    wall_write(w, eg, -14, -14, 29, 29);
     c0 = 0; c1 = 0; c2 = 0; c3 = 0; c4 = 0; c5 = 0;
-    for r in -12..13 {
-      for q in -12..13 {
+    for r in -14..15 {
+      for q in -14..15 {
         for dd in 0..6 {
           (nq, nr) = hex_neighbor(q, r, dd);
           if edge_mat(eg, q, r, nq, nr) != 0 {
@@ -28,10 +36,12 @@ fn main() {
       }
     }
     ang = wall_angle_actual(d);
-    println("  {d:>3} {ang:>10.2}    E={c0:>3} SE={c1:>3} SW={c2:>3} W={c3:>3} NW={c4:>3} NE={c5:>3}");
+    note = "";
+    if d == 0 { note = "  east wall: NO E/W (across) edges — only the 30/150 diagonals it runs along"; }
+    if d == 6 { note = "  north wall: the E/W (vertical) edges ARE along it, so they are marked"; }
+    println("  {d:>2} {ang:>8.2}   {c0:>2}  {c1:>2}  {c2:>2}  {c3:>2}  {c4:>2}  {c5:>2}{note}");
   }
   println("");
-  println("The E edge runs corner 4->5, i.e. the line at 90 deg (a VERTICAL edge).");
-  println("A wall running EAST (d24=0) that marks E edges is marking edges ACROSS itself,");
-  println("not along itself — a comb of pickets, not a wall.");
+  println("The comb is gone: the marks that used to run ACROSS the wall now run ALONG it,");
+  println("as one connected chain.  `tests/wall.loft` section 6 asserts both properties.");
 }

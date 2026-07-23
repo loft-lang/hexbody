@@ -22,8 +22,10 @@ than inherited, including **two defects every other gate was green through**).
 
 The width question is settled in [`DESIGN.md`](DESIGN.md) §10.9: all 24 directions can be exactly
 straight and exactly equally wide **iff** a wall is a line primitive with a constant width and the
-cells are its rasterisation. **OD-12** — *which edges IS a wall* — is the open one, and the next
-thing to fix. `rebuild`, the census and the corpus do not exist yet.
+cells are its rasterisation. **OD-12** — *which edges IS a wall* — is **resolved** (§10.12): a wall
+marks the edges that **separate** its two sides, one connected chain along the line, not a comb of
+pickets across it. Next is **S3** (`Plan`→cells). `rebuild`, the census and the corpus do not exist
+yet.
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"
