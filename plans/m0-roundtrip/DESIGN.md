@@ -33,10 +33,13 @@ Each is a **design claim**, not a theorem. Notation `A₁ … K₂` is the worki
 
 ## 2. Proposed grammar of `𝕄*`
 
-**Pending OD-6 and OD-7** — both could replace this wholesale.
+**Now bounded by the foxel schema** (`ROUNDTRIP` §2.4): every production below must draw into
+`layer* × point → (height, material, wall1..3, item)` exactly, or it is not admissible. OD-6 and
+OD-7 are closed; what remains proposed is the *description* layer, not the storage.
 
 ```ebnf
-⟨model⟩    ::= { ⟨stencil⟩ | ⟨place⟩ | ⟨line⟩ | ⟨join⟩ }
+⟨model⟩    ::= { ⟨layer⟩ | ⟨stencil⟩ | ⟨place⟩ | ⟨line⟩ | ⟨join⟩ }
+⟨layer⟩    ::= "layer" ⟨nat⟩ { ⟨element⟩ }   (* layer* is the OUTERMOST structure — OD-8 closed *)
 
 (* A · stencil: a CLOSED turtle polygon in a LOCAL frame, headings from H₁₂ *)
 ⟨stencil⟩  ::= "stencil" ⟨name⟩ "h0" ⟨h0⟩ { ⟨element⟩ }
@@ -46,6 +49,8 @@ Each is a **design claim**, not a theorem. Notation `A₁ … K₂` is the worki
 ⟨turn⟩     ::= ⟨int⟩                        (* Δh ∈ -5..6, twelfths of a revolution *)
 ⟨arc⟩      ::= "arc"  ⟨nat⟩ "ctr" ⟨point⟩ "rad" ⟨nat⟩ "from" ⟨rat⟩ "to" ⟨rat⟩
 ⟨feature⟩  ::= ⟨kind⟩ "side" ⟨nat⟩ "t" ⟨rat⟩ "w" ⟨nat⟩ [ "sill" ⟨nat⟩ "head" ⟨nat⟩ ]
+                                            (* stored as a MATERIAL on the wall slot — 2.4.1 *)
+⟨side⟩ shape ::= "straight" | "rounded"     (* a slot may be rounded — this is how arcs store *)
 ⟨place⟩    ::= "place" ⟨name⟩ "at" ⟨point⟩ "orient" ⟨orient⟩
 ⟨orient⟩   ::= ⟨rot⟩ [ "flip" ]             (* o ∈ O — the ONLY choice a placement makes *)
 ⟨rot⟩      ::= "0" | "1" | "2" | "3" | "4" | "5"
@@ -60,8 +65,8 @@ Each is a **design claim**, not a theorem. Notation `A₁ … K₂` is the worki
 ⟨dir⟩      ::= ⟨int⟩ "," ⟨int⟩              (* reduced; ∈ D — reachable ONLY from ⟨line⟩ *)
 ⟨rat⟩      ::= ⟨int⟩ "/" ⟨nat⟩              (* reduced; never a decimal *)
 ⟨int⟩,⟨nat⟩ ::= decimal integer
-⟨name⟩,⟨kind⟩,⟨layer⟩ ::= DEFERRED
-⟨roof⟩     ::= OPEN DECISION                (* domain C — height recovery; OD-2 *)
+⟨name⟩,⟨kind⟩ ::= DEFERRED
+⟨roof⟩     ::= a HEIGHT per point           (* OD-2 closed: heights are stored, profiles are R2 *)
 ```
 
 Two intents the grammar is meant to *enforce* rather than assert:
@@ -116,7 +121,7 @@ join  0 1  rad 6
 Law **J** on that stencil: `Σ turn = 12` ✓, and `4·e(0) + 5·e(3) + 4·e(6) + 5·e(9) = (0,0)` ✓
 since `e(h+6) = −e(h)`.
 
-### 3.1 What is stored — proposed, and challenged by OD-6
+### 3.1 What is stored — settled by the foxel schema
 
 | | stored? | role |
 |---|---|---|
@@ -126,8 +131,9 @@ since `e(h+6) = −e(h)`.
 | `𝔽_wld` — terrain + linework | **yes** | the world's own truth |
 
 This scopes `SPEC` **L3** rather than weakening it: *"the field is the stored truth"* holds for
-the **world**; a **body**'s truth is its original plus its pose. **OD-6 challenges this directly**
-— crawler stores the stencil *as a field*.
+the **world**; a **body**'s truth is its original plus its pose. **OD-6 is closed by the schema**
+(`ROUNDTRIP` §2.4): whatever is stored, the model may only express what the foxel can hold, so
+`𝕋` and the field describe the *same* admissible set.
 
 ### 3.2 Damage — the one place the original is lost
 
@@ -375,12 +381,17 @@ already see safe; only a real scene converts an axis nobody imagined into one yo
 > to option (c) by free poses) and **OD-5** (is the flip exact — `X2` says yes; unaffected by the
 > schema). And a new one below.
 >
-> **OD-9 · does the door survive as an annotation?** `SPEC` **I1** and `FEATURES.md` require a
-> door to be an interval on the analytic surface that **annotates** its edges. The schema gives an
-> edge one `material` slot per wall — so a doored edge either carries a *door material* (losing the
-> wall's own material) or the door lives in a layer the schema does not obviously have. `WALLS.md`
-> solved this by *deleting band triangles*, which OD-7 has now ruled out. **This is the doored-tower
-> defect relocated into the storage schema**, and it is rung **A5**'s real question.
+> **OD-9 · does the door survive as an annotation? — CLOSED.** *"Doors and windows are materials
+> on the wall slot."* The edge is never removed, so the anti-deletion rule holds and the
+> doored-tower defect cannot arise — but a door **is** the material rather than an annotation
+> beside one. Composition therefore lives in the **material vocabulary** ("door in a stone wall" is
+> a material), and the table grows with wall-kinds × feature-kinds. See `ROUNDTRIP` §2.4.1.
+>
+> **OD-10 · arcs are storable — what is recoverable from them? (new, open)** *"We have rounded wall
+> slots too."* So a round tower needs no sub-cell geometry: a run of slots marked **rounded** is the
+> arc. What remains open is the parameter question — from a run of rounded slots, are the **centre
+> and radius** recoverable exactly (R1), or is that a fit (R2)? That is `Sep` restated against the
+> real storage, and it is rung **A6**'s question.
 
 **OD-1 · the morph — dead, or moved into `snap`?**
 `design/EDITOR.md` §2 makes orientation a *minimal affine morph*, *"the bridge from 6 exact
@@ -478,7 +489,7 @@ OD-7 decides both.)*
 
 | site | conflict | law |
 |---|---|---|
-| `src/housedraw.loft:299` | `place_opening` writes `OPEN_DOOR=1` / `OPEN_WINDOW=2` into the EdgeSet **surface-id** slot — the slot a recovered surface must occupy. Two channels, one integer | **D**, **E₂** |
+| `src/housedraw.loft:299` | **A concrete fix, now that OD-9 is closed.** `place_opening` writes `OPEN_DOOR=1` / `OPEN_WINDOW=2` into the EdgeSet **surface-id** slot (`edge_set_surf`). Doors and windows are **materials on the wall slot** (`ROUNDTRIP` §2.4.1), so they belong in `edge_set_mat` — the same call `draw_walls` already uses at `:195`. This frees the `surf` slot for the analytic surface it is named for, and removes the two-meanings-one-integer collision | **D**, **E₂** |
 | `src/hexroof.loft:493` | `roof_match(..., tol: float)` — a tolerance inside a recovery | **P4**; gated by OD-2 |
 | `SPEC` **L4** | superseded on the assumption the flip approximates — **pending OD-5** | **G**, **H** |
 | `PLAN.md` **M0** | named the work a *fit*; **D**/**E₂** admit no approximation on undamaged geometry — it is a **recovery** | **D** |

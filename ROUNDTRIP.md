@@ -105,8 +105,24 @@ this schema exactly**.
 - **`layer*`** — layers are part of the model, at the top, not an axis added later.
 - **`wall1..3`** — the three edges a point *owns*; the other three belong to its neighbours. This
   is the `EdgeSet` shape, and matches the `h_wall_n/ne/se` storage `WALLS.md` cites in moros.
+  A slot carries a **material**, and a slot may be **straight or rounded** — which is how an arc
+  (a round tower, a curved wall) is stored without any sub-cell geometry.
 - **`height`** — terrain, floors, roofs: all one scalar per point per layer.
 - **`item`** — props, trees, and anything that is an occupant rather than the fabric.
+
+### 2.4.1 A door is a material, not an annotation beside one
+
+**Doors and windows are materials on the wall slot.** The edge is never removed — it carries a
+*door* material instead of a *wall* material. So the anti-deletion rule survives intact (a run is
+never fragmented, and the doored-tower defect cannot arise), but its mechanism changes: it is not
+an annotation *beside* the material, it **is** the material.
+
+| | consequence |
+|---|---|
+| **won** | features are **directly readable** from storage — an edge with a door material *is* a door — so feature recovery is exact (R1), not inferred |
+| **lost** | a doored edge cannot also carry its wall's own material in the same slot |
+| **therefore** | composition moves into the **material vocabulary**: "door in a stone wall" is a material, not two values on one edge |
+| **the cost** | the material table grows with (wall kinds × feature kinds) rather than adding a channel. That is the trade the single slot buys |
 
 > **`fits?` becomes syntactic and finite.** Not *"is this recoverable in principle"* but *"does
 > this land in six slots per point per layer, exactly." * The census (`DESIGN.md` §8) stops being

@@ -51,7 +51,7 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 
 | ID | invariant | control that must fire |
 |---|---|---|
-| **I1** | a door/window is an interval on the **analytic surface**; the 2/3-direction edge strip is storage the feature never indexes | select edges by strip order → clear width wobbles between the zigzag and staircase sides |
+| **I1** | a door/window is an interval on the **analytic surface**, and is **stored as a material on the wall slot** — the edge is never removed, so a run is never fragmented ([`ROUNDTRIP.md`](ROUNDTRIP.md) §2.4.1). The 2/3-direction edge strip is storage the feature never indexes | select edges by strip order → clear width wobbles between the zigzag and staircase sides · delete an edge instead of re-materialling it → the run fragments (the doored-tower defect) |
 | **I2** | placement is `(side, t)`, which is **affine-invariant** → a feature survives orientation-morph exactly | store the raw opened edges → the morphed house's feature moves |
 | **I3** | a wall is the **boundary of a filled region**, closed by construction *(gap-fill)*, stored in the **three wall slots a point owns** (foxel schema, [`ROUNDTRIP.md`](ROUNDTRIP.md) §2.4). *(OD-7 resolved: `WALLS.md`'s triangle-subdivision band needs sub-cell resolution the schema has no slot for — it may still serve render/collision, but it cannot be stored.)* | the buffer-band rule → 2 components, 0 enclosed (a wall with a hole), yet still "12/12 equivariant" |
 | **I4** | a proxy **⊇** its shape (never misses an overlap) **and** overshoot `≤ ε` metres | shrink the proxy below the footprint → a real overlap is missed |
