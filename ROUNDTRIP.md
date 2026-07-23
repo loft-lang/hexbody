@@ -5,7 +5,7 @@ measured or gated. Peer to [`SPEC.md`](SPEC.md) — `SPEC` says *what must be ac
 *what the objects are*. On disagreement about an object or a map, this file is authoritative.
 
 **Everything still being designed, built or decided — the grammar, `fits?`, the censuses, the
-seam budget, the eight open decisions — is in
+seam budget, the open decisions — is in
 [`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md).** Nothing here depends on it.
 
 ---
@@ -22,16 +22,20 @@ seam budget, the eight open decisions — is in
 
 Check: `‖(1,0)‖ = ‖(1,-1)‖ = s`; `‖(1,1)‖ = s√3`; `‖(2,1)‖ = s√7`.
 
-**Rotation and reflection are exact integer maps** — measured, not assumed:
+**Rotation and reflection are claimed to be exact integer maps.** *Tier **T2** (§7) — crawler
+states it verified this over 625 cells, but that is a design try, not a gate here. It is the
+single most load-bearing inherited claim in this file, and **re-measuring it is rung A1's first
+by-product**.*
 
 ```
 60° rotation:   k' = (k − m)/2,   m' = (3k + m)/2          reflection:   k → −k
 ```
 
-Both integral for every cell, since cell centres satisfy `k ≡ m (mod 2)`. *Verified over 625
-cells: zero non-integer images, and six rotations are exactly the identity.* Reflection is
-likewise exact, which is where the **12 orientations** come from. So stencils rotate and reflect
-with **no resampling and no drift**. *(crawler `EXTRACTION.md` § Stencils.)*
+Both are integral for every cell if cell centres satisfy `k ≡ m (mod 2)`. crawler reports *"zero
+non-integer images, and six rotations are exactly the identity"* over 625 cells, and that
+reflection is likewise exact — which is where the **12 orientations** come from, and why stencils
+would rotate and reflect with **no resampling and no drift**. *(crawler `EXTRACTION.md` §
+Stencils; `X1`, `X2`.)*
 
 ## 2. Objects
 
@@ -40,7 +44,7 @@ with **no resampling and no drift**. *(crawler `EXTRACTION.md` § Stencils.)*
 | `𝕄` | — | **models** as authored: arbitrary real position, direction, radius |
 | `𝕄*` | `⊆ 𝕄` | **fitting** models — those that draw injectively |
 | `𝕋` | — | **canonical texts** — the written form |
-| `𝔽` | — | **field** states: `⟨HexSet, EdgeSet, Heights, Labels⟩` |
+| `𝔽` | — | **field** states — the **foxel** (§2.4): `layer* × point → (height, material, wall1..3, item)`. *`hex_field`'s `HexSet`/`EdgeSet`/`Heights`/`Labels` are one **encoding** of it, not a second model — moros: "ONE model … with the cell as a storage concern over the field"* |
 | `𝔽_loc` | `⊆ 𝔽` | a **body's own** field, in its **local** frame |
 | `𝔽_wld` | `⊆ 𝔽` | the **world** field — terrain and linework |
 | `P` | `ℝ² × S¹ × …` | a **pose**: continuous position and orientation in the world |
@@ -282,7 +286,8 @@ world terrain and linework, and the maps between them.
 ```
 snap    : 𝕄  → 𝕄* × ℝ≥0      σ ≔ π₁∘snap (projection)   ρ ≔ π₂∘snap (residual, metres)
 write   : 𝕄* → 𝕋             read : 𝕋 → 𝕄*
-draw    : 𝕄* → 𝔽_loc         rebuild : 𝔽 → 𝕄* × ℝ≥0
+draw    : 𝕄* → 𝔽             rebuild : 𝔽 → 𝕄* × ℝ≥0
+                              domain A lands in 𝔽_loc, domain B in 𝔽_wld; both are LAYER 1
 place   : 𝕄* × P → world      NOT a rasterization — the pose transforms, it never stamps
 ```
 
@@ -314,12 +319,20 @@ following are **theorems**, not design choices:
 > **Consequence.** An `ε` in an **R1** round-trip comparison (§6) is a **defect signal**: by P4 it
 > can only mean `𝕄*` was drawn wider than `draw` is injective on.
 
-## 5. Established today
+## 5. Established today — the whole of it
+
+**T1 is short.** Everything below the line is a proposal (`DESIGN.md`) or inherited at T2–T4 (§7).
 
 | | status |
 |---|---|
 | **law I** — `∀m, o ∈ O, v ∈ Λ. draw(τ_v ∘ o · m) = τ_v ∘ o · draw(m)` | **GREEN** — `housetest`, 12/12 equivariant in cells *and* edges, mismatched 0 |
-| everything else | [`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md) |
+| the two `H₁₂` step-length classes (§2.1) — `2⁄√3`, `3√3⁄4` | **GREEN** — measured by `housetest` gate 7 |
+| the eave is level on the fitted line (`SPEC` **I8**) | **GREEN** — `housetest` gate 4, `spread 0.0000`, control fires |
+| chunk seams are `d = 0` (`X19`) | **GREEN**, but in *crawler's* gate, not ours |
+| **everything else** | proposed, or inherited below T1 |
+
+**The propositions of §4 are theorems, not gates** — they hold *given* D, E₂, A₁, B, C₁, all of
+which are still proposals. They tell you what to check; they are not themselves checked.
 
 ## 6. Two recovery regimes
 

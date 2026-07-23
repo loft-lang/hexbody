@@ -32,7 +32,7 @@ not the prose;** the prose says *why*, the spec says *what*, checkably.
 model, `𝕋` its canonical text, `𝔽` the field), the maps (`snap`, `write`/`read`, `draw`/`rebuild`),
 the `D`/`E₂` contract with its **proved** propositions, and the constraints already measured in
 `../crawler`. **Only what is not in dispute.** Everything still being designed or decided — the
-grammar, the censuses, the eight open decisions — lives in
+grammar, the censuses, the open decisions — lives in
 [`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md) — a proposal or a question, never
 a fact to cite.
 

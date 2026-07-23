@@ -64,9 +64,11 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 | **I11** | the forward trailer-follow is **stable** — a drifted wagon returns to the drawbar, does not snake | overshoot gain → it oscillates (and isolates that reverse is the only unstable case) |
 
 **Round-trip items** — defined formally in [`ROUNDTRIP.md`](ROUNDTRIP.md); the law letter is the definition.
-**Prior art:** [`ROUNDTRIP.md`](ROUNDTRIP.md) **§7** lists ten constraints (`X1`–`X10`) already
-measured or gated in `../crawler` — do not re-derive them. [`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md) **§10** lists eight open decisions;
-**OD-5**–**OD-8** are conflicts between this spec and that prior art, and items marked ⚠ depend on them.
+**Prior art:** [`ROUNDTRIP.md`](ROUNDTRIP.md) **§7** lists the inherited constraints `X1`–`X19`
+**with their trust tier** — and **only `X19` is T1**. Everything else is a design try (T2/T3) or a
+shape read from untested code (T4): *indicative, to be re-measured here*, never cited as settled.
+[`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md) **§10** carries the open decisions;
+items marked ⚠ below depend on one.
 
 | ID | invariant | law | control that must fire |
 |---|---|---|---|

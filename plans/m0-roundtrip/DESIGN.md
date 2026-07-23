@@ -1,8 +1,9 @@
 # DESIGN — M0 round trip: what we are building, testing and deciding
 
 The **in-flight** half. [`ROUNDTRIP.md`](../../ROUNDTRIP.md) holds only what is settled —
-definitions, proved propositions, and crawler's measured constraints `X1`–`X10`. **Everything
-here is a proposal, a hypothesis or an open question**, and none of it should be cited as fact.
+definitions, the propositions that provably follow, and the inherited constraints `X1`–`X19`
+**with their trust tier** (§7: only `X19` is T1). **Everything here is a proposal, a hypothesis or
+an open question**, and none of it should be cited as fact.
 
 Plan status, phases and ordering: [`README.md`](README.md).
 
@@ -484,6 +485,10 @@ already see safe; only a real scene converts an axis nobody imagined into one yo
 
 ## 10. Open decisions
 
+> **Status: 7 of 10 closed.** Open: **OD-1** (the morph — narrowed to *probably unnecessary*),
+> **OD-5** (is the flip exact — `X2` says yes, but at T2), **OD-10** (arc parameters from rounded
+> slots). Plus one unnumbered fork: **how an anchor is addressed** (§10.3.1).
+>
 > **The foxel schema (`ROUNDTRIP` §2.4) closed or narrowed most of what follows.** Recorded here
 > so the reasoning survives, with the schema's consequence marked on each. **What the schema
 > states is settled; the per-decision consequences below are inference and want one confirmation

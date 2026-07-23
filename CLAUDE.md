@@ -72,8 +72,8 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **settled formal core** — only what is not in dispute: the lattice, objects, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and crawler's measured constraints `X1`–`X10`. ~180 lines | **authoritative** on any object or map |
-| **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the method, the gates, and the **eight open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
+| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the inherited constraints `X1`–`X19` **with trust tiers** | **authoritative** on any object or map |
+| **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
 | `PLAN.md` | milestone through-line (P, M0–M7); the synthesis layer, not a plan index | — |

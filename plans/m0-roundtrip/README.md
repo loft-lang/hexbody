@@ -9,9 +9,10 @@ issue when one exists)* · **Value:** `F` · **Effort:** `H`
 mechanics spine rather than running beside it (decided 2026-07-23).
 
 The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** holds only the
-**settled** core — definitions, proved propositions, and crawler's measured constraints `X1`–`X10`
-— while **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar,
-`fits?`, the seam, the method, the gates, and the eight open decisions. No code yet; of the
+**settled** core — definitions, the propositions that follow from them, and the inherited
+constraints `X1`–`X19` **with trust tiers** (only `X19` is T1) — while
+**[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar, `fits?`,
+the seam, the corpus, the method, the gates, and the open decisions. No code yet; of the
 proposed gates exactly one is green — `rt_orient` (law **I**), `housetest` 12/12 in cells *and*
 edges.
 
