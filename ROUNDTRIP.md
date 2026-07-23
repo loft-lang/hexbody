@@ -197,6 +197,34 @@ geometry (so no triangle subdivision), no second wall on the same edge, and no g
 not a height, an edge, or an occupant. **Thickness is *not* foreclosed** — it comes from the
 `WallDef` behind the id, not from the cell.
 
+### 2.4.2 Two layers, split by consumer — and the editor gets only one
+
+| | **layer 1 — stored** | **layer 2 — derived** |
+|---|---|---|
+| what | the **foxel**: compact, uniform, everywhere | collision structures, **meshes**, water flow, air flow, sound |
+| who | **the editor** works on this, and *only* this | **the game**, at runtime |
+| authored? | yes | **never** — derived from layer 1 on demand |
+| persisted? | yes | **never** |
+
+> **No second representation inside the editor.** One compact form, written everywhere, so
+> working on distant parts of the world needs no swap between representations and no conversion
+> step. That is the editor's whole requirement, and it is a *constraint on layer 1*: the stored
+> form must be good enough to edit directly.
+
+**Layer 2 is `SPEC` L3's rule, generalised.** L3 wrote it for the patch-atlas; the same rule
+covers the whole layer — *derived on demand, never persisted, never a branch in a hot-path op*.
+So the patch-atlas is one member of layer 2, not a special case, and **`K-PROXY`'s collision
+proxy is layer 2 as well**.
+
+**Consequence for `𝕋`.** The canonical text is **not** a second editor representation, and must
+not become one — that is exactly the second layer the editor is not allowed to have. Its role is
+narrower: an authored **stencil** may carry a description, but once placed the world is foxel. So
+`rebuild` is genuinely load-bearing rather than a validation nicety — it is how a description is
+recovered *from* the world, for editing, for re-canonicalising after damage, and for extraction.
+
+**Consequence for `draw`.** Its target is **layer 1, the foxel**. The census and `rt_trip` measure
+against that, not against a runtime structure.
+
 ### 2.5 Scope — what this model does not cover
 
 **In scope:** a body's **original** (`𝕄*`/`𝕋`), its **pose** `P` as a stored representation (§2.3),
