@@ -87,16 +87,22 @@ defends, is the thing to fix.
 
 **Two project kinds, two test conventions. hexbody is the *application* kind**, like crawler.
 
-| | **library** (`gridmesh`, `hex_field`) | **application** (crawler, hexbody) |
-|---|---|---|
-| layout | `loft.toml` `[library] entry`, `src/<name>.loft`, `tests/<topic>.loft` | `src/*.loft`, no `tests/` |
-| a test is | `fn test_*()` + `assert(cond, "msg")` | a **program**: `ok` flag, printed counts, final `=== NAME OK ===` |
-| run by | the package test harness | a runner that **greps the marker** |
-| header | `// Copyright …` + `// SPDX-License-Identifier: LGPL-3.0-or-later` | a purpose block, no copyright (hexbody has no `LICENSE`) |
+| | **library** (`gridmesh`, `hex_field`) | **application** (crawler) | **hexbody** |
+|---|---|---|---|
+| layout | `[library] entry`, `src/`, `tests/` | `src/*.loft`, no `tests/` | `src/` + **`tests/`** |
+| a test is | `fn test_*()` + `assert(…)` | a **program**: `ok` flag, counts, `=== NAME OK ===` | **the program form** |
+| run by | the package harness | a runner that **greps the marker** | `make test`, greps the marker |
+| header | Copyright + SPDX | a purpose block | a purpose block (no `LICENSE`) |
+
+**hexbody takes the library's `tests/` layout with the application's gate form** — gates are
+programs that print their evidence and end in `=== NAME OK ===`, but they live in `tests/`, named
+by topic without a `test` suffix (`tests/form.loft`, `tests/house.loft`), exactly as `gridmesh`
+names `tests/segmesh.loft`. This works because the `Makefile` passes **`--lib src/`**: without it
+a file in `tests/` cannot `use` a module in `src/` (*"Library 'hexform' not found"*).
 
 - **Module names**: `hex*` for geometry algorithms (`hexedge`, `hexway`, `hexroof`, `hexform`);
-  `house*` for the building layer. **The test drops the `hex` prefix** — `hexedge` → `edgetest`,
-  `hexroof` → `rooftest`, so `hexform` → **`formtest`**.
+  `house*` for the building layer. A gate is `tests/<topic>.loft` — the module's name with any
+  `hex`/`house` prefix dropped: `hexform` → `tests/form.loft`, `housedraw` → `tests/house.loft`.
 - **Struct field prefixes**: a 2-letter tag from the struct name, on *every* field —
   `HexSet`→`hs_`, `Plan`→`pl_`, `Chunk`→`ck_`, `SideRun`→`sr_`, `Surfaces`→`sf_`,
   `WallDef`→`wd_`, `Skeleton`→`sk_`. Universal across all four repos.
