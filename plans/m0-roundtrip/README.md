@@ -50,9 +50,27 @@ once recovery lands.
 
 ## Phases
 
+**Phase A is a ladder, not one step** (`ROUNDTRIP` §8.1). Each rung enumerates **exhaustively** at
+its level, round-trips every form, and is a complete gated increment — so the work always has
+something green, and the boundary is *discovered* rather than assumed.
+
+| A·n | level | first question it answers |
+|---|---|---|
+| **A1** | the minimal closed cycle — equilateral triangle, `len 1`, `turn 4` × 3, both heading classes | does *anything* round-trip? |
+| **A2** | grow `len` on the same shape | does length alone ever collide? |
+| **A3** | grow side count — 4 (today's house), 5, 6 | — |
+| **A4** | unequal side lengths | — |
+| **A5** | non-convex — reflex turns | where does a concave corner stop being recoverable? |
+| **A6** | features (doors, windows) on the cycle | does the `surf`-slot collision bite here? |
+| **A7** | arcs | the line/arc separation bound `Sep` |
+| **A8** | **combination** — two stencils adjacent (who owns the shared edge?), stencil against linework, stencil on terrain | **where things that work alone stop working together** |
+
+A8 is the rung that matters most and the one a single-object enumeration cannot see. Do not stop
+at "one complex stencil works."
+
 | Phase | Effort | Verify | Status |
 |---|---|---|---|
-| **A** — stencil census: enumerate `Cyc` exhaustively, count collisions | S | `rt_census_a` — collisions **must be 0**; control fires | **Open — next** |
+| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **Open — next (A1)** |
 | **B** — linework census: `period`, `D`, `Sep`; the straight/arc recovery | M | `rt_census_b`; `eave_spread == 0` on the recovered line | Blocked on A |
 | **C** — `write` / `read`, canonical text frozen | S | `rt_canon`, `rt_project`, `rt_fits`, `rt_close` | Blocked on A, B, **OD-2** |
 | **D** — `rt_trip` written **empty** (red), before `rebuild` exists | XS | needs no ground truth — only `write`/`read`/`draw`/`rebuild` + `diff` | Blocked on C |
@@ -65,8 +83,12 @@ than going silently ungated.
 
 ## Order + risks
 
-- **A first, and it is cheap.** Finite, decidable, no new representation needed. It either closes
-  at 0 or hands back the exact colliding pair — an answer either way.
+- **A first, and it is cheap.** Finite, decidable, no new representation needed — `housedraw`
+  already rasterizes. Grown by level, so every rung is a green increment rather than one long red
+  run to a single verdict.
+- **A collision is a result, not a failure.** The restrictions are the *output* of this plan, not
+  its precondition. Defining the admitted space up front and then enumerating it would presuppose
+  exactly the bounds we are trying to find (`ROUNDTRIP` §8.1).
 - **Its output is not a throwaway probe.** `Cyc` and `period` are the **shared artifact** that
   `rt_trip` *and* the editor's `fits?` both consume (`K-FIT`: `authorable ⊆ fits?`). Building them
   twice — once for the gate, once for the editor — is the `N > 1` silent-divergence failure.

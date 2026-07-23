@@ -363,7 +363,7 @@ fits?(m)  ⟺  syn(m) ∧ sem(m)
 | direction set | `H₁₂` — finite, small | `D` — 24 |
 | span length | **short spans permitted** | long by nature |
 | recovery | **exact match against the enumerated cycle set** | period-based direction recovery |
-| injectivity proved by | **exhaustive enumeration** over the admitted space | `n ≥ period(d)` bound |
+| injectivity proved by | **exhaustive enumeration** at each level, up to the discovered frontier (§8.1) | `n ≥ period(d)` bound |
 | failure mode | two distinct stencils sharing one boundary cycle | a run too short to fix its direction |
 
 **Why stencils need no length bound.** An isolated 1-step span cannot fix its heading: one hex edge
@@ -451,23 +451,58 @@ an invertible transform of a house, and no amount of care makes it one.
 
 | constant | domain | signature | produced by | status |
 |---|---|---|---|---|
-| `Cyc` | **A** | the set of admitted boundary cycles, with its **collision count** | the **stencil census** — exhaustive | **OPEN**, must be `0` |
+| `Cyc` | **A** | the admitted boundary cycles **up to the discovered frontier**, and the first form that fails | the **stencil census** — grown by level (§8.1) | **OPEN** |
 | `period` | **B** | `D → ℕ` — least `p` with `σ_strip(ℓ_d)` invariant under `τ_{p·d}` | the **linework census** | **OPEN** |
 | `Sep` | **B** | `⊆ ℕ × ℚ` — `(rad, span)` where an arc strip differs from every line strip | the arc sweep | **OPEN** |
 | `D` | **B** | which 24 reduced vectors are admitted | follows from `period` | **OPEN** |
 | `ε_seam` | **frames** | the crack budget at a frame crossing, **in metres** (`L8`) | measured at the chokepoint | **OPEN** |
 | `κ≥3` rate | **frames** | the fraction of queries with 3+ contending frames, measured in the `G★` pile | `rt_contend` histogram | **OPEN** — asserted low, not yet measured |
 
-**A · the stencil census is a proof obligation, not a measurement.** Enumerate every admitted
-stencil — bounded side count, bounded `len`, headings in `H₁₂`, closure by law **J** — rasterize
-each, and **count collisions**. The result must be **exactly 0**. A non-zero count is not a bound to
-record; it is a pair of distinct stencils the field cannot tell apart, and one of them must be
-excluded from `𝕄*` (or the storage must gain a channel to separate them). Because the space is
-finite, law **F** is *decided* here, not estimated.
+**A · the stencil census is a proof obligation, not a measurement** — but see §8.1: it is run as a
+**search for the frontier**, not as a verdict over a presupposed space. At each level the
+enumeration is exhaustive, so within the frontier law **F** is *decided*, not estimated. A
+collision is not a defect to eliminate; it is the **boundary of `𝕄*` being located.**
 
 **B · the linework census is a measurement.** Runs are long by nature, so `period(d)` is a
 threshold that is expected to be satisfiable; the census produces the table and the minimum length
 in metres that `L8` requires.
+
+### 8.1 How the constants are found — grow, don't presuppose
+
+**Do not define the admitted space and then enumerate it.** That presupposes the bounds, and the
+bounds *are* the answer. The restrictions are not known in advance; **they are the output.**
+
+Instead, grow — smallest forms first, combine, and let the first failure locate the boundary:
+
+```
+  level n:  enumerate EXHAUSTIVELY at this level  ──▶ round-trip each  ──▶ all pass?
+                          ▲                                                │  yes → n+1
+                          └────────────────────────────────────────────────┘
+                                                                           │  no
+                                    the failing pair IS a restriction ─────┘
+                                    record it in fits?, then continue
+```
+
+**Two growth axes, and the second is where the discoveries are:**
+
+| axis | ladder |
+|---|---|
+| **form** — one object, more complex | minimal closed cycle → longer sides → more sides → unequal sides → non-convex (reflex turns) → features → arcs |
+| **combination** — objects together | two stencils adjacent (a shared boundary: which owns the edge?) · stencil against linework · stencil on terrain |
+
+Things that round-trip alone routinely stop round-tripping **combined** — that is the axis no
+single-object enumeration can see, and it is the reason the ladder does not stop at "one complex
+stencil works."
+
+**The smallest form is concrete.** By law **J** a stencil needs `Σ turn = 12` and a closing vector
+sum, so the minimum is **3 sides**: an equilateral triangle, `turn 4` at each corner. It closes
+exactly because three lattice vectors 120° apart sum to zero — e.g. `(1,0) + (-1,1) + (0,-1) =
+(0,0)`. `len 1` at each heading class is level 1.
+
+**What this changes about the gate.** `rt_census_a` is not pass/fail over an assumed space; it
+**reports the frontier** — the largest level that round-trips, and the exact form that first
+fails. Both outcomes are results. And because every level is a complete, gated increment, the
+work always has something green rather than one long red run to a single verdict.
 
 > **Dissolved.** An earlier draft asked whether house walls could carry the fine directions, given
 > sides of 4–5 steps. They cannot and need not: houses are `H₁₂` with **short spans permitted**,
@@ -484,7 +519,7 @@ in metres that `L8` requires.
 | **`rt_trip`** | **D** | both | **`write(rebuild(draw(read(T)))) ≟ T`** | a non-fitting model bypassing `σ` → diff |
 | `rt_total` | E₁ | both | `σ(rebuild(f)) = rebuild(f)` for arbitrary `f` | hand-corrupt an `EdgeSet` → still lands in `𝕄*`, never fails |
 | `rt_ruin` | E₂,E₃ | A | `ρ = 0` on `im(draw)`; `ρ` **reported** off it | crumble a wall → `ρ > 0` and is surfaced, not swallowed |
-| **`rt_census_a`** | **F** | **A** | **exhaustive** enumeration of `Cyc`; collisions **must be 0** | remove a corner's turn from the match key → collisions appear |
+| **`rt_census_a`** | **F** | **A** | grow by level (§8.1), exhaustive at each; **reports the frontier** — largest level that round-trips, and the first form that fails | remove a corner's turn from the match key → collisions appear at level 1 |
 | `rt_census_b` | F | B | count colliding strips over `D × ℕ`; emit `period` | shorten below `period(d)` → collision |
 | `rt_close` | J | A | `Σ lenᵢ·e(hᵢ) = 0` ∧ `Σ turnᵢ = 12` | drop one turn → non-zero sum |
 | **`rt_seam`** | **K₁** | both | error `≡ 0` sampled in frame interiors; `≤ ε_seam` on `Σ`; replay byte-identical | "fix" a crack by snapping a body wall to the world lattice → interior error ≠ 0 |

@@ -73,10 +73,16 @@ you reach for instead (`ROUNDTRIP` §11.2).
   `housetest`, 12/12 in cells *and* edges.
 - **done when** — `rt_trip` is green over every primitive kind, and `Cyc` closes at 0 collisions.
 
-**Order inside M0.** The **stencil census** is first: finite, exhaustive, decidable — it either
-closes at zero collisions or hands back the exact colliding pair. `rt_trip` is written **before**
-`rebuild` exists (it needs no ground truth, only `write`/`read`/`draw`/`rebuild` and `diff`), and
-goes green when `rebuild` becomes correct.
+**Order inside M0 — grow, don't presuppose** (`ROUNDTRIP` §8.1). The **stencil census** is first,
+and it is a **ladder**: the smallest closed form (an equilateral triangle, `len 1`), then longer
+sides, more sides, unequal sides, reflex corners, features, arcs — and finally **combination**,
+where forms that round-trip alone stop doing so together. Each rung enumerates exhaustively, so
+within the frontier law **F** is *decided*; the outer loop is what discovers where the frontier
+is. **The restrictions are M0's output, not its input** — defining the admitted space first would
+presuppose exactly the bounds being sought.
+
+`rt_trip` is written **before** `rebuild` exists (it needs no ground truth, only
+`write`/`read`/`draw`/`rebuild` and `diff`), and goes green when `rebuild` becomes correct.
 
 **Blocking the grammar freeze:** **OD-2** — are roofs inside the exact round trip?
 `hexroof.loft:493` `roof_match(..., tol: float)` is the `ε` law **P4** forbids. The census does
@@ -191,18 +197,19 @@ limb. The bigger acceptance test, once the derailment has proved the stack integ
 is built on, so building the spine ahead of it means guessing what a body *is* and rebuilding
 later. The first move is one thing, not two:
 
-**The stencil census.** Enumerate every admitted stencil — bounded side count, bounded `len`,
-headings in `H₁₂`, closure by law **J** — rasterize each, count collisions. The result must be
-**exactly 0**.
+**The stencil census, rung A1** — the *smallest* closed form: an equilateral triangle, `len 1`,
+`turn 4` at each of 3 corners, in both heading classes. By law **J** that is the minimum a stencil
+can be (`Σ turn = 12`, and three lattice vectors 120° apart sum to zero). Rasterize it, rebuild
+it, compare. Then grow (`ROUNDTRIP` §8.1).
 
-It is the right first move for four reasons: the space is **finite**, so law **F** is *decided*
+It is the right first move for four reasons: each level is **finite**, so law **F** is *decided*
 rather than sampled; it needs **no new representation** (`housedraw` already rasterizes); it is
 **falsifiable today** against the one thing already green; and its output — `Cyc`, and the
 `period` table from its domain-B sibling — is the **shared artifact** both `rt_trip` and the
 editor's `fits?` consume, so it is not a throwaway probe.
 
-If it closes at 0, `write`/`read` and `rt_trip` follow. If it does not, it hands back the exact
-pair of stencils the field cannot tell apart — which is the answer either way, and cheap.
+Every rung is a green increment. Where a rung fails, that failure **is** a restriction — recorded
+into `fits?` and carried forward, not patched away.
 
 Then `P + M1` (`body.loft`, `bodytest.loft` with one wheel at `angle = travel/radius`) on top of
 a settled representation. Everything after is the loop that built `housedraw`: one exact brick,
