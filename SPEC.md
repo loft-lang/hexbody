@@ -124,6 +124,7 @@ items marked ⚠ below depend on one.
    | `census.loft` §1 | **I-CLOSE** — law J as the admission filter (660 proposed, 30 admitted) |
    | `census.loft` §2–§3 | law **F** decided at level 1 (`X38`); **I-EXTEND**'s census obligation |
    | `census.loft` §7 | **I-CLOSE**, **K-FIT** — non-convex forms break law F, so the doorstep refuses them (`X46`) |
+   | `surface.loft` | **G2** (the analytic surface), **I-EXACT** — averaging, no tolerance (`X47`) |
    | `text.loft` | **I-EXACT** — `write(read(T)) = T` as a byte diff, no ε (`X39`); **C1–C5** |
    | `trip.loft` | **I-RT**, **I-EXACT**, **I-TOTAL** — `write(rebuild(draw(read(T)))) = T` byte-for-byte over the **committed** corpus (`X41`); control: a non-grammar footprint → R2 with `ρ > 0` |
    | `wall.loft` §1, §2, §5 | **I-DOMAIN** *(`D`; the even/odd split, measured)* |

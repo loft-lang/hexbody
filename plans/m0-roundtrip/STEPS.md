@@ -282,29 +282,52 @@ is the requirement `tests/house.loft` never checked: **what happens where two ru
   quotient) is the corpus digest; recorded as `X40`. Caught before the corpus was committed, which
   is the only time it was cheap to fix.
 
-## S4b · the wall surface, by averaging — `src/hexform.loft` · S *(new, from the model decision)*
+## S4b ✅ · the wall surface, by averaging — `src/hexsurf.loft` + `tests/surface.loft` · S · **DONE**
 
-The surface a run approximates is the **exact average** of its edges (`ROUNDTRIP` §6.1) — mean
-direction is the integer sum of edge vectors, mean position the rational mean of edge midpoints.
-Verified numerically: both exact, wobble ≤ 0.199 world units (0.172 m) on both families.
+The surface a run approximates is the **exact average** of its edges (`ROUNDTRIP` §6.1) — nothing
+is fitted, so nothing has a tolerance.
 
-- **BLOCKED FIRST on corner ownership.** Per-side quantities are undefined until it is stated
-  which side owns a corner edge — measuring today gives 2.598 m and 6.062 m for what must be one
-  length (`DESIGN.md` §10.5). Read `housedraw::side_edges`'s rule, state it, gate it.
-- **the corner rule exists** — `housedraw::side_edges` classifies by *which local coordinate is
-  furthest outside the massing* (`ex_u = |lu| − hw` vs `ex_v = |lv| − hd`), no corner table. State
-  it and gate it; it was never missing, only unread.
-- **gate**, in order: (1) the corner rule holds; (2) both bands **in loft**, exact — tops `1/2 u`,
-  sides `√3/2 u`, ratio `√3` (`ROUNDTRIP` §6.2); (3) the widening `(√3−1)/2 u` total,
-  `(√3−1)/4 u` per face, applied to the tops only; (4) the band matches the **triangle
-  subdivision** (each hex edge in 3) — recorded, **not yet verified**.
-- **no tolerance appears in any of these.** Every constant is exact in `ℚ(√3)`; a gate that needs
-  an `ε` here has the wrong formulation.
-- **gate**: the recovered direction of a `Plan` side equals the nominal one **exactly**; the
-  recovered offset is an exact rational; the wobble is reported per family.
-- **control**: fit by least squares instead → a residual appears where there should be none.
-- **why this replaces "the fit"**: `PLAN.md` M0 was originally "recover the straight/arc surface".
-  Averaging *is* that recovery, with no tolerance — so the word "fit" was wrong twice over.
+- **the blocker was already cleared.** S4b was listed as *blocked on corner ownership*; S4 gated
+  that `side_edges`' four runs **partition** the boundary (`X36`), so per-side quantities are well
+  defined. The rule was, as the step said, *never missing, only unread*.
+- **direction** — the summed edge vector is **exactly parallel** to a heading, zero cross product,
+  over all 24 side-runs across 6 rotations. Position is kept as an exact **rational**
+  (numerator/denominator in doubled coordinates); no float enters the derivation.
+- **the bands of §6.2, measured and confirmed exactly**:
+
+  | family | corner band | §6.2 |
+  |---|---|---|
+  | east (tops), `dm = 0` | `0.50000000` | `1/2 u` ✓ |
+  | north (sides), `dk = 0` | `0.86602540` | `√3/2 u` ✓ |
+  | ratio | `1.73205081` | `√3` ✓ |
+
+- **the widening rule** — `(√3−1)/2` total, `(√3−1)/4` per face, tops only, landing **exactly** on
+  the sides' band. In metres: `0.31699 m` total, `0.15849 m` per face.
+- **a fact §6.2 does not state**: the **midpoint** band is not the corner band. On the east family
+  the edge midpoints are **exactly colinear** (band 0) — the mean line passes through every one —
+  while on the north family they span the full `√3/2`. The corners hide it; the row stagger causes
+  it.
+- **control**: the scatter a least-squares fit would have to threshold — `0.0000000` on the east
+  family, `0.9166667` on the north. Real on one family, so *"averaging beats fitting"* is a
+  measurement rather than rhetoric: averaging names that same geometry as the exact constant `√3/2`
+  and has nothing to tune.
+- **NOT verified, and the gate says so**: that this band matches the **triangle subdivision** (each
+  hex edge in 3, wall width `√3/6 u`). `X10` is T2 and has not been re-measured here.
+
+### The check was written wrong twice before it was written right
+
+Both wrong versions failed on geometry that was never in doubt, and both were *my formalisation of
+"exact" being too narrow*:
+
+| spelling | why it was wrong | failed |
+|---|---|---|
+| "one component is zero" | only 4 of 12 headings have one; a NE side is `(1,3)` | 16 of 24 |
+| "an integer multiple of the step" | the SUM over a run is `(0,14)` where the step is `(0,6)` | 12 of 24 |
+| **"parallel — zero cross product"** | what §6.1 actually claims: the *direction* is exact, the magnitude carries no claim | **0 of 24** |
+
+Worth recording because the failure looked like a geometry defect each time. The lesson is the one
+A4 taught in a different form: when a check fails, ask what the claim actually is before assuming
+the subject is broken.
 
 ## S8 ✅ · `rebuild`, level 1 — `src/formfit.loft` · M · **DONE**
 

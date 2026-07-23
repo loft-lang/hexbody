@@ -38,7 +38,7 @@ crawler's prototypes and design docs are **design tries** — input, not authori
 | **T3 · designed** | a doc argues a construction | **input to design, never truth** |
 | **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
 
-**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X46`** — eight of them re-measured *here*, and
+**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X47`** — eight of them re-measured *here*, and
 `X26`–`X31` **discovered here**. Everything else the design leans on is still a try or a schema
 (notably the whole foxel schema, `X11`–`X15`), and the census is where it gets re-measured. Citing a T2 number as settled is
 the specific mistake to avoid — in either direction: re-deriving what is genuinely gated wastes
@@ -73,7 +73,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X46` **with trust tiers** | **authoritative** on any object or map |
+| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X47` **with trust tiers** | **authoritative** on any object or map |
 | **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
@@ -129,7 +129,7 @@ a file in `tests/` cannot `use` a module in `src/` (*"Library 'hexform' not foun
 ## Run
 
 ```sh
-make test    # the gates in tests/ — form, wall, box, census, text, house, trip
+make test    # form, wall, box, census, text, house, surface, trip
 make shot    # contact sheet -> /tmp/house12.png
 ```
 
@@ -138,8 +138,8 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 
 ## State (2026-07-23)
 
-- **Seven gates, all green** — `make test` runs `tools/run_tests.sh`.
-  Form, wall (~3 min), box, census, text, house, trip.
+- **Eight gates, all green** — `make test` runs `tools/run_tests.sh`.
+  Form, wall (~3 min), box, census, text, house, surface, trip.
 - **Green:** `G0` / law **I** — `tests/house.loft`, 12/12 equivariant in cells *and* edges, `eave_spread
   0.0000`, every control fires. `make shot` reproduces the committed baseline byte-identically.
 - **Green:** `tests/form.loft` (**S0**/**S1**) — the 12 headings; **`X1`**/**`X2`** re-measured to **T1**
@@ -261,8 +261,17 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 - **The L-shaped house is NOT admissible** under this grammar: `I3` makes the wall the boundary of
   the fill, so a reflex corner enclosing no distinct cells is invisible to the field. A real limit
   on what can be authored, written down rather than left to be discovered.
-- Next: **S4b** (the wall surface by averaging — the render/`G2` front `make shot` waits on), or
-  **A5** (features: doors/windows on straight sides) — see `STEPS.md` and the rung table.
+- **S4b is done (X47)** — the wall surface by averaging. The summed edge vector is **exactly
+  parallel** to a heading (zero cross product, 24/24 runs); position is an exact **rational**.
+  §6.2's corner bands confirmed exactly (`1/2 u`, `√3/2 u`, ratio `√3`), and the widening
+  `(√3−1)/2` lands exactly on the larger band. **New fact:** the *midpoint* band is **0** on the
+  east family (the mean line passes through every midpoint) but the full `√3/2` on the north — the
+  row stagger. Control: the scatter a fit would threshold is 0 east / 0.9167 north, so
+  *averaging vs fitting* is measured, not rhetorical.
+- **Still unverified**: that the band matches the triangle subdivision (`X10`, T2). The gate prints
+  it as pending rather than asserting it.
+- Next: **A5** (features — doors/windows on straight sides, where OD-9 and the `surf`-slot question
+  bite) — see `STEPS.md` and the rung table.
 - **The foxel schema is the limit** (`ROUNDTRIP.md` §2.4): `layer* × point → (height, material,
   wall1, wall2, wall3, item)`. A model is admissible **iff it draws into that exactly**, which
   makes `fits?` syntactic and finite. It closed OD-2/3/4/6/7/8 — roofs and terrain are `height`,
@@ -272,7 +281,7 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
   relocated into the schema, and rung A5's real question.
 - **Constraints are in `ROUNDTRIP.md` §7 (X1–X31) with trust tiers.** T1 now holds `X1`, `X2`,
-  `X19`–`X22`, `X24`–`X46`; do not re-derive those. Everything else is still a try or a schema.
+  `X19`–`X22`, `X24`–`X47`; do not re-derive those. Everything else is still a try or a schema.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their

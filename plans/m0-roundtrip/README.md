@@ -10,11 +10,11 @@ mechanics spine rather than running beside it (decided 2026-07-23).
 
 The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** holds only the
 **settled** core — definitions, the propositions that follow from them, and the constraints
-`X1`–`X46` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X46`) — while
+`X1`–`X47` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X47`) — while
 **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar, `fits?`,
 the seam, the corpus, the method, the gates, and the open decisions.
 
-**Progress: S0–S8 done, rungs A1–A3 closed — the round trip holds over 119 committed entries** ([`STEPS.md`](STEPS.md)). Seven gates green through `tools/run_tests.sh`:
+**Progress: S0–S8 done, rungs A1–A3 closed — the round trip holds over 119 committed entries** ([`STEPS.md`](STEPS.md)). Eight gates green through `tools/run_tests.sh`:
 
 | gate | covers |
 |---|---|
@@ -23,6 +23,7 @@ the seam, the corpus, the method, the gates, and the open decisions.
 | `tests/box.loft` | the box in 12 directions, thin wall and thick wall |
 | `tests/census.loft` | the census grown by level — **law F decided at levels 1–3** (`X38`, `X42`) |
 | `tests/text.loft` | the canonical text — `write(read(T)) = T` byte-for-byte (`X39`) |
+| `tests/surface.loft` | the wall surface by averaging — exact direction and bands, no tolerance (`X47`) |
 | `tests/trip.loft` | `rt_trip` — byte-for-byte over **119 committed entries** in `corpus/a1` + `a2` + `a3` (`X41`) |
 | `tests/house.loft` | law **I**, 12/12 equivariant in cells *and* edges |
 
@@ -78,8 +79,13 @@ survives `read → draw → rebuild → write` byte-identically* — holds over 
   `form_admissible` = closed ∧ simple ∧ convex — not a better recovery. ⚠ This corrected §10.22's
   guidance toward tracing. **The L-shaped house is not admissible under this grammar.**
 
-**Rungs A1–A4 are closed.** Next is **A5** (features — doors and windows on straight sides, where
-the `surf`-slot question bites), or **S4b** (the wall surface by averaging, the render front).
+- **§10.24 — S4b.** The wall surface by averaging: direction exactly parallel to a heading
+  (24/24), position an exact rational, §6.2's bands confirmed (`1/2`, `√3/2`, ratio `√3`) and the
+  widening landing exactly. New: the *midpoint* band is 0 on one family and the full band on the
+  other — the row stagger.
+
+**Rungs A1–A4 and S0–S8 + S4b are closed.** Next is **A5** (features — doors and windows on
+straight sides, where OD-9 and the `surf`-slot question bite).
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"

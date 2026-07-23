@@ -2008,6 +2008,67 @@ invisible to the field. Recovering it would need the model to store something th
 determine — which `L3`/`I3` currently forbid. That is a real limit on what hexbody can author, and
 it is now written down rather than waiting to be discovered by someone drawing an L.
 
+## 10.24 S4b — the wall surface, by averaging
+
+The straight surface a wall run approximates is **derived by averaging the edges already there**,
+never fitted to them. That is what makes domain-A straight-wall recovery **R1**: least squares
+would introduce a residual to threshold; an average of exact rationals *is* the answer.
+
+**The step's stated blocker was already cleared.** S4b was listed as *blocked on corner ownership*
+— per-side quantities undefined until it is stated which side owns a corner edge. S4 gated that
+`side_edges`' four runs **partition** the boundary (`X36`), so they are well defined. The rule was,
+as the step itself guessed, *never missing, only unread*.
+
+### What is exact
+
+- **direction** — the summed edge vector is **exactly parallel** to a heading (zero cross product),
+  over all 24 side-runs across 6 rotations.
+- **position** — the mean of the edge midpoints, kept as an exact **rational** (numerator and
+  denominator in doubled coordinates). No float enters the derivation; floats appear only when the
+  gate prints a band in world units.
+
+### The bands, confirmed — and one §6.2 omits
+
+| family | corner band | §6.2 | midpoint band |
+|---|---|---|---|
+| east (tops), `dm = 0` | `0.50000000` | `1/2 u` ✓ | **`0`** |
+| north (sides), `dk = 0` | `0.86602540` | `√3/2 u` ✓ | `0.86602540` |
+| ratio | `1.73205081` | `√3` ✓ | |
+
+§6.2's constants are the **corner** bands — the full extent of the strip — and they hold exactly.
+The widening rule lands exactly too: `1/2 + (√3−1)/2 = √3/2`, i.e. `0.31699 m` total and
+`0.15849 m` per face.
+
+**The last column is new.** On the east family the edge **midpoints are exactly colinear** — the
+mean line passes through every one of them — while on the north family they span the full band. The
+corners hide the difference; the **row stagger** causes it. Recorded as part of `X47` because a
+model that assumed the two bands were the same quantity would be wrong on one family.
+
+### The control, and why it is not rhetoric
+
+The scatter a least-squares formulation would have to threshold: **`0` on the east family,
+`0.9167` on the north.** It is real on one family, so the claim *averaging beats fitting* is a
+measurement rather than a slogan — averaging names that same geometry as the exact constant `√3/2`
+and has nothing to tune.
+
+### Still not verified, and the gate says so
+
+That this band matches the **triangle subdivision** (each hex edge in 3, wall width `√3/6 u`).
+`X10` is tier T2 and has not been re-measured here; the gate prints it as pending rather than
+asserting it.
+
+### The check was written wrong twice before it was written right
+
+| spelling of "exact" | why it was wrong | failed |
+|---|---|---|
+| "one component is zero" | only 4 of 12 headings have one; a NE side is `(1,3)` | 16 of 24 |
+| "an integer multiple of the step" | the SUM over a run is `(0,14)` where the step is `(0,6)` | 12 of 24 |
+| **"parallel — zero cross product"** | what §6.1 claims: the *direction* is exact; the magnitude carries no claim | **0 of 24** |
+
+Both wrong versions failed on geometry that was never in doubt. This is A4's lesson in a different
+form: **when a check fails, establish what the claim actually is before assuming the subject is
+broken.** Twice in one step is worth writing down.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |

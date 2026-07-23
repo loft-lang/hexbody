@@ -1,0 +1,183 @@
+// surface — THE GATE FOR hexsurf, STEP S4b.  Every check has a control that must fire.
+//
+//   1  the mean DIRECTION is exactly PARALLEL to one of the 12 headings — zero cross product
+//   2  the BAND constants of `ROUNDTRIP` §6.2, measured: tops 1/2 u, sides sqrt(3)/2 u, ratio sqrt(3)
+//   3  the WIDENING rule: (sqrt3-1)/2 total, (sqrt3-1)/4 per face, tops only, landing on the sides' band
+//   4  the midpoint band is NOT the corner band — a fact §6.2 does not state
+//   5  control: the scatter a least-squares fit would threshold, which averaging names exactly
+//
+// NO TOLERANCE APPEARS IN ANY OF THIS.  Every constant is exact in Q(sqrt3); the comparisons below
+// use 1e-12 only to compare two floats that are algebraically identical, not to admit a range.
+use hex_field;
+use hex_grid;
+use hexform;
+use housedraw;
+use hexsurf;
+
+const W = 61;
+const H = 61;
+const Q0 = -30;
+const R0 = -30;
+const EXACT = 0.000000000001;
+
+fn fabsf(v: float) -> float { if v < 0.0 { -v } else { v } }
+
+fn main() {
+  ok = true;
+  println("=== hexsurf — the wall surface, by averaging (S4b) ===");
+
+  // ── 1. THE MEAN DIRECTION IS AN EXACT LATTICE AXIS ────────────────────────
+  //
+  // `STEPS.md` listed S4b as BLOCKED on corner ownership. It is not: `housedraw::side_edges`
+  // classifies by which local coordinate is furthest outside the massing, and S4 gated that its
+  // four runs PARTITION the boundary (`X36`). So per-side quantities are well defined, and this
+  // is the first thing that would break if they were not.
+  println("");
+  println("1. DIRECTION — the summed edge vector is exactly parallel to a heading, every rotation");
+  println("   rot side   n   dir(dk,dm)  heading  exact?");
+  ndir = 0;
+  for rt in 0..6 {
+    cells = hexset_chunk(Q0, R0, W, H);
+    types = labels_new(Q0, R0, W, H);
+    pl = plan_new(0, 0, 5, 4, rt, false);
+    draw_floor(pl, cells, types, 1);
+    for sd in 0..4 {
+      ws = surface_of(pl, cells, sd);
+      ax = surface_is_exact(ws);
+      if !ax { ndir = ndir + 1; }
+      if rt == 0 || rt == 1 {
+        println("   {rt:>3} {sd:>4} {ws.ws_n:>3}   ({ws.ws_dk:>3},{ws.ws_dm:>3}) "
+                + "  {surface_heading(ws):>6}  {ax}");
+      }
+      if ws.ws_n <= 0 { println("  FAIL: rot={rt} side={sd} has no edges"); ok = false; }
+    }
+  }
+  println("   24 side-runs over 6 rotations: {ndir} with a residual perpendicular component");
+  if ndir != 0 {
+    println("  FAIL: an averaged direction is not exactly parallel to a heading — the recovered"
+            + " direction does not equal the nominal one"); ok = false;
+  }
+  // CONTROL: a vector that is NOT a multiple of any heading step must be rejected, or "0" is free.
+  bogus = WallSurface { ws_dk: 3, ws_dm: 5, ws_num_k: 0, ws_num_m: 0, ws_den: 2, ws_n: 1 };
+  println("   CONTROL (3,5) is parallel to no heading: exact reads"
+          + " {surface_is_exact(bogus)} (must be false)");
+  if surface_is_exact(bogus) {
+    println("  FAIL: control did not fire — every direction reads as exact"); ok = false;
+  }
+
+  // ── 2. THE BAND CONSTANTS, MEASURED ───────────────────────────────────────
+  //
+  // §6.2's table gives tops 1/2 u and sides sqrt(3)/2 u with ratio sqrt(3) exactly. These are the
+  // CORNER bands — the full extent of the strip.
+  println("");
+  println("2. BANDS — the exact perpendicular extent of the strip (world units)");
+  println("   side  family        corner band     expected");
+  bcells = hexset_chunk(Q0, R0, W, H);
+  btypes = labels_new(Q0, R0, W, H);
+  bpl = plan_new(0, 0, 5, 4, 0, false);
+  draw_floor(bpl, bcells, btypes, 1);
+  tops = 0.0;
+  sides = 0.0;
+  nband = 0;
+  for bs in 0..4 {
+    bw = surface_of(bpl, bcells, bs);
+    bc = surface_band_corners(bpl, bcells, bs);
+    fam = "north (sides)";
+    want = BAND_SIDES;
+    if bw.ws_dm == 0 { fam = "east  (tops) "; want = BAND_TOPS; }
+    if bw.ws_dm == 0 { tops = bc; } else { sides = bc; }
+    println("   {bs:>4}  {fam}  {bc:11.8}   {want:11.8}");
+    if fabsf(bc - want) > EXACT { nband = nband + 1; }
+  }
+  if nband != 0 {
+    println("  FAIL: {nband} bands differ from ROUNDTRIP 6.2's exact constants"); ok = false;
+  }
+  ratio = (sides / tops) ?? 0.0;
+  println("   ratio sides/tops = {ratio:11.8}, sqrt(3) = {BAND_RATIO:11.8}");
+  if fabsf(ratio - BAND_RATIO) > EXACT {
+    println("  FAIL: the band ratio is not exactly sqrt(3)"); ok = false;
+  }
+
+  // ── 3. THE WIDENING RULE ──────────────────────────────────────────────────
+  //
+  // Both walls are presented straight and equally thick at the LARGER band. Only the tops widen,
+  // by a closed form in Q(sqrt3) — nothing measured, nothing tuned.
+  println("");
+  println("3. WIDENING — tops only, (sqrt3-1)/2 total and (sqrt3-1)/4 per face");
+  println("   tops {tops:9.7} + {WIDEN_TOTAL:9.7} = {tops + WIDEN_TOTAL:9.7},"
+          + " sides {sides:9.7}");
+  if fabsf((tops + WIDEN_TOTAL) - sides) > EXACT {
+    println("  FAIL: widening the tops does not land exactly on the sides' band"); ok = false;
+  }
+  if fabsf(WIDEN_FACE * 2.0 - WIDEN_TOTAL) > EXACT {
+    println("  FAIL: the per-face widening is not half the total"); ok = false;
+  }
+  if fabsf(WIDEN_TOTAL - (BAND_SIDES - BAND_TOPS)) > EXACT {
+    println("  FAIL: the widening constant is not the difference of the two bands"); ok = false;
+  }
+  println("   in metres (1 u = 0.8660254 m): total {WIDEN_TOTAL * 0.8660254037844386:7.5} m,"
+          + " per face {WIDEN_FACE * 0.8660254037844386:7.5} m");
+
+  // ── 4. THE MIDPOINT BAND IS NOT THE CORNER BAND ───────────────────────────
+  //
+  // Not in §6.2, and worth stating: on the EAST family the edge midpoints are exactly COLINEAR —
+  // the mean line passes through every one of them — while on the NORTH family they span the full
+  // band. The corners hide it; the stagger is what causes it.
+  println("");
+  println("4. MIDPOINTS — colinear on one family, full band on the other");
+  println("   side  family        midpoint band   corner band");
+  nmid = 0;
+  for ms in 0..4 {
+    mw = surface_of(bpl, bcells, ms);
+    mm = surface_band_mids(bpl, bcells, ms);
+    mc = surface_band_corners(bpl, bcells, ms);
+    fam2 = "north (sides)";
+    if mw.ws_dm == 0 { fam2 = "east  (tops) "; }
+    println("   {ms:>4}  {fam2}  {mm:13.8} {mc:13.8}");
+    if mw.ws_dm == 0 {
+      if fabsf(mm) > EXACT { nmid = nmid + 1; }            // east: must be exactly colinear
+    } else {
+      if fabsf(mm - BAND_SIDES) > EXACT { nmid = nmid + 1; }  // north: must span the full band
+    }
+  }
+  if nmid != 0 {
+    println("  FAIL: the midpoint bands are not 0 (east) and sqrt(3)/2 (north)"); ok = false;
+  }
+
+  // ── 5. CONTROL — WHAT A FIT WOULD HAVE TO THRESHOLD ───────────────────────
+  //
+  // Averaging returns an exact integer direction and an exact rational position, so there is
+  // nothing to tune. A least-squares formulation would report the scatter below as a residual and
+  // need a threshold for it. The control is that the scatter is REAL on one family — otherwise
+  // "averaging beats fitting" would be rhetoric.
+  println("");
+  println("5. CONTROL — the residual a least-squares fit would have to threshold");
+  reast = 0.0;
+  rnorth = 0.0;
+  for rs in 0..4 {
+    rw = surface_of(bpl, bcells, rs);
+    rr = surface_lsq_residual(bpl, bcells, rs);
+    if rw.ws_dm == 0 { reast = rr; } else { rnorth = rr; }
+  }
+  println("   east (tops)  sum of squared deviations: {reast:10.7}  -> a fit finds nothing here");
+  println("   north (sides) sum of squared deviations: {rnorth:10.7}  -> a fit reports THIS");
+  if fabsf(reast) > EXACT {
+    println("  FAIL: the east family is not exactly colinear after all"); ok = false;
+  }
+  if rnorth <= EXACT {
+    println("  FAIL: control did not fire — there is no scatter on either family, so nothing"
+            + " distinguishes averaging from fitting"); ok = false;
+  }
+  println("   averaging names that same geometry as the exact constant sqrt(3)/2 and has");
+  println("   nothing to tune — which is why domain-A straight-wall recovery is R1.");
+
+  // ── NOT VERIFIED, and said so ─────────────────────────────────────────────
+  println("");
+  println("   NOT VERIFIED (STEPS S4b item 4): that this band matches the TRIANGLE SUBDIVISION");
+  println("   (each hex edge in 3, wall width sqrt(3)/6 u). Recorded as pending, not asserted —");
+  println("   the triangle model is X10 at tier T2 and has not been re-measured here.");
+
+  println("");
+  if ok { println("=== SURFACE OK ==="); }
+  else { println("=== surface test FAILED ==="); }
+}
