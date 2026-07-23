@@ -41,6 +41,10 @@ end-result** (the exact target output for one specific input), the **invariant**
 headless dump, a round-trip test). But if the primitives already exist in the tree, the cheapest
 medium is the engine itself — write the real gate, not a model of it.
 
+**Cite the `../../SPEC.md` items this phase touches** — the invariants (`I*`) it must preserve,
+the limits (`L*`) it must not cross, the goal (`G*`) it advances. Each gate should defend a named
+spec item; a gate defending none, or a spec item no gate defends, is the thing to fix.
+
 Say so in one line if a phase has no exact-invariant surface. Silence reads as "gate done", not
 "gate N/A".
 

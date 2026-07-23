@@ -37,6 +37,8 @@ Any wall renders as its analytic surface, not its strip.
   control).
 - **Medium:** the engine itself — the primitives exist (`housedraw`, the strip), so the cheapest
   medium is the real gate + `houseshot` for the visual, not a separate model.
+- **SPEC items** ([`../../SPEC.md`](../../SPEC.md)): advances **G2**; defends **I8** (eave level
+  on the fitted line) and **I1** (the analytic surface features sit on); honours **L8** (metres).
 
 ## Phases
 

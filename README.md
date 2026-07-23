@@ -24,6 +24,10 @@ proxy contract, the destruction models, the roadmap — is in
 [`ARCHITECTURE.md`](ARCHITECTURE.md); and **what to build, in what order** — the milestones from
 the first brick to the derailment hero demo — is in [`PLAN.md`](PLAN.md).
 
+**[`SPEC.md`](SPEC.md) is the checkable build target** — the goals (G), limits (L), invariants
+(I) and contracts (K) as short, formal, falsifiable items. **Build and verify against `SPEC.md`,
+not the prose;** the prose says *why*, the spec says *what*, checkably.
+
 ## Lineage
 
 - **Built on `hex_field`** (the exact-integer field core: `HexSet`, `EdgeSet`, `Heights`,
