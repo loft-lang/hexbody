@@ -48,6 +48,12 @@ achieved*, `ROUNDTRIP` *what the objects are* — and on any question about an o
 - **Split out of `crawler`** (2026-07-23), which is the **first consumer and the proof**: if
   crawler can build its own colossus on hexbody, the harness thesis is demonstrated.
 
+> **This is the fourth implementation of these hex routines — after a Python, a C++ and a Rust
+> version — and the first with a solid base for features.** The earlier three are not a source to
+> mine (the C++ and Rust ones live on GitHub and are not worth chasing); the point is that three
+> attempts did not reach a foundation, which is what the gate-with-a-control discipline is
+> protecting.
+
 > **Most of this project's substance originated in `../crawler`, and far more of it is still
 > there than has been moved.** hexbody is a young extraction of a long-running body of design and
 > prototyping. **Read crawler before building anything here** — the odds are good that the problem

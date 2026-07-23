@@ -365,7 +365,7 @@ trustworthy **as a warning** even though the surrounding code is unverified.
 | **X7** | footprints are chosen by best **collision** match, not best **shape** match | `roundness.py`, `collision_fit.py` |
 | **X8** | a way is an exact **centreline plus offsets**, never a rasterised band | `5-geometry/ways.py` |
 | **X9** | **width-normalise before ranking by heading**, or the table inverts — this reversed a conclusion in crawler before it was caught | `directions.py` METHOD NOTE |
-| **X10** | the triangle-subdivision **wall band model is validated in 2D**; corner tests pass | `WALLS.md` |
+| **X10** | the triangle-subdivision **wall band model is validated in 2D**; corner tests pass — *"rect corners exactly 90°, rhombus 60°/120°, miter offsets correct"*. The reference is in-workspace and checkable | `WALLS.md` + `tools/wallproto/` (`walltri.py`, `hexoffset.py`, `hexdungeon.py`) |
 | **X16** | **a graph is not a field and cannot be fitted like one** — *"the roof matcher recovers a cone by solving for five parameters, but a skeleton has a variable number of nodes and no amount of least-squares will produce one"*. This is why mechanism is authored/derived, never recovered | `hexskel` |
 | **X17** | the part representation exists: *"two levels, no more: an **anchor**, and parts in the anchor's frame"*, with the granularity rule — *split where something moves independently, merge where it does not* | `hexpart` |
 

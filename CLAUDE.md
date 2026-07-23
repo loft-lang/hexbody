@@ -39,6 +39,12 @@ hexbody is the **strictest** of the three: every gate carries a control that mus
 constant is measured, every claim is falsifiable. **Adopting moros code without re-gating it
 forfeits exactly the thing this project is for.** moros is a source, never a foundation.
 
+**Why the rigor, historically.** There have been **three earlier implementations** of these hex
+routines — one Python, one C++, one Rust — and **this is the first with a solid base for
+features**. The C++ and Rust versions live somewhere on GitHub and are **not worth chasing**;
+don't go looking. What *is* in-workspace and useful: `crawler/tools/wallproto/` (the Python
+reference behind `X10`'s 2D validation) and `crawler/plans/5-geometry/*.py`.
+
 - **`crawler/plans/5-geometry/`** — the plan hexbody was seeded from, **plus Python prototypes
   that cover much of M0**: `matcher.py` (recover surfaces from a traced boundary → `rebuild`),
   `directions.py` (the 24-direction question: a hex grid has 12 natural directions, so 12 of the
