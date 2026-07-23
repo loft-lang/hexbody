@@ -904,6 +904,60 @@ renders 6 forms, runs corner tests — had already done the whole exercise on a 
 it.** `CLAUDE.md`'s own rule covers exactly this: *look in crawler before building; specifying
 from scratch what already exists is the most likely way to waste effort here.*
 
+## 10.7 The house outline — the construction that works
+
+![hexes and triangles](shots/base_hex_tri.png)
+![one triangle thick](shots/wall_inside.png)
+![the outline](shots/wall_faces.png)
+
+Blueprint phase, in the cheapest medium (`shots/wall_outline.py`, throwaway Python) as the
+design-protocol prescribes. **The result is a closed house outline** — `shots/wall_faces.png`.
+
+**1 · the triangle space.** Equilateral triangles, side `= 1/3` hex edge, so **three fit each hex
+edge**. Basis `U` at 30°, `V` at 90°, which aligns it: every hex **corner and centre is a lattice
+point**. *(Not the 18-triangle fan of `realworld/trimesh.loft` — that is a terrain mesh of skinny
+slivers from the hex centre, and it does not read as a building at all.)*
+
+**2 · the averaged line.** Per wall side (grouped by `housedraw::side_edges`' rule), take the
+boundary hex edges and average them: direction `= Σ` edge vectors normalised, position `=` mean of
+edge **midpoints**. This is the line the wobble is *about* — `ROUNDTRIP` §6.1.
+
+**3 · the wall, one triangle thick.** The triangles whose **centroid** lies within half a
+triangle-height of that line, inside the run's extent. **The triangles make their own straight
+line; they do not trace the hex boundary** — the hex wobble crosses *under* the wall. Selecting by
+what the line *touches* instead gives a **double** line, which is what `shots/avg_wall.png` shows
+and why it is kept.
+
+**4 · the two faces, equal width.** The vertical strip's own outside edges give the width —
+**`√3/6` wu `= 0.2887` wu `= 0.2500 m`** — and the horizontals take that **same width on their own
+trajectory**. That is the equalising rule, applied where it belongs: to the *faces*, not to the
+band.
+
+**5 · extend to meet.** All eight face lines run on until outer meets outer and inner meets inner,
+giving two closed mitred rings — which is also what closes the corners.
+
+| | outer | inner |
+|---|---|---|
+| ring | `±4.907 × ±3.894` wu | `±4.619 × ±3.606` wu |
+| metres | **8.499 × 6.744** | **8.000 × 6.246** |
+
+### Two measured discrepancies, not yet chased
+
+- **The strip is not centred on its averaged line.** Vertical faces land at `−0.0962 / +0.1925`
+  about the centre — offset outward by a third of the width — while the horizontals are symmetric
+  at `±0.1443`.
+- **The outline is larger than nominal**: 8.50 × 6.74 m against the house's 7.5 × 6.0 m. The
+  averaged line sits at `x = ±4.715` rather than the cell-centre line at `±4.330`, because the
+  boundary edges bulge past the centres and averaging their midpoints keeps that bulge.
+
+### What this cost, and the rule it re-proves
+
+Six wrong constructions before this one: a uniform lattice selected by point-probe (the **centroid
+bug** `WALLS.md` names explicitly), the 18-triangle fan (a terrain mesh), a band from a distance
+threshold, a strip tracing the hex boundary, and a doubled line. `tools/wallproto/walltri.py` had
+already done a version of this — **and I cited that directory as `X10`'s reference without reading
+the file.** `CLAUDE.md`'s first rule is exactly this case.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |
