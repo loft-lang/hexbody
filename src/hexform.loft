@@ -155,3 +155,26 @@ pub fn form_closes(f: Form) -> boolean {
   res = form_close(f);
   res.0 == 0 && res.1 == 0 && form_turn_sum(f) == TURN_FULL
 }
+
+// ── WHY A LATTICE POLYGON CANNOT BE A RECTANGLE (step S1, OD-11) ────────────
+//
+// Two headings 90 degrees apart exist (0 and 3), so a turtle cycle CAN turn a right angle.
+// What it cannot do is make both sides quantise the same way, and that is a property of the
+// hex lattice rather than of this table:
+//
+//     the perpendicular of (k, m) is (-m, 3k)          3*k*(-m) + m*(3k) = 0
+//     its 4*len^2 is  3m^2 + 9k^2 = 3 * (3k^2 + m^2)   EXACTLY 3x the original
+//
+// Any lattice vector along that perpendicular is an integer multiple of the primitive one,
+// so its length is sqrt(3) * (a rational) times the original — never equal, because sqrt(3)
+// is irrational.  THERE IS NO SQUARE SUBLATTICE OF A HEXAGONAL LATTICE (a lattice cannot
+// carry both 4-fold and 6-fold symmetry), so no choice of headings gives a rectangle whose
+// two sides are counted in the same unit.
+//
+// That is why `housedraw`'s Plan is a CONTINUOUS rectangle rasterised centre-in-region, and
+// why it — not a turtle cycle — is domain A's shape primitive.  See DESIGN.md §10.4.
+pub fn perp_k(k: integer, m: integer) -> integer { -m }
+pub fn perp_m(k: integer, m: integer) -> integer { 3 * k }
+
+// 4 * the squared world length of an arbitrary doubled-coordinate vector.
+pub fn vec_n2_4(k: integer, m: integer) -> integer { 3 * k * k + m * m }

@@ -65,7 +65,7 @@ arithmetic only.
   polygon at all. The rhombus `[4,5,4,5]` with turns `[2,4,2,4]` (all edge-class) replaces it.
   **This is a real constraint on S3's cross-check** — see there.
 
-## S3 · turtle → cells — `src/hexform.loft` · S · **BLOCKED on OD-11**
+## S3 · **`Plan`** → cells — `src/hexform.loft` · S *(OD-11 resolved)*
 
 Walk the cycle and produce the filled region as a `HexSet` (**fill, then take the boundary** —
 `SPEC` **I3**, never a buffered band).
@@ -78,9 +78,11 @@ Walk the cycle and produce the filled region as a `HexSet` (**fill, then take th
   turtle polygon, and its two side directions are both in units of `s` — which no pair of the 12
   headings gives, since headings 90° apart are in different length classes. So a turtle cycle
   cannot express that house.
-- **BLOCKED**: `DESIGN.md` §10.4 (**OD-11**) asks whether domain A's grammar is the turtle cycle
-  at all, or `Plan`'s `(cq, cr, wid, dep, rot, mir)` — which *is* the gated house and is equally
-  integer-parametric. S3 builds the rasteriser for whichever wins, so it should not start first.
+- **OD-11 resolved: rasterise `Plan`, not the turtle.** A lattice polygon *provably* cannot be a
+  rectangle (`X24`), so `Plan`'s `(cq, cr, wid, dep, rot, mir)` is domain A's spine. The turtle
+  `Form` is retained as the **hexagonal-tower** primitive — a different family, also in the scene.
+- **and the cross-check is back**: since S3 now rasterises the same `Plan` `housedraw` does, the
+  27-cell / 38-edge comparison against `tests/house.loft` works after all. Take it.
 - **what to cross-check instead** *(if the turtle wins)*, in preference order: (a) a **rhombus** drawn both ways — turtle
   fill vs a `Plan` with the matching parallelogram — if `housedraw` can express one; (b) Euler /
   shoelace: the enclosed cell count from an independent closed-form area, which needs no second
@@ -91,9 +93,17 @@ Walk the cycle and produce the filled region as a `HexSet` (**fill, then take th
 
 Boundary edges of the filled region, reusing `housedraw::draw_walls` unchanged.
 
-- **gate** `tests/form.loft`: the house outline gives **38 boundary edges**, matching `tests/house.loft`.
+- **gate** `tests/form.loft`: the house outline gives **38 boundary edges**, matching
+  `tests/house.loft`.
 - **control**: buffer a band instead of taking the boundary → 2 components, 0 enclosed (`I3`'s
   own control, now reachable from the new path).
+- **CORNERS MUST BE PRECISE** — the requirement `tests/house.loft` does not currently check
+  anywhere (`DESIGN.md` §10.4). Four parts: (1) the boundary is **one closed loop**, no gap at a
+  corner; (2) the corner **angle is exact** — 90° for a `Plan`; (3) the corner cell is claimed
+  **exactly once**, neither doubled nor dropped; (4) the **miter point** of the two fitted
+  surfaces sits on the exact corner. Parts 1 and 3 are checkable here on the strip; parts 2 and 4
+  need the fitted surface, so **write them into the gate red at S4** and let S8 turn them green —
+  the same discipline as `rt_trip`.
 
 ## S5 · field digest + the level-1 census — `src/formcensus.loft` + `tests/census.loft` *(new)* · S
 

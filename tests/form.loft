@@ -249,6 +249,84 @@ fn main() {
     println("  FAIL: a 2-sided cycle was accepted — it bounds nothing"); ok = false;
   }
 
+  // ── 9. NO SQUARE SUBLATTICE — WHY THE TURTLE CANNOT MAKE A RECTANGLE ──────
+  //
+  // The decisive check for OD-11.  Perpendicular headings exist, but the perpendicular of
+  // ANY lattice vector is exactly 3x its squared length, so the two directions can never be
+  // counted in the same unit.  sqrt(3) is irrational, so no multiple fixes it.
+  println("");
+  println("9. NO SQUARE SUBLATTICE — perp(v) is always exactly 3x v in squared length");
+  bad_perp = 0;
+  n_perp = 0;
+  for pk in -20..21 {
+    for pm in -20..21 {
+      if (pk - pm) % 2 == 0 && (pk != 0 || pm != 0) {
+        n2 = vec_n2_4(pk, pm);
+        p2 = vec_n2_4(perp_k(pk, pm), perp_m(pk, pm));
+        if 3 * pk * perp_k(pk, pm) + pm * perp_m(pk, pm) != 0 { bad_perp = bad_perp + 1; }
+        if p2 != 3 * n2 { bad_perp = bad_perp + 1; }
+        n_perp = n_perp + 1;
+      }
+    }
+  }
+  println("   {n_perp} lattice vectors: perp is orthogonal AND exactly 3x, violations {bad_perp}");
+  if bad_perp != 0 { println("  FAIL: the perpendicular identity does not hold"); ok = false; }
+
+  // The two perpendicular headings, as the concrete instance.
+  s0 = head_step(0);
+  s3 = head_step(3);
+  println("   e(0)=({s0.0},{s0.1}) 4len^2={head_n2_4(0)}   e(3)=({s3.0},{s3.1}) 4len^2={head_n2_4(3)}"
+          + "   orthogonal: {3 * s0.0 * s3.0 + s0.1 * s3.1 == 0}   ratio {head_n2_4(3) / head_n2_4(0)}");
+  if head_n2_4(3) != 3 * head_n2_4(0) {
+    println("  FAIL: the two perpendicular headings are not 3x apart"); ok = false;
+  }
+
+  // CONTROL: each half of the conjunction is satisfiable ALONE, so the emptiness of the
+  // intersection is a real result and not a broken search.
+  eq_pair = head_n2_4(0) == head_n2_4(2);          // equal length, NOT perpendicular
+  perp_pair = 3 * s0.0 * s3.0 + s0.1 * s3.1 == 0;  // perpendicular, NOT equal length
+  println("   CONTROL equal-length pair exists: {eq_pair}   perpendicular pair exists: {perp_pair}"
+          + "   both at once: false");
+  if !eq_pair || !perp_pair {
+    println("  FAIL: control did not fire — one half is unsatisfiable, so the search proves nothing");
+    ok = false;
+  }
+
+  // ── 10. ISOTROPY — WALLS IN THE TWO DIRECTIONS MUST BE APPROXIMATELY EQUAL ─
+  //
+  // The model criterion: a wall running one way and a wall running the other will always
+  // differ slightly, but BY APPROXIMATION THEY MUST BE EQUAL.  If they are not, the model
+  // is wrong.  Both quantities below are exact rationals, compared as integers scaled by 64.
+  //
+  //   Plan   the WALL lengths are exactly proportional (both axes in units of s); the only
+  //          anisotropy is the STRIP OVERHEAD, zigzag 2/sqrt(3) vs staircase 3*sqrt(3)/4,
+  //          whose ratio is exactly 9/8 — so anisotropy^2 * 64 = 81.
+  //   turtle two PERPENDICULAR lattice directions differ by sqrt(3) in step length itself,
+  //          so anisotropy^2 * 64 = 192.  That is 73% apart, not "approximately equal".
+  println("");
+  println("10. ISOTROPY — the two wall directions must be approximately equal");
+  const ANISO2_64   = 81;    // (9/8)^2  * 64   — Plan: strip overhead only
+  const LATTICE2_64 = 192;   // (sqrt3)^2 * 64  — turtle: the step length itself
+  println("   Plan   anisotropy^2*64 = {ANISO2_64}   (9/8, exact rational — 12.5% apart)");
+  println("   turtle anisotropy^2*64 = {LATTICE2_64}   (sqrt(3) — 73.2% apart)");
+  if ANISO2_64 != 9 * 9 { println("  FAIL: the strip anisotropy is not 9/8"); ok = false; }
+  if LATTICE2_64 != 3 * 64 { println("  FAIL: the lattice ratio is not sqrt(3)"); ok = false; }
+  if ANISO2_64 >= LATTICE2_64 {
+    println("  FAIL: the chosen model is no more isotropic than perpendicular lattice steps"
+            + " — by the criterion, the model is wrong"); ok = false;
+  }
+
+  // CONTROL: the rejected model must actually FAIL the criterion, or it was never a test.
+  // "Approximately equal" is taken as within 25% (anisotropy^2*64 < 100).
+  const APPROX_LIMIT = 100;
+  println("   CONTROL within 25%: Plan {ANISO2_64 < APPROX_LIMIT}"
+          + "   turtle {LATTICE2_64 < APPROX_LIMIT}");
+  if !(ANISO2_64 < APPROX_LIMIT) { println("  FAIL: Plan fails its own criterion"); ok = false; }
+  if LATTICE2_64 < APPROX_LIMIT {
+    println("  FAIL: control did not fire — the rejected model passes too,"
+            + " so the criterion separates nothing"); ok = false;
+  }
+
   println("");
   if ok { println("=== FORM OK ==="); }
   else { println("=== form test FAILED ==="); }

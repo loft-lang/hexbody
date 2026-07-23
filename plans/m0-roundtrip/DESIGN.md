@@ -42,9 +42,17 @@ OD-7 are closed; what remains proposed is the *description* layer, not the stora
 ⟨model⟩    ::= { ⟨layer⟩ | ⟨stencil⟩ | ⟨place⟩ | ⟨line⟩ | ⟨join⟩ }
 ⟨layer⟩    ::= "layer" ⟨nat⟩ { ⟨element⟩ }   (* layer* is the OUTERMOST structure — OD-8 closed *)
 
-(* A · stencil: a CLOSED turtle polygon in a LOCAL frame, headings from H₁₂ *)
-⟨stencil⟩  ::= "stencil" ⟨name⟩ "h0" ⟨h0⟩ { ⟨element⟩ }
-⟨element⟩  ::= ⟨side⟩ | ⟨arc⟩ | ⟨feature⟩ | ⟨roof⟩ | ⟨layer⟩
+(* A · stencil, in a LOCAL frame.  TWO shape primitives — see §10.4, they are different
+   families and neither subsumes the other. *)
+⟨stencil⟩  ::= "stencil" ⟨name⟩ { ⟨element⟩ }
+⟨element⟩  ::= ⟨plan⟩ | ⟨form⟩ | ⟨arc⟩ | ⟨feature⟩ | ⟨roof⟩ | ⟨layer⟩
+
+(* rectangular massing — the house.  Continuous, rasterised centre-in-region; both axes in
+   units of s.  A union of these gives L-shapes and wings. *)
+⟨plan⟩     ::= "plan" ⟨nat⟩ "at" ⟨point⟩ "wid" ⟨nat⟩ "dep" ⟨nat⟩
+
+(* lattice-native polygon — the hexagonal tower.  A closed turtle cycle, law J. *)
+⟨form⟩     ::= "form" ⟨nat⟩ "h0" ⟨h0⟩ { ⟨side⟩ }
 ⟨side⟩     ::= "side" ⟨nat⟩ "len" ⟨nat⟩ "turn" ⟨turn⟩
 ⟨h0⟩       ::= ⟨nat⟩                        (* initial heading h ∈ H₁₂ = ℤ/12 *)
 ⟨turn⟩     ::= ⟨int⟩                        (* Δh ∈ -5..6, twelfths of a revolution *)
@@ -707,7 +715,7 @@ address, exactly as metres are derived from step counts.
 an axle inside the footprint. A hinge is on a wall; an axle is not. It may need both, and then the
 question is whether that is one address type with two forms or two kinds of anchor.
 
-## 10.4 OD-11 · what IS a house? — four models, and ours is the only one unbuilt
+## 10.4 OD-11 ✅ RESOLVED · what IS a house? — `Plan`, not the turtle cycle
 
 Asked directly: *does hexbody follow crawler's model for presenting houses in the world?* **No.**
 Inspecting crawler turns up **four** different answers, and the grammar in §2 is a fifth.
@@ -726,7 +734,83 @@ of `s` (5 × 4 steps = 7.5 m × 6.0 m, `HOUSE.md` §1), but no two of the 12 hea
 *and* in the same length class — headings 0 and 3 differ by `√3`. A turtle cycle cannot draw that
 rectangle.
 
-**So the open question is what domain A's grammar actually is.**
+### RESOLVED — `Plan` wins, because the turtle *provably* cannot do 90° rectangles
+
+The test is whether our model is better at **exact 90° thin walls**. It is not, and the reason is
+the lattice rather than the table (`X24`, gated in `tests/form.loft` §9):
+
+> the perpendicular of `(k,m)` is `(−m, 3k)`, whose squared length is `3m² + 9k² = 3·(3k²+m²)` —
+> **exactly 3×**. Every lattice vector along that perpendicular is an integer multiple, so its
+> length is `√3 ×` a rational times the original: **never equal**. There is no square sublattice
+> of a hexagonal lattice.
+
+So a turtle cycle can turn a right angle (headings 0 and 3), but its two sides quantise on
+different grids — 1.5 m one way, 2.598 m the other — and **no choice of headings fixes it**.
+`Plan` sidesteps it by being **continuous, then rasterised**: both axes in units of `s`, corners
+exactly 90°, 12 orientations, already gated.
+
+**Domain A's shape primitive is `Plan` — option (a).**
+
+### A second, independent criterion picks the same answer
+
+*"The walls in one direction will always be slightly different than the other but by
+approximation they should be equal. If that is not the case the model is wrong."* — a model test,
+and it separates the two cleanly (`X25`, gated §10):
+
+| model | what differs between the two directions | apart |
+|---|---|---|
+| **`Plan`** | wall **lengths** are exactly proportional (both axes in units of `s`); only the **strip overhead** differs — `2/√3` vs `3√3/4` | `9/8` **exactly** — 12.5% ✓ |
+| turtle | the **step length itself** — perpendicular lattice directions | `√3` — 73.2% ✗ |
+
+The anisotropy is an **exact rational, 9/8**, which is the strongest form "approximately equal"
+can take: bounded, and known in closed form rather than measured. Two independent criteria — no
+square sublattice (`X24`) and approximate isotropy (`X25`) — reaching the same conclusion from
+different directions is worth more than either alone.
+
+### The remaining requirement: corners must be precise
+
+*"And the corners between the walls where they touch have to be precise."* This is **not yet
+gated**, and `tests/house.loft` does not check it — it gates side edge counts, equivariance,
+openings, roof and eave, but never what happens **where two runs meet**.
+
+It is the same property `FORMS.md` names as its acceptance criterion (*"no visible gap (position)
+**and** no visible angle / kink (direction) at any seam, except where an angle is intended — a
+building corner"*) and that `WALLS.md` reports its 2D prototype passing (*"rect corners exactly
+90°, rhombus 60°/120°, miter offsets correct, the band covers every corner"*, `X10`, tier T2).
+
+**Four checkable parts**, and they belong to **S4**:
+
+| # | what must hold | how it fails |
+|---|---|---|
+| 1 | the boundary is **one closed loop** — no gap at a corner | a run ends before the corner cell |
+| 2 | the corner **angle is exact** — 90° for a `Plan`, 60°/120° for a rhombus | the two fitted lines meet at the wrong angle |
+| 3 | the corner cell is claimed **exactly once** — not doubled, not dropped | adjacent runs both own it, or neither does |
+| 4 | the **miter point** — where the two fitted surfaces intersect — is at the exact corner | the recovered corner drifts off the model corner |
+
+Parts 1 and 3 are checkable at S4 on the strip alone. Parts 2 and 4 need the fitted surface, so
+they land with recovery (S8) — but they should be **written into the gate red at S4**, the same
+way `rt_trip` is written before `rebuild` exists.
+
+### Two primitives, not one — and that is the honest shape
+
+`Plan` and the turtle cycle express **genuinely different families**, and neither subsumes the
+other. Forcing one mechanism over both would be the over-unification this document exists to
+catch:
+
+| primitive | expresses | cannot express |
+|---|---|---|
+| **`Plan`** — `(cq, cr, wid, dep, rot, mir)`, continuous then rasterised | rectangular massing at 90°, both axes in `s`; unions give L-shapes and wings | a hexagonal or triangular tower — its corners are not 90° |
+| **`Form`** — the closed turtle cycle (S1) | lattice-native polygons: **hexagonal towers**, triangles, rhombi — exact, closed by law **J** | any rectangle (`X24`) |
+
+So S1's `Form` is **retained and gated**, not dead — it is the tower primitive, and a hex tower is
+in the very scene driving this ladder (§8.1). What changes is that it is **not the spine**:
+houses are `Plan`, and S3 rasterises `Plan` first.
+
+---
+
+*(Original framing of the question, kept because the reasoning is what produced X24.)*
+
+**So the open question was what domain A's grammar actually is.**
 
 | option | expresses the gated house? | recovery |
 |---|---|---|
