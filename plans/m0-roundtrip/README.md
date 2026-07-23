@@ -10,11 +10,11 @@ mechanics spine rather than running beside it (decided 2026-07-23).
 
 The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** holds only the
 **settled** core — definitions, the propositions that follow from them, and the constraints
-`X1`–`X38` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X38`) — while
+`X1`–`X39` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X39`) — while
 **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar, `fits?`,
 the seam, the corpus, the method, the gates, and the open decisions.
 
-**Progress: S0, S1, S2b, S2c, S3, S4, S5 done** ([`STEPS.md`](STEPS.md)). Five gates green through
+**Progress: S0, S1, S2b, S2c, S3, S4, S5, S6 done** ([`STEPS.md`](STEPS.md)). Six gates green through
 `tools/run_tests.sh`:
 
 | gate | covers |
@@ -23,6 +23,7 @@ the seam, the corpus, the method, the gates, and the open decisions.
 | `tests/wall.loft` | the 24-direction wall — `X26`–`X32`, the first constraints hexbody *discovered* rather than inherited, including **two defects every other gate was green through** |
 | `tests/box.loft` | the box in 12 directions, thin wall and thick wall |
 | `tests/census.loft` | the level-1 census — **law F decided at level 1** (`X38`) |
+| `tests/text.loft` | the canonical text — `write(read(T)) = T` byte-for-byte (`X39`) |
 | `tests/house.loft` | law **I**, 12/12 equivariant in cells *and* edges |
 
 Three things are settled in [`DESIGN.md`](DESIGN.md):
@@ -41,7 +42,12 @@ Three things are settled in [`DESIGN.md`](DESIGN.md):
   collisions, 0 unexplained — law F holds at level 1**. It found a requirement for S6: the
   canonical text must fix the starting **corner**, not just the winding.
 
-Next is **S6** (canonical text). `rebuild` and the corpus do not exist yet.
+- **§10.16 — S6.** The canonical text: `write(read(T)) = T` byte-for-byte, and the **start corner**
+  fixed by the smallest `(turns, lens, h0)`. 30 spellings collapse to 10 canonical texts; what
+  remains is orientation, which placement carries.
+
+Next is **S7** (the corpus, and `rt_trip` written before `rebuild` exists). `rebuild` does not
+exist yet.
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"

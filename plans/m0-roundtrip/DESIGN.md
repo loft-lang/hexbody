@@ -1566,6 +1566,54 @@ correctly before it could be checked at all**, and the wrong statement was confi
 enough to look like a real finding. That is the census hazard `X9` warns about in a different
 dress: a confident, ranked, wrong table.
 
+## 10.16 S6 — the canonical text, and the corner rule that closes it
+
+The round-trip gate is a **byte diff** (`P3`). That only means anything if a model has **exactly
+one** spelling — so the canonical text and the ambiguity rules are one deliverable, not two.
+
+Two things make a cycle ambiguous:
+
+| ambiguity | fixed by | when |
+|---|---|---|
+| the **winding** — the same shape walked the other way has turn total `−12` | law J requires `+12`, so C3 picks one | settled at **S1** |
+| the **start corner** — a closed cycle has no first corner, so `[2,5,5]`, `[5,5,2]`, `[5,2,5]` are one triangle from three places | the rule below | **S6**, required by `X38` |
+
+### The rule
+
+> Of the `n` cyclic spellings, the canonical one is the **lexicographically smallest
+> `(turns, lens, h0)`**.
+
+Deterministic, total, and it needs no tie-break bolted on top: a fully periodic cycle like
+`[4,4,4]` has several spellings with *identical* turns, and the `h0` component decides between
+them. Measured: every re-spelling of every admitted cycle canonicalises to the same text — 30
+cycles × 2 alternative corners, 0 disagreements — and the control confirms the **raw** spellings
+genuinely differ, so there was something to canonicalise.
+
+### The collapse is exact
+
+```
+30 enumerated spellings  ->  10 canonical texts     ( = 10 cycles x 3 corners )
+```
+
+and what remains differs **only** in `h0`. The gate checks that directly: every pair sharing a
+field whose canonical texts differ does so in the `h0` field and nowhere else. That closes the loop
+S5 opened — collisions were orientation **and** re-spelling; re-spelling is now gone, orientation
+remains and is placement's job.
+
+### Orientation is deliberately not quotiented
+
+`h0` is the stencil's **own authored heading**; placement carries `orient` separately (§3's
+example: `place house1 at 3,-2 orient 4 flip`). Two stencils differing only by `h0` are different
+authorings that law **I** makes interchangeable at *use* time. Folding orientation into the text
+would conflate authoring with placement and leave the `place` element with nothing to say.
+
+### The parser refuses; it does not repair
+
+A reordered field (`turn` before `len`) and out-of-order side indices both parse to **0 sides**.
+That strictness is the point: a lenient reader would admit a second spelling of one model, and the
+byte diff would stop meaning anything. The control checks the other direction too — a well-formed
+text must still parse, or the refusals prove only that the reader rejects everything.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |

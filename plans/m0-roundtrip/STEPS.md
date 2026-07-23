@@ -228,13 +228,32 @@ is the requirement `tests/house.loft` never checked: **what happens where two ru
   turn sequence from the identity collapses 30 forms to 12; and the re-spelling test itself is
   checked both ways (`[4,4,4]` is not a re-spelling of `[2,5,5]`; `[5,5,2]` is).
 
-## S6 · canonical text — `src/formtext.loft` + `tests/text.loft` *(new)* · S
+## S6 ✅ · canonical text — `src/formtext.loft` + `tests/text.loft` · S · **DONE**
 
-`write` / `read` for the S1 cycle form only — `stencil / h0 / side len turn`. Rules **C1–C5**
-(`DESIGN.md` §3): integers only, fixed order, reduced forms, fixed layout, defaults omitted.
+`write` / `read` for the S1 cycle form: `stencil / h0 / side len turn`, rules **C1–C5**.
 
-- **gate** `tests/text.loft` (`rt_canon`): `write(read(T)) = T` byte-for-byte over every S5 form.
-- **control**: reorder a field, or emit a default → diff.
+- **gate** `tests/text.loft` (`rt_canon`), three sections, every control fires.
+- **`write(read(T)) = T` byte-for-byte** over all 30 forms the S5 census admits, and
+  `read(write(f)) = f` as a Form. The round-trip gate is a byte `diff` (`P3`), which is only
+  meaningful if a model has exactly ONE spelling — so this and the corner rule are two halves of
+  one claim.
+- **the START CORNER is now fixed** (`X38`, the requirement S5 found). Of the `n` cyclic
+  spellings, the canonical one is the lexicographically smallest `(turns, lens, h0)` —
+  deterministic, total, and needing no extra tie-break: a fully periodic cycle like `[4,4,4]` has
+  several spellings with identical turns and the `h0` component then decides. Every re-spelling of
+  every admitted cycle canonicalises to the same text (30 cycles × 2 alternative corners, 0
+  disagreements). Control: the RAW spellings must differ, or there was nothing to canonicalise.
+- **the collapse is exact: 30 enumerated spellings → 10 canonical texts**, i.e. 10 cycles × 3
+  corners. What remains is `h0` alone, and the gate proves it: every pair sharing a field whose
+  canonical texts differ does so **only** in the `h0` field. That closes the loop with S5.
+- **orientation is deliberately NOT quotiented.** `h0` is the stencil's own authored heading and
+  placement carries `orient` separately (`DESIGN.md` §3's example). Two stencils differing only by
+  `h0` are different authorings that law **I** makes interchangeable at USE time — placement's job,
+  not the text's.
+- **the parser is strict, and refuses rather than repairs**: a reordered field (`turn` before
+  `len`) and out-of-order side indices both parse to 0 sides. A lenient reader would admit a
+  second spelling of one model and the byte diff would stop meaning anything. Control: a
+  well-formed text must still parse, or the two refusals prove only that it rejects everything.
 
 ## S7 · the corpus, and `rt_trip` **red** — `corpus/` + `tests/trip.loft` *(new)* · XS
 

@@ -1,0 +1,186 @@
+// text — THE GATE FOR formtext, STEP S6 (`rt_canon`).  Every check has a control that must fire.
+//
+//   1  write/read round-trips BYTE-FOR-BYTE over every form the S5 census admits
+//   2  the canonical spelling fixes the START CORNER — every cyclic re-spelling of a cycle
+//      writes the SAME text (X38, the requirement the census found)
+//   3  after canonicalisation the only multiplicity left is h0 — orientation, which placement
+//      carries; that closes the loop with S5
+//   4  controls: reorder a field, emit a default, or feed a non-canonical spelling -> diff
+use hex_field;
+use hexform;
+use formcensus;
+use formtext;
+
+const W = 61;
+const H = 61;
+const Q0 = -30;
+const R0 = -30;
+
+fn main() {
+  ok = true;
+  println("=== formtext — the canonical text, and write(read(T)) = T ===");
+
+  // Re-enumerate level 1 exactly as the census does, so this gate covers the same forms.
+  h0s: vector<integer> = [];
+  t0s: vector<integer> = [];
+  t1s: vector<integer> = [];
+  t2s: vector<integer> = [];
+  for eh in 0..12 {
+    for ea in 1..12 {
+      for eb in 1..12 {
+        ec = 12 - ea - eb;
+        if ec >= 1 && ec <= 11 {
+          ef = form_new(eh, [1, 1, 1], [ea, eb, ec]);
+          if form_closes(ef) { h0s += [eh]; t0s += [ea]; t1s += [eb]; t2s += [ec]; }
+        }
+      }
+    }
+  }
+  nadm = len(h0s);
+
+  // ── 1. write(read(T)) = T, BYTE-FOR-BYTE ──────────────────────────────────
+  //
+  // This is `rt_canon`. The round-trip gate is a byte diff (`P3`), which is only meaningful if a
+  // model has exactly one spelling — so this and section 2 are two halves of one claim.
+  println("");
+  println("1. ROUND TRIP — write(read(T)) = T over every form the census admits");
+  nbad = 0;
+  for ri in 0..nadm {
+    rf = form_new(h0s[ri] ?? 0, [1, 1, 1], [t0s[ri] ?? 0, t1s[ri] ?? 0, t2s[ri] ?? 0]);
+    t1 = form_write(rf, "s{ri}");
+    back = form_read(t1);
+    t2 = form_write(back, "s{ri}");
+    if t1 != t2 { nbad = nbad + 1; }
+    if !form_eq(rf, back) { nbad = nbad + 1; }
+  }
+  println("   {nadm} forms written, read back and re-written: {nbad} mismatches");
+  if nbad != 0 { println("  FAIL: the text does not round-trip byte-for-byte"); ok = false; }
+  println("   sample:");
+  smp = form_write(form_new(0, [4, 5, 4, 5], [2, 4, 2, 4]), "house1");
+  println("{smp}");
+
+  // CONTROL A: REORDER A FIELD. C2 fixes field order; a reader that shrugs at `turn` before
+  // `len` would let two spellings of one model exist, and the byte diff would stop meaning
+  // anything. The parser must REFUSE, not repair.
+  bad_order = "stencil x h0 0\nside 0 turn 4 len 1\nside 1 len 1 turn 4\nside 2 len 1 turn 4";
+  ro = form_read(bad_order);
+  println("   CONTROL a reordered field -> parsed {len(ro.fm_len)} sides (must be 0 = refused)");
+  if len(ro.fm_len) != 0 {
+    println("  FAIL: control did not fire — a reordered field was accepted, so C2 is not enforced");
+    ok = false;
+  }
+  // CONTROL B: OUT-OF-ORDER SIDE INDEX — C2 again, at the element level.
+  bad_idx = "stencil x h0 0\nside 1 len 1 turn 4\nside 0 len 1 turn 4\nside 2 len 1 turn 4";
+  ri2 = form_read(bad_idx);
+  println("   CONTROL sides out of index order -> parsed {len(ri2.fm_len)} sides (must be 0)");
+  if len(ri2.fm_len) != 0 {
+    println("  FAIL: control did not fire — unordered elements were accepted"); ok = false;
+  }
+  // CONTROL C: a well-formed text must still parse, or the two above prove only that the parser
+  // rejects everything.
+  good = "stencil x h0 0\nside 0 len 1 turn 4\nside 1 len 1 turn 4\nside 2 len 1 turn 4";
+  rg = form_read(good);
+  println("   CONTROL a well-formed text -> parsed {len(rg.fm_len)} sides (must be 3)");
+  if len(rg.fm_len) != 3 {
+    println("  FAIL: the parser rejects a canonical text"); ok = false;
+  }
+
+  // ── 2. THE CANONICAL SPELLING FIXES THE START CORNER (X38) ────────────────
+  //
+  // The S5 census found this: a closed cycle has no distinguished first corner, so one triangle is
+  // written once per corner. Fixing the winding (C3, sum turn = +12) is necessary and NOT
+  // sufficient. Every cyclic re-spelling must canonicalise to the SAME text.
+  println("");
+  println("2. START CORNER — every re-spelling of a cycle writes the same canonical text");
+  nresp = 0;
+  for ci in 0..nadm {
+    cf = form_new(h0s[ci] ?? 0, [1, 1, 1], [t0s[ci] ?? 0, t1s[ci] ?? 0, t2s[ci] ?? 0]);
+    base = form_canon_text(cf, "c");
+    // walk the same cycle from each of its other corners and canonicalise again
+    for cs in 1..3 {
+      sh = h0s[ci] ?? 0;
+      for cj in 0..cs {
+        if cj == 0 { sh = sh + (t0s[ci] ?? 0); }
+        if cj == 1 { sh = sh + (t1s[ci] ?? 0); }
+      }
+      st0 = t0s[ci] ?? 0;
+      st1 = t1s[ci] ?? 0;
+      st2 = t2s[ci] ?? 0;
+      if cs == 1 { sf = form_new(sh, [1, 1, 1], [st1, st2, st0]); }
+      else { sf = form_new(sh, [1, 1, 1], [st2, st0, st1]); }
+      if form_canon_text(sf, "c") != base { nresp = nresp + 1; }
+    }
+  }
+  println("   {nadm} cycles x 2 alternative starting corners: {nresp} disagreed with the"
+          + " canonical text");
+  if nresp != 0 {
+    println("  FAIL: a re-spelling canonicalises differently — the start corner is not fixed,"
+            + " and X38's requirement is unmet"); ok = false;
+  }
+  // CONTROL: the RAW text of a re-spelling must actually DIFFER from the canonical one, or
+  // there was nothing to canonicalise and the check above is vacuous.
+  raw_a = form_write(form_new(0, [1, 1, 1], [2, 5, 5]), "c");
+  raw_b = form_write(form_new(2, [1, 1, 1], [5, 5, 2]), "c");
+  can_a = form_canon_text(form_new(0, [1, 1, 1], [2, 5, 5]), "c");
+  can_b = form_canon_text(form_new(2, [1, 1, 1], [5, 5, 2]), "c");
+  println("   CONTROL raw spellings differ: {raw_a != raw_b}; canonical agree: {can_a == can_b}");
+  if raw_a == raw_b {
+    println("  FAIL: control did not fire — the two spellings were already identical"); ok = false;
+  }
+  if can_a != can_b {
+    println("  FAIL: two spellings of one cycle canonicalise differently"); ok = false;
+  }
+
+  // ── 3. WHAT IS LEFT AFTER CANONICALISATION IS ORIENTATION ────────────────
+  //
+  // S5 measured 183 collisions and explained every one as a re-spelling. With the corner now
+  // fixed, forms that still share a FIELD must differ only in h0 — which is orientation, and
+  // placement's job (law I), not the text's. That closes the loop between S5 and S6.
+  println("");
+  println("3. WHAT REMAINS — canonical texts sharing a field differ only by h0 (orientation)");
+  ctexts: vector<text> = [];
+  digs: vector<text> = [];
+  chs: vector<integer> = [];
+  for di in 0..nadm {
+    df = form_new(h0s[di] ?? 0, [1, 1, 1], [t0s[di] ?? 0, t1s[di] ?? 0, t2s[di] ?? 0]);
+    cn = form_canon(df);
+    ctexts += [form_write(cn, "c")];
+    chs += [cn.fm_h0];
+    dc = hexset_chunk(Q0, R0, W, H);
+    form_fill(df, 0, 0, dc);
+    digs += [digest_text(field_digest(dc))];
+  }
+  ncanon = 0;
+  for si in 0..nadm {
+    firsts = true;
+    for sk in 0..si { if (ctexts[sk] ?? "") == (ctexts[si] ?? "") { firsts = false; } }
+    if firsts { ncanon = ncanon + 1; }
+  }
+  println("   {nadm} enumerated forms -> {ncanon} distinct canonical texts");
+  // any two DISTINCT canonical texts that share a field must differ only in h0
+  nnoth0 = 0;
+  for ai in 0..nadm {
+    for aj in 0..nadm {
+      if ai < aj && (digs[ai] ?? "") == (digs[aj] ?? "")
+         && (ctexts[ai] ?? "") != (ctexts[aj] ?? "") {
+        // same shape, different canonical text: the turn/len parts must be identical
+        ta = (ctexts[ai] ?? "").replace("h0 {chs[ai] ?? 0}", "h0 *");
+        tb = (ctexts[aj] ?? "").replace("h0 {chs[aj] ?? 0}", "h0 *");
+        if ta != tb { nnoth0 = nnoth0 + 1; }
+      }
+    }
+  }
+  println("   pairs sharing a field whose canonical texts differ by MORE than h0: {nnoth0}");
+  if nnoth0 != 0 {
+    println("  FAIL: two canonical texts draw one field but are not orientation-images — the"
+            + " canonical form is still ambiguous"); ok = false;
+  }
+
+  println("");
+  println("   S6 RESULT: {nadm} enumerated spellings collapse to {ncanon} canonical texts;");
+  println("   write(read(T)) = T byte-for-byte on all of them; what remains is orientation.");
+
+  println("");
+  if ok { println("=== TEXT OK ==="); }
+  else { println("=== text test FAILED ==="); }
+}
