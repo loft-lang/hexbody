@@ -20,7 +20,7 @@ has not been seen to fire.
 
 ## 0. The concrete end-result (measured, not hypothesised)
 
-The 5 × 4 house (7.5 m × 6.0 m), the fixture `housetest` already gates. A wall is a strip of
+The 5 × 4 house (7.5 m × 6.0 m), the fixture `tests/house.loft` already gates. A wall is a strip of
 hex edges, and how it runs depends on its heading — this is the "two not-equal directions" in
 numbers, measured across all 12 orientations:
 
@@ -200,10 +200,10 @@ gaps.
 **Exists:**
 - `place_opening` + `side_edges` (hexbody `housedraw`) — n edges centred at `t`, annotating
   the surf slot, never deleting; and the ordered per-side edge list with its `t`. Gated by
-  `housetest` (door 0.87 m, window 0 edges, nothing deleted).
+  `tests/house.loft` (door 0.87 m, window 0 edges, nothing deleted).
 - `Features` / `feature_add` / `apply_features` / `surf_param`, and `Materials` with the full
   property vector, in `hexedge` (extraction to the shared lib pending — see ARCHITECTURE §*core*).
-- The two-direction measurement itself — `housetest` gate 7.
+- The two-direction measurement itself — `tests/house.loft` gate 7.
 
 **Gaps this design names:**
 1. **The FIT for thin walls** — the surface layer must be *recovered* from the two-direction

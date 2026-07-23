@@ -12,9 +12,12 @@ The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** hol
 **settled** core — definitions, the propositions that follow from them, and the inherited
 constraints `X1`–`X19` **with trust tiers** (only `X19` is T1) — while
 **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar, `fits?`,
-the seam, the corpus, the method, the gates, and the open decisions. No code yet; of the
-proposed gates exactly one is green — `rt_orient` (law **I**), `housetest` 12/12 in cells *and*
-edges.
+the seam, the corpus, the method, the gates, and the open decisions.
+
+**Progress: S0 done** ([`STEPS.md`](STEPS.md)). Green today: `rt_orient` (law **I**) —
+`tests/house.loft`, 12/12 in cells *and* edges — plus `tests/form.loft`, which re-measured
+**`X1`**/**`X2`** to **T1** and added **`X20`** (the heading table is parity-free in doubled
+`(k,m)`). `rebuild`, the census and the corpus do not exist yet.
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"
@@ -148,7 +151,7 @@ than going silently ungated.
 
 [`STEPS.md`](STEPS.md) — phase A broken into **nine small safe steps** (`S0`–`S8`), each with its
 file, its gate and its control. `S0`–`S2` are integer-only and convert `X1`/`X2` from inherited
-claims to our own **T1**; `S3`–`S4` cross-check the new turtle path against `housetest`'s existing
+claims to our own **T1**; `S3`–`S4` cross-check the new turtle path against `tests/house.loft`'s existing
 27 cells / 38 edges; `S8` (`rebuild`) is the only M-sized step in the ladder.
 
 ## See also

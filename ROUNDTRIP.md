@@ -63,14 +63,14 @@ Stencils; `X1`, `X2`.)*
 
 ### 2.1 `H₁₂` has two classes, with different step lengths
 
-| class | `h` | lattice step | `‖step‖` | strip | measured by `housetest` |
+| class | `h` | lattice step | `‖step‖` | strip | measured by `tests/house.loft` |
 |---|---|---|---|---|---|
 | **edge** | even | neighbour vector | `s` | zigzag, 2 axes | `ratio 2⁄√3 = 1.15470` |
 | **vertex** | odd | corner vector | `s√3` | staircase, 3 axes | `ratio 3√3⁄4 = 1.29904` |
 
 The 6 rotations act by `h ↦ h + 2`, so the two classes **never mix**. A reflection acts by
 `h ↦ 6 − h` when it is `k → −k`, or `h ↦ −h` when it is `m → −m` — both are lattice reflections,
-differing by a 180° rotation. `formtest` gates the first, since `X2` states `k → −k`.
+differing by a 180° rotation. `tests/form.loft` gates the first, since `X2` states `k → −k`.
 `O` acts on stencils, `H₁₂` indexes their sides — `|O| = |H₁₂| = 12` is a coincidence, not an
 identification.
 
@@ -336,11 +336,11 @@ following are **theorems**, not design choices:
 
 | | status |
 |---|---|
-| **law I** — `∀m, o ∈ O, v ∈ Λ. draw(τ_v ∘ o · m) = τ_v ∘ o · draw(m)` | **GREEN** — `housetest`, 12/12 equivariant in cells *and* edges, mismatched 0 |
-| **`X1`** the 60° rotation is exact and acts as `h ↦ h+2`; **`X2`** the reflection is exact, `h ↦ 6−h` | **GREEN** — `formtest` (S0): 625 cells, 0 non-integral images, 0 six-rotations-not-identity |
-| **`X20`** the heading table is **parity-free** in doubled `(k,m)` | **GREEN** — `formtest`, against `hex_field`'s own `nb_q`/`nb_r` |
-| the two `H₁₂` step-length classes (§2.1) — `2⁄√3`, `3√3⁄4` | **GREEN** — measured by `housetest` gate 7 |
-| the eave is level on the fitted line (`SPEC` **I8**) | **GREEN** — `housetest` gate 4, `spread 0.0000`, control fires |
+| **law I** — `∀m, o ∈ O, v ∈ Λ. draw(τ_v ∘ o · m) = τ_v ∘ o · draw(m)` | **GREEN** — `tests/house.loft`, 12/12 equivariant in cells *and* edges, mismatched 0 |
+| **`X1`** the 60° rotation is exact and acts as `h ↦ h+2`; **`X2`** the reflection is exact, `h ↦ 6−h` | **GREEN** — `tests/form.loft` (S0): 625 cells, 0 non-integral images, 0 six-rotations-not-identity |
+| **`X20`** the heading table is **parity-free** in doubled `(k,m)` | **GREEN** — `tests/form.loft`, against `hex_field`'s own `nb_q`/`nb_r` |
+| the two `H₁₂` step-length classes (§2.1) — `2⁄√3`, `3√3⁄4` | **GREEN** — measured by `tests/house.loft` gate 7 |
+| the eave is level on the fitted line (`SPEC` **I8**) | **GREEN** — `tests/house.loft` gate 4, `spread 0.0000`, control fires |
 | chunk seams are `d = 0` (`X19`) | **GREEN**, but in *crawler's* gate, not ours |
 | **everything else** | proposed, or inherited below T1 |
 
@@ -383,9 +383,9 @@ result without re-gating it forfeits exactly what this project is for.
 
 | # | constraint | tier | source |
 |---|---|---|---|
-| **X1** | 60° rotation is an exact integer map, `k' = (k−m)/2`, `m' = (3k+m)/2`; six rotations are the identity; acts on `H₁₂` as `h ↦ h+2` | **T1** ✅ | **`formtest`** — 625 cells, 0 non-integral, 0 non-identity |
-| **X2** | reflection is exact (`k → −k`), acting on `H₁₂` as `h ↦ 6 − h` | **T1** ✅ | **`formtest`** — 12/12 |
-| **X20** | the heading table is **parity-free in doubled `(k,m)`** — the 6 neighbour deltas are identical on both row parities, so nothing below needs to branch on `r & 1` | **T1** ✅ | **`formtest`** — vs `hex_field`'s `nb_q`/`nb_r` |
+| **X1** | 60° rotation is an exact integer map, `k' = (k−m)/2`, `m' = (3k+m)/2`; six rotations are the identity; acts on `H₁₂` as `h ↦ h+2` | **T1** ✅ | **`tests/form.loft`** — 625 cells, 0 non-integral, 0 non-identity |
+| **X2** | reflection is exact (`k → −k`), acting on `H₁₂` as `h ↦ 6 − h` | **T1** ✅ | **`tests/form.loft`** — 12/12 |
+| **X20** | the heading table is **parity-free in doubled `(k,m)`** — the 6 neighbour deltas are identical on both row parities, so nothing below needs to branch on `r & 1` | **T1** ✅ | **`tests/form.loft`** — vs `hex_field`'s `nb_q`/`nb_r` |
 | **X3** | **all 24 headings representable** — *"representability was never the question, only cost"*; width-normalised edge `1.00×`, off-axis `≈3.5×` | **T2** | `5-geometry/directions.py` |
 | **X4** | arbitration nearest-wins and **order-free**; different levels never contest | **T3** | crawler `EXTRACTION.md` |
 | **X5** | **refusal, not rounding** — *"a stencil rotated by a non-multiple of 60° must be refused"* | **T3** | crawler `EXTRACTION.md` |
@@ -405,7 +405,7 @@ result without re-gating it forfeits exactly what this project is for.
 | **X19** | **chunk seams are exactly `d = 0`** — *"integer-metre bases ⇒ globally-aligned grid ⇒ watertight"*, green in crawler's `make test` | **T1** | crawler `chunktest` |
 
 > **Nothing in T2–T4 is settled.** T1 now holds `X1`, `X2`, `X19`, `X20` — the first three of
-> those re-measured *here*, by `formtest` (step **S0**). Still below the line and still leaned on:
+> those re-measured *here*, by `tests/form.loft` (step **S0**). Still below the line and still leaned on:
 > the **24-direction cost** (`X3`), the **wall-band validation** (`X10`) and the whole **foxel
 > schema** (`X11`–`X15`).
 

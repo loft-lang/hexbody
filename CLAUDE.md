@@ -125,7 +125,7 @@ a file in `tests/` cannot `use` a module in `src/` (*"Library 'hexform' not foun
 ## Run
 
 ```sh
-make test    # the headless gate — housetest, 12 orientations
+make test    # the headless gates in tests/ — form, then house
 make shot    # contact sheet -> /tmp/house12.png
 ```
 
@@ -134,10 +134,13 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 
 ## State (2026-07-23)
 
-- **Green:** `G0` / law **I** — `housetest`, 12/12 equivariant in cells *and* edges, `eave_spread
+- **Green:** `G0` / law **I** — `tests/house.loft`, 12/12 equivariant in cells *and* edges, `eave_spread
   0.0000`, every control fires. `make shot` reproduces the committed baseline byte-identically.
-- **Everything else is open.** No `body.loft`, no `proxy.loft`, no `rebuild`. Of the round-trip
-  gates only `rt_orient` exists.
+- **Green:** `tests/form.loft` (**S0**) — the 12 headings; **`X1`**/**`X2`** re-measured to **T1**
+  (625 cells, 0 non-integral rotation images, six rotations exactly the identity); **`X20`**, the
+  heading table is parity-free in doubled `(k,m)`, checked against `hex_field`'s `nb_q`/`nb_r`.
+- **Everything else is open.** No `body.loft`, no `proxy.loft`, no `rebuild`, no census, no
+  corpus. Next step is **S1** (law **J**, closure) — see `plans/m0-roundtrip/STEPS.md`.
 - **The foxel schema is the limit** (`ROUNDTRIP.md` §2.4): `layer* × point → (height, material,
   wall1, wall2, wall3, item)`. A model is admissible **iff it draws into that exactly**, which
   makes `fits?` syntactic and finite. It closed OD-2/3/4/6/7/8 — roofs and terrain are `height`,

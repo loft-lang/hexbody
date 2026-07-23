@@ -6,7 +6,7 @@ file, and what gate proves it** — at a size where each step can be read and ju
 
 ## What makes a step "safe" here
 
-1. **Additive.** A new file and a new gate. No step edits a path `housetest` covers, so the green
+1. **Additive.** A new file and a new gate. No step edits a path `tests/house.loft` covers, so the green
    gate stays green and any breakage is attributable to the step that caused it.
 2. **Independently gated**, with a control that must fire. A step that cannot go red is not done.
 3. **Verifiable by reading the output.** Counts and identities, printed — not a pass/fail bit.
@@ -52,17 +52,6 @@ arithmetic only.
   (`len 4,5,4,5`, `turn 3` ×4) closes.
 - **control**: drop one turn → non-zero vector sum, and `Σ turn ≠ 12`.
 
-## S2 · re-measure `X1`/`X2` — `tests/form.loft` · XS
-
-The exact rotation `k' = (k−m)/2`, `m' = (3k+m)/2` and reflection `k → −k`, over our own lattice.
-
-- **gate**: over a bounded cell range — every image integral; **six rotations are the identity**;
-  reflection is exact.
-- **control**: feed a non-multiple-of-60° rotation → a non-integer image (and it must be
-  **refused**, per `X5`, not rounded).
-- **why it matters more than its size**: `X1`/`X2` are **T2** — inherited claims this whole design
-  leans on, verified only in crawler. This step converts them to **T1**, and it is a dozen lines.
-
 ## S3 · turtle → cells — `src/hexform.loft` · S
 
 Walk the cycle and produce the filled region as a `HexSet` (**fill, then take the boundary** —
@@ -78,7 +67,7 @@ Walk the cycle and produce the filled region as a `HexSet` (**fill, then take th
 
 Boundary edges of the filled region, reusing `housedraw::draw_walls` unchanged.
 
-- **gate** `tests/form.loft`: the house outline gives **38 boundary edges**, matching `housetest`.
+- **gate** `tests/form.loft`: the house outline gives **38 boundary edges**, matching `tests/house.loft`.
 - **control**: buffer a band instead of taking the boundary → 2 components, 0 enclosed (`I3`'s
   own control, now reachable from the new path).
 
@@ -132,16 +121,18 @@ this is an **exact match against the enumerated set**, not a fit. No tolerance a
 ## Order, and where it can go wrong
 
 ```
-S0 ─▶ S1 ─▶ S2          integers only, no geometry yet
-       └──▶ S3 ─▶ S4    geometry, cross-checked against housetest
+S0 ✅ ─▶ S1             integers only, no geometry yet
+          └──▶ S3 ─▶ S4  geometry, cross-checked against tests/house.loft
               └──▶ S5   the census machinery
                     └──▶ S6 ─▶ S7 ─▶ S8   text, corpus, recovery
 ```
 
-- **S0–S2 are integer-only** and total perhaps a day. They are also where `X1`/`X2` stop being
-  inherited claims, which is disproportionate value for the size.
+- **S0–S1 are integer-only.** S0 is **done**, and it is where `X1`/`X2` stopped being inherited
+  claims — `T2 → T1` for a dozen lines of gate, which is why re-measuring came first rather than
+  being deferred as a nicety. *(S2 was a separate step for that re-measurement; it is absorbed
+  into S0's gate section 3 and no longer numbered.)*
 - **S3–S4 are where the design meets the existing code.** If the turtle path cannot reproduce
-  `housetest`'s 27 cells and 38 edges, something in the model is wrong and it is far better to
+  `tests/house.loft`'s 27 cells and 38 edges, something in the model is wrong and it is far better to
   discover that here than at S8.
 - **S5 is the first irreversible-ish commitment** — the digest defines what "the same field"
   means, and law **F** is stated against it.

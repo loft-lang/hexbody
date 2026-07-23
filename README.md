@@ -97,13 +97,16 @@ Seeded from crawler's plan-#11 P5 geometry work, verified running standalone her
 | file | what it is |
 |---|---|
 | `src/housedraw.loft` | the drawing routines — `draw_floor`, `draw_walls` (thin, edge-based), `place_opening` (doors/windows), `draw_roof` |
-| `src/housetest.loft` | the gate: one house at all **12 orientations**, cells + edges equivariant, openings, roof, eave; every check has a control that fires |
+| `src/hexform.loft` | **the 12 headings of `H₁₂`** as exact lattice steps, in doubled `(k,m)` — parity-free, so nothing downstream branches on `r & 1` |
+| `tests/house.loft` | the gate: one house at all **12 orientations**, cells + edges equivariant, openings, roof, eave; every check has a control that fires |
+| `tests/form.loft` | the gate for `hexform`: the involution, the two length classes, and the **exact rotation and reflection re-measured here** (`X1`/`X2`, now T1) |
 | `src/houseshot.loft` | the 12-orientation contact sheet → `/tmp/house12.png` |
 | `src/hexedge`, `src/hexway`, `src/hexroof` | supporting geometry algorithms (edges, tracks, roof profiles) copied from crawler; they belong to this project's *"more algorithms"* remit |
 
 **Migration status (2026-07-23):**
 
-- **`housedraw` / `housetest` / `houseshot` are now hexbody-only.** crawler's game never called
+- **`housedraw` / `housetest` / `houseshot` are now hexbody-only.** *(`housetest` has since
+  become [`tests/house.loft`](tests/house.loft).)* crawler's game never called
   them (they were only self-referential), so crawler deleted its copies and dropped the
   `housetest` row from its gate; hexbody owns them and gates them here.
 - **`hexedge` / `hexway` / `hexroof` are still duplicated** (crawler + hexbody). They are
@@ -115,9 +118,12 @@ Seeded from crawler's plan-#11 P5 geometry work, verified running standalone her
 ## Run
 
 ```sh
-make test    # the headless gate (housetest, 12 orientations)
+make test    # the headless gates in tests/ — form, then house
 make shot    # render the contact sheet -> /tmp/house12.png
 ```
+
+Gates live in **`tests/`**, modules in `src/`; the `Makefile` passes `--lib src/` so a gate can
+`use` them.
 
 Needs the loft toolchain at `../loft` and the `hex_field` family at `../loft-libs-world`
 (both siblings under `workspace/`). `--lib` reads the **working tree**, so confirm

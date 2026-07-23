@@ -72,7 +72,7 @@ you reach for instead (`DESIGN` §11).
   `rt_seam` · `rt_contend` · `rt_flip` · `rt_drift`. Controls per `DESIGN` §9; the spine
   control is a non-fitting model bypassing `snap` → diff.
 - **depends on** — `hex_field`, `housedraw`. `rt_orient` (law **I**) is **already green**:
-  `housetest`, 12/12 in cells *and* edges. **And on `../crawler`** — much of this is prototyped
+  `tests/house.loft`, 12/12 in cells *and* edges. **And on `../crawler`** — much of this is prototyped
   there, and `ROUNDTRIP` §7 lists ten constraints (**X1–X10**) already measured or gated.
 - **done when** — `rt_trip` is green over every primitive kind, and the census has **located the
   frontier** (the restrictions are M0's output, not a pass/fail).

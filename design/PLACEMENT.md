@@ -12,7 +12,7 @@ the **morphed terrain** `T'` that meets it.
 Design-protocol order: the concrete target first, then the invariants, then the honest hard
 parts and the seam, then gates with controls. The numbers in §0 are the *predicted* target —
 there is no seating code yet, so they are the shape to pin with a probe, not measurements
-(unlike `FEATURES.md`, whose numbers came from `housetest`).
+(unlike `FEATURES.md`, whose numbers came from `tests/house.loft`).
 
 ---
 

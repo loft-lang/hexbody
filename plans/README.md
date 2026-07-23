@@ -75,7 +75,7 @@ hexbody's. Read top-down; pick from the highest category with open work.
 | Tag | Meaning | hexbody examples |
 |---|---|---|
 | **S** | **Silent failure / wrong result with no error** — highest priority | a proxy that misses a real overlap; a non-deterministic derailment breaking replay |
-| **R** | **Regression / gate-blocker** — `make test` red, or a toolchain bump that breaks the build | a loft upgrade breaking `housetest` |
+| **R** | **Regression / gate-blocker** — `make test` red, or a toolchain bump that breaks the build | a loft upgrade breaking `tests/house.loft` |
 | **G** | **Goal-enabling** — directly advances the demo path | the moving body, the train, the derailment |
 | **F** | **Foundation** — unblocks 2+ downstream plans | the fit, the Body/joint model, the proxy contract |
 | **U** | **Presentation** — how it reads: the editor, rendering, seating clarity | the side-by-side editor, the fitted wall render |

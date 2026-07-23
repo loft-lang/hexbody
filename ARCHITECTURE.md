@@ -207,7 +207,7 @@ cannot fire is not a check.
 
 | step | what | proves |
 |---|---|---|
-| **done** | `housedraw` + `housetest` — floor/walls/openings/roof at 12 orientations | the static body, equivariant |
+| **done** | `housedraw` + `tests/house.loft` — floor/walls/openings/roof at 12 orientations | the static body, equivariant |
 | **bodytest + wheel** | a 2-part body, one revolute joint; wheel angle = travel/radius; each part carries its derived proxy | derived motion + per-part proxy, gated |
 | **proxy + bound** | derive the clean box from the footprint; gate `proxy ⊇ shape, overshoot ≤ X m` across 12 orientations | the proxy contract |
 | **swept interaction** | two bodies of different scale, shared occupancy, run past at varying speed/`dt` | the one chokepoint; no tunnelling |

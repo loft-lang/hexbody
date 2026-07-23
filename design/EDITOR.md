@@ -98,7 +98,7 @@ Add a door to the left; it appears, morphed to fit, in each one on the right, th
 place it.
 
 **It is the live verification instrument.** This is exactly `houseshot`'s 12-orientation
-contact sheet — the sheet this project already renders — plus `housetest`'s equivariance gate,
+contact sheet — the sheet this project already renders — plus `tests/house.loft`'s equivariance gate,
 turned *interactive* and *single-authored*. The developer watches the invariant hold on every
 edit, instead of running a gate after the fact.
 
