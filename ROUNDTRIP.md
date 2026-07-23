@@ -173,7 +173,7 @@ adjacent mechanisms that must not be conflated with it.
 Props — drainpipes, streetlamps, chimneys, inset panes, fence posts — are **not fabric**. crawler
 settled the discriminator against the scale contract: **below the resolution floor a thing is an
 OBJECT, not a field**, and *"almost everything on the list is below one hex step"* (1 step =
-1.5 m). They are parented to a surface, authored by the editor, and **read by render only**
+1.5 m). They are parented to a surface and **read by render only** — and in crawler they are not authored at all but **derived from the architecture plus a seed** (`X23`): *"a village furnishes itself"*
 (`FEATURES.md` §4, the *dressing* row).
 
 The foxel cannot hold them anyway: `h_item` is **one item per hex**, so a wall carrying a
@@ -357,10 +357,16 @@ Recovery is exact in one and a fit in the other. Confusing them is the trap.
 | **R2 · trace** | arbitrary **cell-authored** content — a hand-drawn footprint, no `𝕋` behind it | **none** | **fit**, with a pinned tolerance | `ρ > 0`, reported |
 
 **P4 governs R1 only.** R2 is reached by damage, by an editor that paints cells, and by any
-content authored before a grammar existed. It is prototyped in crawler
-`plans/5-geometry/matcher.py`, and it is the harder problem: a traced boundary **zigzags** —
-*"no two consecutive edges are collinear (measured); every run wanders around the true line by
-roughly the hex corner offset."*
+content authored before a grammar existed. It is the harder problem — a traced boundary
+**zigzags** — and it **already exists in loft, gated**: crawler's `hexmatch` (`X21`), with
+`roofmatch` doing the same for height fields (`X22`).
+
+> **R2's tolerance is a lattice constant, not a knob.** `hexmatch`: *"THE TOLERANCE IS NOT
+> TUNED. A boundary vertex is a hex CORNER, so it can sit at most one circumradius — exactly
+> 1.0 world unit — from the true surface it came from … large enough to absorb the zigzag
+> (worst measured residual on a straight wall is 0.81), small enough that a real corner never
+> fits inside it."* So even in R2 there is nothing to calibrate: the tolerance is derived from
+> the lattice and carries a measured margin, `0.81 < 1.0`.
 
 > **The trap:** using R2's machinery where R1 applies — fitting a line to a stencil whose turtle
 > description we hold throws away an exact answer and reintroduces a tolerance nothing needs.
@@ -403,6 +409,9 @@ result without re-gating it forfeits exactly what this project is for.
 | **X15** | the Map↔`hex_field` round trip is **lossy**, and its test is **green for the wrong reason** | **T4**, but trustworthy **as a warning** — it is moros's own written admission | moros `moros_map.loft` |
 | **X18** | 32×32 chunks are **not net-new** — grid, addressing, sparse storage + GC; the batched-mesh pipeline (`gridmesh`, one VBO per render-group) | **T2/T4** | `hex_world.loft`, `gridmesh`, moros `wall.loft` |
 | **X19** | **chunk seams are exactly `d = 0`** — *"integer-metre bases ⇒ globally-aligned grid ⇒ watertight"*, green in crawler's `make test` | **T1** | crawler `chunktest` |
+| **X21** | **R2 recovery exists in loft and is GATED** — `hexmatch`, traced boundary → straights + arcs, `MATCH OK` in crawler's test table. Its tolerance is **derived** (one circumradius = 1.0 world unit), not tuned, with margin 0.81 | **T1** | crawler `hexmatch` + `matchtest` |
+| **X22** | **roof recovery exists and is GATED** — `roofmatch`, *"recover the cone; planar roofs just interpolate"*, `ROOFMATCH OK` | **T1** | crawler `roofmatchtest` |
+| **X23** | **props are DERIVED from the architecture plus a seed, not authored** — *"a village FURNISHES ITSELF: every wall opening gets a door, and nothing about that is authored data"* | **T3** | crawler `hexderive`, `land.loft` |
 
 > **Nothing in T2–T4 is settled.** T1 now holds `X1`, `X2`, `X19`, `X20` — the first three of
 > those re-measured *here*, by `tests/form.loft` (step **S0**). Still below the line and still leaned on:

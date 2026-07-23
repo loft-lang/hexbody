@@ -65,7 +65,7 @@ arithmetic only.
   polygon at all. The rhombus `[4,5,4,5]` with turns `[2,4,2,4]` (all edge-class) replaces it.
   **This is a real constraint on S3's cross-check** — see there.
 
-## S3 · turtle → cells — `src/hexform.loft` · S
+## S3 · turtle → cells — `src/hexform.loft` · S · **BLOCKED on OD-11**
 
 Walk the cycle and produce the filled region as a `HexSet` (**fill, then take the boundary** —
 `SPEC` **I3**, never a buffered band).
@@ -78,7 +78,10 @@ Walk the cycle and produce the filled region as a `HexSet` (**fill, then take th
   turtle polygon, and its two side directions are both in units of `s` — which no pair of the 12
   headings gives, since headings 90° apart are in different length classes. So a turtle cycle
   cannot express that house.
-- **what to cross-check instead**, in preference order: (a) a **rhombus** drawn both ways — turtle
+- **BLOCKED**: `DESIGN.md` §10.4 (**OD-11**) asks whether domain A's grammar is the turtle cycle
+  at all, or `Plan`'s `(cq, cr, wid, dep, rot, mir)` — which *is* the gated house and is equally
+  integer-parametric. S3 builds the rasteriser for whichever wins, so it should not start first.
+- **what to cross-check instead** *(if the turtle wins)*, in preference order: (a) a **rhombus** drawn both ways — turtle
   fill vs a `Plan` with the matching parallelogram — if `housedraw` can express one; (b) Euler /
   shoelace: the enclosed cell count from an independent closed-form area, which needs no second
   implementation; (c) failing both, accept that S3 has **no external cross-check** and say so,

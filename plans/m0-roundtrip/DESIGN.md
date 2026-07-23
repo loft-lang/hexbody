@@ -707,6 +707,44 @@ address, exactly as metres are derived from step counts.
 an axle inside the footprint. A hinge is on a wall; an axle is not. It may need both, and then the
 question is whether that is one address type with two forms or two kinds of anchor.
 
+## 10.4 OD-11 · what IS a house? — four models, and ours is the only one unbuilt
+
+Asked directly: *does hexbody follow crawler's model for presenting houses in the world?* **No.**
+Inspecting crawler turns up **four** different answers, and the grammar in §2 is a fifth.
+
+| # | model | what a house is | status |
+|---|---|---|---|
+| 1 | crawler `land.loft` `add_house` | a **scene node**: floats `x, y, w, d, eaves, ang` + `mat4_trs` | **shipping** — the rendered landscape; touches no field at all |
+| 2 | `housedraw` `Plan` *(ours)* | a **continuous rectangle** in a local frame, rasterised **centre-in-region** | **shipping + gated** — `tests/house.loft`, 12/12 |
+| 3 | crawler `STENCILS.md` | a **small field**, stamped by merging | **designed, not implemented** |
+| 4 | crawler `HOUSE.md` | a `Storey = {cells, floor, soffit}` stack | **designed**; matches the foxel's `cy` |
+| 5 | **`DESIGN.md` §2** *(this grammar)* | a **closed turtle polygon** over `H₁₂` | **no implementation anywhere** |
+
+**That is the finding.** Our grammar is the only one of the five that nothing implements, and S1
+showed it **cannot express the house that is already gated**: `Plan` measures both sides in units
+of `s` (5 × 4 steps = 7.5 m × 6.0 m, `HOUSE.md` §1), but no two of the 12 headings are 90° apart
+*and* in the same length class — headings 0 and 3 differ by `√3`. A turtle cycle cannot draw that
+rectangle.
+
+**So the open question is what domain A's grammar actually is.**
+
+| option | expresses the gated house? | recovery |
+|---|---|---|
+| **(a) `Plan`-parametric** — `(cq, cr, wid, dep, rot, mir)`, integers + a 6-way rotation + a flag | **yes** — it *is* the gated house | finite parameter search — **R1, exact** |
+| **(b) turtle polygon** — the §2 grammar | **no** | exact match on the cycle — R1 |
+| **(c) both** — `Plan` as a *shape constructor* whose boundary is a cycle | yes | R1, at the cost of two forms in `𝕋` |
+
+Option **(a)** deserves more weight than it has had. `Plan` is already integer-parametric —
+`wid`, `dep`, `rot ∈ 0..5`, `mir ∈ bool` — so it is a finite grammar with exact recovery, and it
+is the one thing here with a green gate. The turtle model is *more general* in one direction
+(arbitrary polygons) and **strictly less** in another (it cannot draw the fixture).
+
+**What this does not change.** Laws A–K, the corpus, the two regimes and the trust tiers are all
+independent of which shape grammar domain A uses. S0 and S1 also survive: `H₁₂`, the exact
+rotation and reflection, and closure are needed by *any* of these, and `Plan`'s `rot` is exactly
+the 6-rotation subgroup S0 measured. **What it changes is S3 onward**, which is why it surfaced
+now rather than after `rebuild` was written against the wrong grammar.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |
