@@ -1614,6 +1614,63 @@ That strictness is the point: a lenient reader would admit a second spelling of 
 byte diff would stop meaning anything. The control checks the other direction too — a well-formed
 text must still parse, or the refusals prove only that the reader rejects everything.
 
+## 10.17 S7 — the corpus, and a gate that is red on purpose
+
+The corpus is 10 entries, one per canonical level-1 text, written **once** by
+`src/corpusgen.loft` and committed. That generator is deliberately **not** in `make test`: a gate
+that regenerates its own baseline compares new output against new output and passes
+unconditionally — the `X15` failure, in our own tree. Re-running it is a **decision**, not a chore.
+
+### Red, and asserted red
+
+`tests/trip.loft` is written before `rebuild` exists, so it is RED. The runner does not merely
+tolerate that — `run_red` **asserts** it:
+
+- the gate must **not** print its OK marker;
+- it **must** print `TRIP RED: rebuild absent` — red for the *stated* reason, never because it
+  crashed.
+
+So the gate runs on every `make test` and cannot rot, and **if it ever goes green by accident the
+runner fails** and demands the row be promoted into the normal table. That is strictly stronger
+than a gate that is simply always red, and it keeps the suite a live signal. Verified by flipping
+`REBUILD_LANDED`: the gate refuses to stay pending and the runner reports *red for the wrong
+reason*, which is exactly the message S8 should hit.
+
+*(This is the same question S4 raised and the opposite answer, for a reason: S4's parts 2 and 4
+were checks added to an already-green gate, where redness would poison an existing signal. S7's
+gate has never been green, and its redness is information.)*
+
+### What is already green, against committed bytes
+
+| leg | status |
+|---|---|
+| `write(read(T)) == T` over the committed texts | green, 10/10 |
+| `draw(read(T))` reproduces the committed `.f` | green, 10/10 — **the regression anchor** |
+| law F: no two entries share a field | green, 0 sharing pairs |
+| `write(rebuild(draw(read(T)))) == T` | **pending `rebuild`** |
+
+The second row is the one that earns the corpus its keep: it fires against bytes written *before*
+any future change to `form_fill` or the digest.
+
+### The finding — two digests, two questions
+
+The first `.f` used the census's `field_digest`, and the gate reported **17 false law F failures on
+a 10-entry corpus**.
+
+The census digest **quotients by orientation**, because the census asks *how many distinct shapes
+does this level hold* — and an orientation-image is the same stencil (law **I**). **Law F asks
+something else**: is `draw` injective — which is about the cells actually written. A stencil at
+`h0 = 0` and the same stencil at `h0 = 6` draw genuinely different cells; the shape digest calls
+them equal.
+
+> `field_exact` — no orientation quotient, no translation quotient — is the corpus digest.
+> Recorded as `X40`.
+
+Caught **before the corpus was committed**, which is the only point at which regenerating it was
+free. That is the third time this session a check was confidently measuring the wrong quantity
+(§10.15's `h0`-parity, §10.14's corner cell, and this) — each one produced a specific, plausible
+number, which is exactly what makes the class dangerous.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |

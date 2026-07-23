@@ -255,21 +255,32 @@ is the requirement `tests/house.loft` never checked: **what happens where two ru
   second spelling of one model and the byte diff would stop meaning anything. Control: a
   well-formed text must still parse, or the two refusals prove only that it rejects everything.
 
-## S7 · the corpus, and `rt_trip` **red** — `corpus/` + `tests/trip.loft` *(new)* · XS
+## S7 ✅ · the corpus, and `rt_trip` **red** — `corpus/a1/` + `tests/trip.loft` · XS · **DONE**
 
-Write the level-1 entries out as corpus files, and the round-trip gate **before `rebuild` exists**
-— so it starts red and goes green when S8 lands.
-
-```
-corpus/a1/<case>.t      the canonical text
-corpus/a1/<case>.f      draw(read(T)), or its digest
-```
-
-- **gate** `tests/trip.loft`: `write(rebuild(draw(read(T)))) ≟ T`, byte-for-byte, enumeration-driven over
-  every corpus entry.
-- **control**: a non-fitting model bypassing `snap` → diff.
-- **the rule that makes it a gate at all**: entries are **committed and never regenerated**
-  (`DESIGN.md` §8.0). Regenerating compares new output against new output and always passes.
+- **the corpus is written and committed**: 10 entries, one per canonical level-1 text.
+  `src/corpusgen.loft` wrote them **once**; it is deliberately NOT in `make test`, because a gate
+  that regenerates its own baseline compares new output against new output and passes
+  unconditionally — the `X15` failure in our own tree. Re-running it is a **decision**, not a
+  chore: if `form_write` or `draw` changes, read the diff and judge.
+- **gate** `tests/trip.loft`, RED on purpose until S8 lands `rebuild`.
+- **the runner ASSERTS the redness** (`run_red` in `tools/run_tests.sh`). The gate must not print
+  its OK marker and must print `TRIP RED: rebuild absent` — red for the *stated* reason, never
+  because it crashed. So it **runs on every `make test`** and cannot rot, and **if it ever goes
+  green by accident the runner fails** and demands the row be promoted. That is strictly stronger
+  than a gate that is simply always red, and it keeps `make test` a live signal.
+- **the legs that exist are already green against committed bytes**: every committed `T`
+  round-trips `write(read(T)) = T`, and `draw(read(T))` still reproduces the committed `.f`. That
+  second one is the **regression anchor** — it fires against bytes written before any future
+  change to `form_fill` or the digest.
+- **law F over the corpus**: 0 sharing pairs among the 10 entries.
+- **the finding — the corpus digest and the census digest are DIFFERENT FUNCTIONS.** The first
+  `.f` used the census's `field_digest`, which quotients by orientation because the census asks
+  *how many shapes does this level hold* (law I). Law F asks something else: is `draw` **injective**
+  — about the cells actually written. A stencil at `h0=0` and the same stencil at `h0=6` draw
+  genuinely different cells, so the shape digest called them equal and the gate reported **17 false
+  law F failures on a 10-entry corpus**. `field_exact` (no orientation quotient, no translation
+  quotient) is the corpus digest; recorded as `X40`. Caught before the corpus was committed, which
+  is the only time it was cheap to fix.
 
 ## S4b · the wall surface, by averaging — `src/hexform.loft` · S *(new, from the model decision)*
 

@@ -20,6 +20,23 @@ run() {
   grep -q "$2" "$3" || { echo "    FAIL: $4"; exit 1; }
 }
 
+# run_red <src-file> <red-marker> <ok-marker> <log> <label>
+#
+# A gate written BEFORE its subject exists (DESIGN.md 8.0: `rt_trip` is written before `rebuild`).
+# It must be RED — and red for the STATED reason, not because it crashed — until the step that
+# turns it green. Asserting the redness means the gate still RUNS every time (it cannot rot), and
+# if it ever goes green by accident the runner FAILS and demands the row be promoted to the table.
+run_red() {
+  echo "  $5"
+  # shellcheck disable=SC2086
+  "$LOFT" --interpret $FLAGS "$1" | tee "$4"
+  if grep -q "$3" "$4"; then
+    echo "    FAIL: this gate is GREEN — move its row from run_red into the table"; exit 1
+  fi
+  grep -q "$2" "$4" || { echo "    FAIL: red for the WRONG reason (expected: $2)"; exit 1; }
+  echo "    RED, as expected — $2"
+}
+
 # table <<EOF — file|marker|log|fail-text|label  (order = execution order)
 table() {
   while IFS='|' read -r file marker log fail label; do
@@ -29,12 +46,15 @@ table() {
 }
 
 table <<'EOF'
-tests/form.loft|FORM OK|/tmp/hexbody_form.log|headings|[1/6] the 12 headings, the exact rotation and reflection (S0/S1) ...
-tests/wall.loft|WALL OK|/tmp/hexbody_wall.log|walls|[2/6] the 24-direction wall: edge table, foxel write, mesh evaluation ...
-tests/box.loft|BOX OK|/tmp/hexbody_box.log|boxes|[3/6] the box in 12 directions, thin wall and thick wall ...
-tests/census.loft|CENSUS OK|/tmp/hexbody_census.log|census|[4/6] the level-1 census: law F decided at level 1 ...
-tests/text.loft|TEXT OK|/tmp/hexbody_text.log|text|[5/6] the canonical text: write(read(T)) = T byte-for-byte ...
-tests/house.loft|HOUSE OK|/tmp/hexbody_house.log|house|[6/6] floor/walls/openings/roof at all 12 orientations ...
+tests/form.loft|FORM OK|/tmp/hexbody_form.log|headings|[1/7] the 12 headings, the exact rotation and reflection (S0/S1) ...
+tests/wall.loft|WALL OK|/tmp/hexbody_wall.log|walls|[2/7] the 24-direction wall: edge table, foxel write, mesh evaluation ...
+tests/box.loft|BOX OK|/tmp/hexbody_box.log|boxes|[3/7] the box in 12 directions, thin wall and thick wall ...
+tests/census.loft|CENSUS OK|/tmp/hexbody_census.log|census|[4/7] the level-1 census: law F decided at level 1 ...
+tests/text.loft|TEXT OK|/tmp/hexbody_text.log|text|[5/7] the canonical text: write(read(T)) = T byte-for-byte ...
+tests/house.loft|HOUSE OK|/tmp/hexbody_house.log|house|[6/7] floor/walls/openings/roof at all 12 orientations ...
 EOF
+
+run_red tests/trip.loft "TRIP RED: rebuild absent" "TRIP OK" /tmp/hexbody_trip.log \
+        "[7/7] rt_trip: the round trip against the committed corpus (RED until S8) ..."
 
 echo "  PASS"

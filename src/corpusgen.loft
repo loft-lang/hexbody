@@ -1,0 +1,75 @@
+// corpusgen — WRITE THE LEVEL-1 CORPUS ONCE.  Run by hand, committed, never re-run in a gate.
+//
+// `DESIGN.md` §8.0: the entries ARE the deliverable, and they are kept rather than regenerated.
+// A gate that regenerates its own baseline compares new output against new output and passes
+// unconditionally — the `X15` failure, in our own tree. So this program is deliberately NOT wired
+// into `make test`: it is run once by a human, its output is committed, and `tests/trip.loft`
+// reads those committed bytes forever after.
+//
+//     corpus/a1/<case>.t    the canonical text T
+//     corpus/a1/<case>.f    the FAITHFUL digest of draw(read(T)) — the cells exactly as drawn
+//
+// The `.f` uses `field_exact`, NOT the census's `field_digest`. The census digest quotients by
+// orientation (it asks how many SHAPES a level holds); law F asks whether `draw` is INJECTIVE,
+// which is about the cells actually written. Using the census digest here reported 17 false law F
+// failures on a 10-entry corpus.
+//
+// RE-RUNNING THIS IS A DECISION, NOT A CHORE. If `form_write` or `draw` ever changes, the right
+// move is to look at the diff and decide whether the change is intended — not to regenerate and
+// move on. That is the whole value of the corpus.
+//
+//     loft --interpret --path ../loft/ --lib ../loft/lib/ --lib ../loft-libs-world/ --lib src/ \
+//          src/corpusgen.loft
+use hex_field;
+use hexform;
+use formcensus;
+use formtext;
+
+const W = 61;
+const H = 61;
+const Q0 = -30;
+const R0 = -30;
+
+fn main() {
+  dir = "{source_dir()}/../corpus/a1";
+  mkdir_all(dir);
+  println("writing the level-1 corpus to {dir}");
+
+  // Enumerate level 1 exactly as the census does, canonicalise, and keep one entry per distinct
+  // canonical text.  The enumeration order is deterministic, so the case numbering is stable.
+  texts: vector<text> = [];
+  digests: vector<text> = [];
+  for eh in 0..12 {
+    for ea in 1..12 {
+      for eb in 1..12 {
+        ec = 12 - ea - eb;
+        if ec >= 1 && ec <= 11 {
+          ef = form_new(eh, [1, 1, 1], [ea, eb, ec]);
+          if form_closes(ef) {
+            cf = form_canon(ef);
+            ct = form_write(cf, "a1");
+            seen = false;
+            for si in 0..len(texts) { if (texts[si] ?? "") == ct { seen = true; } }
+            if !seen {
+              cc = hexset_chunk(Q0, R0, W, H);
+              form_fill(cf, 0, 0, cc);
+              texts += [ct];
+              digests += [field_exact_text(cc)];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  for wi in 0..len(texts) {
+    idx = "{wi}";
+    if wi < 10 { idx = "0{wi}"; }
+    ft = file("{dir}/a1-{idx}.t");
+    ft.write("{texts[wi] ?? \"\"}\n");
+    ff = file("{dir}/a1-{idx}.f");
+    ff.write("{digests[wi] ?? \"\"}\n");
+    println("  a1-{idx}.t / .f");
+  }
+  println("wrote {len(texts)} entries — COMMIT THEM; the gate reads these bytes, never regenerates them");
+}

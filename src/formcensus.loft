@@ -196,3 +196,29 @@ pub fn turns_cyclic_eq(a: vector<integer>, b: vector<integer>) -> boolean {
   }
   false
 }
+
+// ── THE FAITHFUL DIGEST — a different question, and it must be a different function ─
+//
+// `field_digest` above quotients by orientation, because the CENSUS asks "how many distinct
+// SHAPES does this level hold?" and an orientation-image is the same stencil (law I).
+//
+// LAW F ASKS SOMETHING ELSE: is `draw` injective — do two distinct models produce two distinct
+// FIELDS? That is about the cells actually written, not about the shape class. A stencil at h0=0
+// and the same stencil at h0=6 draw genuinely different cells; the shape digest calls them equal,
+// and law F would look violated when nothing is wrong.
+//
+// So the corpus `.f` uses THIS one: the field exactly as drawn, no orientation quotient and no
+// translation quotient (every entry is drawn at the same anchor, so position is part of the
+// answer). Using the census digest here reported 17 false law F failures on a 10-entry corpus
+// before the distinction was drawn.
+pub fn field_exact(cells: HexSet) -> vector<integer> {
+  raw: vector<integer> = [];
+  for xr in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for xq in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if hexset_get(cells, xq, xr) { raw += [ckey(lattice_k(xq, xr), lattice_m(xq, xr))]; }
+    }
+  }
+  sort_keys(raw)
+}
+
+pub fn field_exact_text(cells: HexSet) -> text { digest_text(field_exact(cells)) }
