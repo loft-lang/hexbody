@@ -73,20 +73,34 @@ by many systems at once** — combat sees a hurtbox, traversal sees a standable 
 an actor — unified by the fact that they all consume the current pose and proxy. It never
 *changes*; it was always both.
 
-## The honest frontier — where this is a bet, not a capability
+## The frontier — and why it is smaller than it first looks
 
 The indie path depends on **produced geometry reaching *shippable aesthetic quality* in 3D**,
-and that is the least-proven claim in the whole thesis. The 2D sprite stack (in crawler and
-the `draw` skill) is the *existence proof* that produced → shippable is possible — but look at
-what it cost: a whole authoring skill, reference plates, recognition critics, a technique
-library, years of craft. The 3D-geometry equivalent of that craft mostly **does not exist
-yet**: today the geometry is *exact but plain*. "Tune the houses up until they ship" is a real
-bet on building the 3D produced-aesthetic craft that the 2D side already earned.
+and stated baldly that sounds like the least-proven claim in the thesis — as if it needed a
+whole new 3D art-craft invented from nothing.
 
-And the tool that makes *"tune them up yourself"* real — for someone who will not hand-edit
-stencils in code — is the **in-world editor**. That reframes the editor from "a second
-consumer that proves a library seam" to *the indie's entire art pipeline*, and probably its
-real priority.
+It doesn't, and the reason is **kitbashing**. The difference between a Bethesda *shipped* house
+and our current model is not sculpting — it is **set dressing**: a house's massing is snapped
+together from a *modular kit* (walls, corners, doorways, trims) and then dressed with props.
+That is literally how Bethesda ships — a modular kit assembled per house — and it is
+**produced, not stored**: the content bill scales with the *kit* (a few dozen reusable pieces),
+not with the house. It is the same thesis as everything else here, applied to appearance, and
+**we have already designed and started it** — the props system, the stencils, the part-tree,
+the bundles are the kit vocabulary.
+
+So the real gap from our model to a shippable one is: **author a modular set-dressing kit, and
+let the editor kitbash it onto the massing.** That is a bounded, on-thesis job, not an
+open-ended craft-invention — and the tool that delivers it is the **in-world editor**, where a
+two-person team drags kit pieces onto a wall and dresses a room without touching code.
+
+The residual bet is honest and much narrower: the kit pieces still have to be *authored*, and
+made to *read* as quality — that craft is real (the 2D sprite stack shows what it costs: a
+`draw` skill, references, critics). But it is a kit of a few dozen pieces reused across a whole
+world, not per-house sculpting. **That is the indie dream made concrete:** the produced geometry
+is the structure, a small authored kit is the dressing, the editor is the pipeline — and a team
+with no art department ships a world that today needs a studio. This reframes the editor from
+"a second consumer that proves a library seam" to *the indie's entire art pipeline*, and
+probably its real priority.
 
 ## Why building this is safe, not a speculative product bet
 

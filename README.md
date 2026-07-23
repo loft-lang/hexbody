@@ -42,10 +42,16 @@ Seeded from crawler's plan-#11 P5 geometry work, verified running standalone her
 | `src/houseshot.loft` | the 12-orientation contact sheet → `/tmp/house12.png` |
 | `src/hexedge`, `src/hexway`, `src/hexroof` | supporting geometry algorithms (edges, tracks, roof profiles) copied from crawler; they belong to this project's *"more algorithms"* remit |
 
-These are **copies**, not yet a migration: crawler's own `make test` still runs its copies.
-The follow-up (crawler consumes hexbody, deletes its copies) is deliberately deferred so the
-crawler gate stays green while this project stands up — the same order the `hex_field`
-extraction used.
+**Migration status (2026-07-23):**
+
+- **`housedraw` / `housetest` / `houseshot` are now hexbody-only.** crawler's game never called
+  them (they were only self-referential), so crawler deleted its copies and dropped the
+  `housetest` row from its gate; hexbody owns them and gates them here.
+- **`hexedge` / `hexway` / `hexroof` are still duplicated** (crawler + hexbody). They are
+  load-bearing in crawler's game — `hexedge` alone has 28 users including `sim.loft` — so
+  crawler keeps them. hexbody's copies are a stopgap. Their proper home is the shared
+  low-level library `loft-libs-world` (like `hex_field`); extracting them there, so both
+  crawler and hexbody consume one source, is the follow-up that ends the duplication.
 
 ## Run
 
