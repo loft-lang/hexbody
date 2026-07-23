@@ -402,7 +402,7 @@ already see safe; only a real scene converts an axis nobody imagined into one yo
 > | | was | after the schema |
 > |---|---|---|
 > | **OD-2** roofs | in or out of the exact round trip? | **`height`.** Heights are the stored truth; a roof *profile* is a **R2** fit over them, so `roof_match`'s `tol` is legitimate — in R2 |
-> | **OD-3** trees | a verb, or a prop outside `𝕄*`? | **`item`.** An occupant, not fabric. Still needs crawler's `TREES.md` read for what an item carries |
+> | **OD-3** trees | a verb, or a prop outside `𝕄*`? | **`item`** — confirmed in code (`ItemDef.id_kind = TREE`, `X13`). And the class **splits by scale**: ≥ 1 hex step → `h_item`; < 1 hex step → **set dressing, outside `𝕄*`** (`ROUNDTRIP` §2.4.0.1) |
 > | **OD-4** terrain | a `⟨terrain⟩` production? | **`height`.** Same slot as roofs — the two were always one question |
 > | **OD-6** stencil: field or description? | the deepest one | **the foxel is the stored truth.** A description is admissible only if it draws into the schema exactly |
 > | **OD-7** which wall model? | edges vs triangle band | **`wall1..3` per point — edges.** A triangle subdivision needs sub-cell resolution the schema has no slot for. `WALLS.md`'s band model cannot be *stored*, whatever its merits as a render/collision construction |

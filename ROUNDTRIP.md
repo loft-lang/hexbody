@@ -141,6 +141,39 @@ this schema exactly**.
 - **`height`** — terrain, floors, roofs: all one scalar per point per layer.
 - **`item`** — props, trees, and anything that is an occupant rather than the fabric.
 
+### 2.4.0 Four things are called "layer" — they are not the same thing
+
+| sense | what it is | where | in the foxel? |
+|---|---|---|---|
+| **storey** | the **vertical** axis — ground, upper, rampart | moros `ha_cy` / `ck_cy` | **yes — this is `layer*`** |
+| **attribute plane** | a named scalar per cell (`ly_names`/`ly_vals`) | `hex_field::Layers` | no — a parallel structure |
+| **wall stack** | an *evaluation* order, each overriding a subset below: storage → surface → material → feature → dressing | `design/FEATURES.md` §4 | no — a rule, not storage |
+| **set dressing** | sub-hex props kitbashed onto surfaces | crawler `PROPS.md`, `plans/10-props/` | **no — see below** |
+
+Only the **storey** sense is the foxel's `layer*`. `𝕄*` is bounded by that one; the others are
+adjacent mechanisms that must not be conflated with it.
+
+### 2.4.0.1 Set dressing is a separate layer, and it is outside `𝕄*`
+
+Props — drainpipes, streetlamps, chimneys, inset panes, fence posts — are **not fabric**. crawler
+settled the discriminator against the scale contract: **below the resolution floor a thing is an
+OBJECT, not a field**, and *"almost everything on the list is below one hex step"* (1 step =
+1.5 m). They are parented to a surface, authored by the editor, and **read by render only**
+(`FEATURES.md` §4, the *dressing* row).
+
+The foxel cannot hold them anyway: `h_item` is **one item per hex**, so a wall carrying a
+drainpipe *and* a lamp *and* a chimney is not expressible in it.
+
+| scale | example | home |
+|---|---|---|
+| **≥ 1 hex step** | tree, wagon, trough, double door | **`h_item`** — in the foxel, `ItemDef` |
+| **< 1 hex step** | drainpipe, lamp, chimney, pane | **set dressing** — outside `𝕄*`, render-only |
+
+So it does **not** round-trip, is **not** collision truth, and is **not** bounded by `fits?`.
+This is VISION's kitbashing route, and it likely lives in crawler rather than here — but the
+boundary matters in both directions: hexbody must not absorb it, and must not be asked to
+recover it.
+
 ### 2.4.1 A door is a material, not an annotation beside one
 
 **Doors and windows are materials on the wall slot.** The edge is never removed — it carries a
@@ -163,6 +196,20 @@ an annotation *beside* the material, it **is** the material.
 geometry (so no triangle subdivision), no second wall on the same edge, and no geometry that is
 not a height, an edge, or an occupant. **Thickness is *not* foreclosed** — it comes from the
 `WallDef` behind the id, not from the cell.
+
+### 2.5 Scope — what this model does not cover
+
+**In scope:** a body's **original** (`𝕄*`/`𝕋`), its **pose** `P` as a stored representation (§2.3),
+world terrain and linework, and the maps between them.
+
+| out of scope | why | owner |
+|---|---|---|
+| how a pose **evolves** — integration, contacts, settling | this model defines the *representation* of orientation, never its dynamics | `DYNAMICS`, `L1`/`L2` |
+| **joint values** and the part-tree | `Body = ⟨original, pose, joints⟩`; the joint value is its own interface, and only `original` round-trips | `K-JOINT` |
+| the **collision proxy** | derived, never stored. *But:* with an exact `𝕄*` the proxy is better derived from the **model** than from the rasterization — analytic, with a closed-form error bound instead of a measured one. That refines `ARCHITECTURE`'s *"derived from the field"*, and is a consequence of this contract rather than a contradiction of it | `K-PROXY` |
+| **authored motion tracks** | the consumer's, by construction | `L5` |
+| **set dressing** — sub-hex props | objects below the resolution floor, parented to a surface, render-only (§2.4.0.1). Does not round-trip, is not collision truth, is not bounded by `fits?` | crawler `PROPS.md` |
+| the **patch-atlas** overlay | derived on demand, never persisted — therefore never in `𝕋` | `L3` |
 
 ## 3. Maps
 
