@@ -92,6 +92,31 @@ arbitrary orientation lives in `P`, which is continuous — not in `Λ`, which i
 `O` is exactly the subset of `P` where the two coincide, which is why the 12 are the *seating*
 set. A body transitions seated → free at the break, and back when it settles.
 
+## 2.4 The foxel — the storage schema, and therefore the limit
+
+```
+foxel  =  layer*  ×  point → ( height, material, wall1, wall2, wall3, item )
+```
+
+**We limit the model to what the foxel can store.** This is the binding constraint on `𝕄*`, and
+it replaces every abstract argument about what "fits": a model is admissible **iff it draws into
+this schema exactly**.
+
+- **`layer*`** — layers are part of the model, at the top, not an axis added later.
+- **`wall1..3`** — the three edges a point *owns*; the other three belong to its neighbours. This
+  is the `EdgeSet` shape, and matches the `h_wall_n/ne/se` storage `WALLS.md` cites in moros.
+- **`height`** — terrain, floors, roofs: all one scalar per point per layer.
+- **`item`** — props, trees, and anything that is an occupant rather than the fabric.
+
+> **`fits?` becomes syntactic and finite.** Not *"is this recoverable in principle"* but *"does
+> this land in six slots per point per layer, exactly." * The census (`DESIGN.md` §8) stops being
+> a search for an unknown bound and becomes an enumeration against a **known schema**.
+
+**What the schema forecloses**, and it is worth stating plainly because each was an open question:
+no sub-cell geometry (so no triangle subdivision), no wall thickness beyond the material carried
+on an edge, no second material on the same edge, and no geometry that is not a height, an edge, or
+an occupant.
+
 ## 3. Maps
 
 ```

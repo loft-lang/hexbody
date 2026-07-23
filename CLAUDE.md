@@ -74,10 +74,14 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   0.0000`, every control fires. `make shot` reproduces the committed baseline byte-identically.
 - **Everything else is open.** No `body.loft`, no `proxy.loft`, no `rebuild`. Of the round-trip
   gates only `rt_orient` exists.
-- **Eight open decisions** (`plans/m0-roundtrip/DESIGN.md` §10). OD-1 the morph · OD-2 roofs · OD-3 trees ·
-  OD-4 terrain · **OD-5** is the flip exact? · **OD-6** is a stencil a *field* or a *generative
-  description*? · **OD-7** which wall model? · **OD-8** when do layers enter? OD-5–8 are conflicts
-  with **settled crawler prior art**, and **OD-6 is the deepest — it probably orders the rest**.
+- **The foxel schema is the limit** (`ROUNDTRIP.md` §2.4): `layer* × point → (height, material,
+  wall1, wall2, wall3, item)`. A model is admissible **iff it draws into that exactly**, which
+  makes `fits?` syntactic and finite. It closed OD-2/3/4/6/7/8 — roofs and terrain are `height`,
+  trees are `item`, walls are the three edge slots, layers are in, the foxel is the stored truth.
+- **Still open** (`plans/m0-roundtrip/DESIGN.md` §10): **OD-1** the morph (narrowed to "probably
+  unnecessary" by free poses) · **OD-5** is the flip exact (`X2` says yes) · **OD-9** does a door
+  survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
+  relocated into the schema, and rung A5's real question.
 - **Established constraints from crawler are in `ROUNDTRIP.md` §7 (X1–X10)** — measured or
   gated already; do not re-derive them.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).

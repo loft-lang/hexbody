@@ -357,6 +357,31 @@ already see safe; only a real scene converts an axis nobody imagined into one yo
 
 ## 10. Open decisions
 
+> **The foxel schema (`ROUNDTRIP` §2.4) closed or narrowed most of what follows.** Recorded here
+> so the reasoning survives, with the schema's consequence marked on each. **What the schema
+> states is settled; the per-decision consequences below are inference and want one confirmation
+> pass.**
+>
+> | | was | after the schema |
+> |---|---|---|
+> | **OD-2** roofs | in or out of the exact round trip? | **`height`.** Heights are the stored truth; a roof *profile* is a **R2** fit over them, so `roof_match`'s `tol` is legitimate — in R2 |
+> | **OD-3** trees | a verb, or a prop outside `𝕄*`? | **`item`.** An occupant, not fabric. Still needs crawler's `TREES.md` read for what an item carries |
+> | **OD-4** terrain | a `⟨terrain⟩` production? | **`height`.** Same slot as roofs — the two were always one question |
+> | **OD-6** stencil: field or description? | the deepest one | **the foxel is the stored truth.** A description is admissible only if it draws into the schema exactly |
+> | **OD-7** which wall model? | edges vs triangle band | **`wall1..3` per point — edges.** A triangle subdivision needs sub-cell resolution the schema has no slot for. `WALLS.md`'s band model cannot be *stored*, whatever its merits as a render/collision construction |
+> | **OD-8** when do layers enter? | deferred | **now.** `layer*` is the outermost structure |
+>
+> **What survives as genuinely open:** **OD-1** (the morph — unaffected, it was already narrowed
+> to option (c) by free poses) and **OD-5** (is the flip exact — `X2` says yes; unaffected by the
+> schema). And a new one below.
+>
+> **OD-9 · does the door survive as an annotation?** `SPEC` **I1** and `FEATURES.md` require a
+> door to be an interval on the analytic surface that **annotates** its edges. The schema gives an
+> edge one `material` slot per wall — so a doored edge either carries a *door material* (losing the
+> wall's own material) or the door lives in a layer the schema does not obviously have. `WALLS.md`
+> solved this by *deleting band triangles*, which OD-7 has now ruled out. **This is the doored-tower
+> defect relocated into the storage schema**, and it is rung **A5**'s real question.
+
 **OD-1 · the morph — dead, or moved into `snap`?**
 `design/EDITOR.md` §2 makes orientation a *minimal affine morph*, *"the bridge from 6 exact
 rotations to **many**."* A morph is a **non-lattice affine map**, so a morphed wall lands outside
