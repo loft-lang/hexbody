@@ -10,7 +10,7 @@ mechanics spine rather than running beside it (decided 2026-07-23).
 
 The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** holds only the
 **settled** core — definitions, the propositions that follow from them, and the constraints
-`X1`–`X45` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X45`) — while
+`X1`–`X46` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X46`) — while
 **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar, `fits?`,
 the seam, the corpus, the method, the gates, and the open decisions.
 
@@ -73,10 +73,13 @@ survives `read → draw → rebuild → write` byte-identically* — holds over 
   admitted form is convex, so **the hull of the filled cells IS the turtle polygon**. 119/119
   entries, 0 diffs — and today's house is **R2 by enumeration, R1 with `ρ = 0` constructively**.
 
-**The next rung is A4** (unequal sides, non-convex). ⚠ It cannot extend the hull: hull recovery is
-exact where it applies and **silently wrong** where it does not, smoothing a reflex corner away
-rather than rejecting it. A4 must switch to boundary **tracing** (`hexmatch`, `X21`), and its gate
-needs a control that a reflex corner is not quietly convexified.
+- **§10.23 — A4.** A reflex corner is **never** recoverable: non-convex forms violate law F (two
+  forms, one field, `ρ = 0`), so no method can separate them. The fix is the **doorstep** —
+  `form_admissible` = closed ∧ simple ∧ convex — not a better recovery. ⚠ This corrected §10.22's
+  guidance toward tracing. **The L-shaped house is not admissible under this grammar.**
+
+**Rungs A1–A4 are closed.** Next is **A5** (features — doors and windows on straight sides, where
+the `surf`-slot question bites), or **S4b** (the wall surface by averaging, the render front).
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"
@@ -141,7 +144,7 @@ already moved arcs from the last rung to the middle, because the scene has a tow
 | **A1** ✅ | the minimal closed cycle — equilateral triangle, `len 1`, `turn 4` × 3, both heading classes | — | **yes, byte-for-byte** (`X41`) |
 | **A2** ✅ | grow `len` on the same shape | — | **no — but unequal sides introduce CHIRALITY** (`X42`) |
 | **A3** ✅ | grow side count — 4 (today's house), 5, 6 | **houses** | injective at every side count; **the frontier becomes COST** (`X43`) |
-| **A4** | unequal sides, and non-convex — the L-shaped house | **houses** | where does a reflex corner stop being recoverable? |
+| **A4** ✅ | unequal sides, and non-convex — the L-shaped house | **houses** | **at every size** — non-convex forms violate law F, so the DOORSTEP refuses them (`X46`) |
 | **A5** | features (doors, windows) on straight sides | **houses** | does the `surf`-slot collision bite here? |
 | **A6** | **arcs** — the round tower shell | **the tower** | `Sep`; and crawler's objective is **collision match**, not shape match — reconcile first |
 | **A7** | **arc + feature — the doored tower** | **the tower** | the **named defect**: a wall with a door fitting **3 arcs instead of 1** (`design/FEATURES.md` §3) — a law **D** failure with prior art |
@@ -157,7 +160,7 @@ crawler `plans/8-landform-morphogenesis/`).
 
 | Phase | Effort | Verify | Status |
 |---|---|---|---|
-| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A3 ✅ closed — next: indexed recovery, then A4** |
+| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A4 ✅ closed — next A5 (features)** |
 | **B** — linework census: `period`, `D`, `Sep`; the straight/arc recovery | M | `rt_census_b`; `eave_spread == 0` on the recovered line | Blocked on A |
 | **C** — `write` / `read`, canonical text frozen | S | `rt_canon`, `rt_project`, `rt_fits`, `rt_close` | Blocked on A, B, **OD-2** |
 | **D** — `rt_trip` written **empty** (red), before `rebuild` exists | XS | needs no ground truth — only `write`/`read`/`draw`/`rebuild` + `diff` | Blocked on C |

@@ -506,3 +506,51 @@ pub const SURFACE_LANDED = false;
 // exists (`DESIGN.md` §8.0).  While this is false the trip gate is legitimately RED, and the
 // runner asserts that redness; flipping it at S8 makes the runner demand a GREEN trip gate.
 pub const REBUILD_LANDED = true;
+
+// ── A4 — LAW J IS NOT A SUFFICIENT ADMISSION RULE ──────────────────────────
+//
+// Law J asks only that the walk CLOSES: `Σ turn = 12` and the vector sum is zero.  Rung A4 grew
+// the space to unequal sides and REFLEX corners, and found law J admits two things it must not:
+//
+//   NON-SIMPLE walks — a repeated vertex, so the "polygon" crosses or touches itself and has no
+//                      well-defined inside.
+//   NON-CONVEX forms — which VIOLATE LAW F.  Measured over the 70 simple non-convex 4-sided
+//                      forms: 62 of 70 at unit scale, and still 36 of 70 grown five times, draw
+//                      a field that some OTHER form also draws.  `draw` is not injective there,
+//                      so no recovery — hull, tracing, or anything else — can tell them apart.
+//                      Scaling shrinks the failure but never removes it.
+//
+// THAT IS A MODEL-SPACE LIMIT, NOT A METHOD LIMIT, and it is why the fix is at the DOORSTEP
+// (`K-FIT`): the editor refuses a non-convex stencil at authoring time rather than letting one be
+// drawn and fail to come back.  `DESIGN.md` §5.2 — a restriction the census finds is a fact to
+// record, not a defect to engineer away.
+//
+// A convex form is exactly one whose turns are all POSITIVE: every exterior angle turning the same
+// way, summing to one revolution.  A turn of 0 is a straight join, which is a re-spelling of a
+// longer side rather than a corner, so it is refused too.
+pub fn form_is_convex(f: Form) -> boolean {
+  turns = f.fm_turn;
+  for ci in 0..len(turns) { if (turns[ci] ?? 0) <= 0 { return false; } }
+  true
+}
+
+// Does the walk visit any point twice?  A repeated vertex means the boundary is not a simple
+// closed curve, so "inside" is not defined and the fill is meaningless.
+pub fn form_is_simple(f: Form) -> boolean {
+  vk = form_poly_k(f);
+  vm = form_poly_m(f);
+  n = len(vk);
+  for ai in 0..n {
+    for aj in 0..n {
+      if ai < aj && (vk[ai] ?? 0) == (vk[aj] ?? 0) && (vm[ai] ?? 0) == (vm[aj] ?? 0) {
+        return false;
+      }
+    }
+  }
+  true
+}
+
+// THE ADMISSION RULE, as A4 leaves it: closed (law J), simple, and convex.
+pub fn form_admissible(f: Form) -> boolean {
+  form_closes(f) && form_is_simple(f) && form_is_convex(f)
+}

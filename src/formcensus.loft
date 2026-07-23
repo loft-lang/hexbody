@@ -267,7 +267,7 @@ pub fn forms_upto(maxlen: integer) -> vector<Form> {
               ec = 12 - ea - eb;
               if ec >= 1 && ec <= 11 {
                 ef = form_new(eh, [la, lb, lc], [ea, eb, ec]);
-                if form_closes(ef) {
+                if form_admissible(ef) {
                   cf = form_canon(ef);
                   ct = form_write(cf, "x");
                   seen = false;
@@ -352,7 +352,7 @@ pub fn forms_sides(sides: integer, maxlen: integer) -> vector<Form> {
         }
         for eh in 0..12 {
           ef = form_new(eh, lens, turns);
-          if form_closes(ef) {
+          if form_admissible(ef) {
             cf = form_canon(ef);
             ct = form_write(cf, "x");
             seen = false;

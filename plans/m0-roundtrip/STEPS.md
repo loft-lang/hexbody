@@ -508,6 +508,51 @@ needs a negative turn, which law J's turn condition does not currently produce a
 silently smooth away. Reaching those wants boundary **tracing** rather than hulling — `hexmatch`'s
 shape (`X21`) — and that is the next real piece of work, not an extension of this one.
 
+## A4 ✅ · unequal sides, non-convex — **DONE** *(and it moved the doorstep, not the recovery)*
+
+The rung's question: **where does a reflex corner stop being recoverable?** The answer is *at every
+size measured* — and the reason is not the recovery.
+
+### Law J is not a sufficient admission rule
+
+Law J asks only that the walk CLOSES (`Σ turn = 12`, vector sum zero). Allowing negative turns
+shows it admits two things it must not:
+
+- **non-simple walks** — a repeated vertex, so the boundary is not a simple closed curve and
+  "inside" is undefined;
+- **non-convex forms** — which **violate law F outright**.
+
+| scale | simple non-convex 4-sided | recovered | **same field, OTHER form** | refused |
+|---|---|---|---|---|
+| 1 | 94 | **0** | 86 | 8 |
+| 3 | 94 | **0** | 66 | 28 |
+| 5 | 94 | **0** | 60 | 34 |
+
+The middle column is the finding: the recovery reproduces the field **exactly** (`ρ = 0`) while
+returning a *different* form. Two distinct forms draw one field, so `draw` is not injective there —
+and **no recovery method can separate them.** Scaling the shape five times shrinks the failure
+(86 → 60) but never removes it.
+
+Against that, the **admissible** (convex, simple) 4-sided set: **138 forms, 0 failures.**
+
+### ⚠ This corrects the guidance I left at constructive recovery
+
+§10.22 said *"A4 must switch to boundary tracing"*, on the theory that hull recovery was the thing
+failing. **That was wrong.** Tracing would rescue only the *refused* column (8→34 cases); the
+majority are ambiguous **in the model**, and a better algorithm cannot help. The problem was never
+the method.
+
+### So the fix is at the DOORSTEP, not in the recovery
+
+`form_admissible` = **closed (law J) ∧ simple ∧ convex**, and the enumerations now call it instead
+of `form_closes`, so the rule is single-sourced rather than implied by a turn range. `fits?` must
+refuse non-convex and non-simple stencils **at authoring time** (`K-FIT`) — they cannot be
+recovered even in principle, so they must never be authored. That is `DESIGN.md` §5.2 exactly: *a
+restriction the census finds is a fact to record, not a defect to engineer away.*
+
+Counts are unchanged by the switch (10/32/60 by level, 10/21/30/36 by side count), which confirms
+the earlier enumerations were already inside the rule — they just had not said so.
+
 ## Order, and where it can go wrong
 
 ```

@@ -38,7 +38,7 @@ crawler's prototypes and design docs are **design tries** — input, not authori
 | **T3 · designed** | a doc argues a construction | **input to design, never truth** |
 | **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
 
-**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X45`** — eight of them re-measured *here*, and
+**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X46`** — eight of them re-measured *here*, and
 `X26`–`X31` **discovered here**. Everything else the design leans on is still a try or a schema
 (notably the whole foxel schema, `X11`–`X15`), and the census is where it gets re-measured. Citing a T2 number as settled is
 the specific mistake to avoid — in either direction: re-deriving what is genuinely gated wastes
@@ -73,7 +73,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X45` **with trust tiers** | **authoritative** on any object or map |
+| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X46` **with trust tiers** | **authoritative** on any object or map |
 | **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
@@ -246,12 +246,23 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 - **It reaches past the enumeration**: today's house `[4,5,4,5]` is **R2 by enumeration
   (ρ = 22)** and **R1 with ρ = 0 constructively** — gated, with the miss asserted so the
   comparison is not vacuous.
-- ⚠ **Hull recovery is exact where it applies and SILENTLY WRONG where it does not.** It assumes
-  convexity; a reflex corner would be smoothed away, not rejected. **A4 (non-convex) must switch to
-  boundary TRACING** (`hexmatch`, `X21`), and its gate needs a control that a reflex corner is not
-  quietly convexified.
-- Next: **A4** (unequal sides, non-convex — needs tracing) or **S4b** (the wall surface by
-  averaging) — see `STEPS.md` and `README.md`'s rung table.
+- **A4 is done, and it moved the DOORSTEP rather than the recovery (X46).** Law J constrains only
+  closure, and admits non-simple walks *and* non-convex forms — and **non-convex forms violate
+  law F**: 0 of 94 recover at any scale, and 86/66/60 (scale 1/3/5) draw a field that **another
+  form also draws**, with `ρ = 0`. `draw` is not injective there, so **no recovery method can
+  separate them**. The admissible (convex ∧ simple) set: 138 forms, 0 failures.
+- **`form_admissible` = closed ∧ simple ∧ convex**, and the enumerations call it instead of
+  `form_closes` — the rule is single-sourced, not implied by a turn range. `fits?` must refuse
+  non-convex/non-simple at authoring time (**K-FIT**).
+- ⚠ **I had guided A4 toward boundary tracing; the measurement inverted that.** Tracing would
+  rescue only the *refused* minority — the rest are ambiguous **in the model**. When recovery
+  fails, first ask whether the information is in the field at all, not which algorithm to reach
+  for.
+- **The L-shaped house is NOT admissible** under this grammar: `I3` makes the wall the boundary of
+  the fill, so a reflex corner enclosing no distinct cells is invisible to the field. A real limit
+  on what can be authored, written down rather than left to be discovered.
+- Next: **S4b** (the wall surface by averaging — the render/`G2` front `make shot` waits on), or
+  **A5** (features: doors/windows on straight sides) — see `STEPS.md` and the rung table.
 - **The foxel schema is the limit** (`ROUNDTRIP.md` §2.4): `layer* × point → (height, material,
   wall1, wall2, wall3, item)`. A model is admissible **iff it draws into that exactly**, which
   makes `fits?` syntactic and finite. It closed OD-2/3/4/6/7/8 — roofs and terrain are `height`,
@@ -261,7 +272,7 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
   relocated into the schema, and rung A5's real question.
 - **Constraints are in `ROUNDTRIP.md` §7 (X1–X31) with trust tiers.** T1 now holds `X1`, `X2`,
-  `X19`–`X22`, `X24`–`X45`; do not re-derive those. Everything else is still a try or a schema.
+  `X19`–`X22`, `X24`–`X46`; do not re-derive those. Everything else is still a try or a schema.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their

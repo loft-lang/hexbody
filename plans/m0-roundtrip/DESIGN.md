@@ -1943,9 +1943,70 @@ The hull argument holds **only for convex forms**. A non-convex form — **A4**'
 needs a negative turn, and the hull would silently smooth the reflex corner away rather than fail
 loudly. That is the dangerous shape of the limit, so it is worth naming precisely:
 
-> Constructive recovery by hull is **exact where it applies and silently wrong where it does not**.
-> A4 must therefore switch to boundary **tracing** (`hexmatch`'s shape, `X21`) rather than extend
-> this, and any A4 gate needs a control that a reflex corner is not quietly convexified.
+> Constructive recovery by hull is **exact where it applies**, and returns *a* form that draws the
+> input exactly where it does not — so the danger is not a wrong field but an ambiguous one.
+
+⚠ **A4 measured this and the conclusion inverted** (§10.23): the majority of non-convex forms are
+ambiguous **in the model** — two forms, one field — so tracing would not rescue them either. The
+fix turned out to belong at the doorstep, not in the recovery.
+
+## 10.23 A4 — the reflex corner, and why the fix is the doorstep
+
+The rung asked *where does a reflex corner stop being recoverable?* The answer is **at every size
+measured**, and the reason is not the recovery.
+
+### Law J is not a sufficient admission rule
+
+Law J constrains only closure. Allowing negative turns shows it admits two things it must not —
+**non-simple** walks (a repeated vertex, so "inside" is undefined) and **non-convex** forms:
+
+| scale | simple non-convex, 4 sides | recovered | **same field, OTHER form** | refused |
+|---|---|---|---|---|
+| 1 | 94 | **0** | 86 | 8 |
+| 3 | 94 | **0** | 66 | 28 |
+| 5 | 94 | **0** | 60 | 34 |
+
+The middle column is the whole finding. There the recovery reproduces the field **exactly**
+(`ρ = 0`) and returns a **different form**. Two distinct forms draw one field, so `draw` is not
+injective — and **no recovery method can separate them.** Growing the shape five times shrinks the
+failure (86 → 60) but never removes it.
+
+The **admissible** (convex ∧ simple) 4-sided set, by contrast: **138 forms, 0 failures.**
+
+### The correction to §10.22
+
+§10.22 concluded *"A4 must switch to boundary tracing"*, reasoning that hull recovery was what
+failed. **That was wrong, and the measurement inverted it.** Tracing would rescue only the
+*refused* column — 8 to 34 cases — while the majority are ambiguous in the **model**. A better
+algorithm cannot fix a `draw` that is not injective.
+
+The lesson generalises past this rung: when recovery fails, the first question is *whether the
+information is present in the field at all*, not which algorithm to reach for. I reached for the
+algorithm.
+
+### The fix: the doorstep
+
+```
+form_admissible(f)  =  form_closes(f)  ∧  form_is_simple(f)  ∧  form_is_convex(f)
+```
+
+and the enumerations now call it instead of `form_closes`, so the rule is **single-sourced** rather
+than implied by a turn range that happened to exclude reflex corners. Counts are unchanged
+(10/32/60 by level, 10/21/30/36 by side count), confirming the earlier enumerations were already
+inside the rule — they had just never said so.
+
+`fits?` must refuse non-convex and non-simple stencils **at authoring time** (`K-FIT`). They cannot
+be recovered even in principle, so they must never be authored. That is `DESIGN.md` §5.2 exactly:
+*a restriction the census finds is a fact to record, not a defect to engineer away* — and §5.2's
+*"the limit sits at the doorstep"* is now load-bearing rather than aspirational.
+
+### What this costs, honestly
+
+**The L-shaped house is out.** A4's headline case is not admissible under this grammar, because
+`I3` makes the wall the boundary of the fill, so a reflex corner that encloses no distinct cells is
+invisible to the field. Recovering it would need the model to store something the fill does not
+determine — which `L3`/`I3` currently forbid. That is a real limit on what hexbody can author, and
+it is now written down rather than waiting to be discovered by someone drawing an L.
 
 ## 11. Known conflicts in the current tree
 

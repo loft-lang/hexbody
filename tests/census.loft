@@ -22,6 +22,7 @@ use hex_field;
 use hexform;
 use formcensus;
 use formtext;
+use formfit;
 
 const W = 61;
 const H = 61;
@@ -289,6 +290,84 @@ fn main() {
   println("   => enumerate-and-match recovery is affordable on ONE axis at a time. The 4-sided");
   println("      house [4,5,4,5] needs maxlen 5 (~1.2M proposals), so reaching it wants INDEXED");
   println("      recovery, not enumeration. That is the real limit this rung found.");
+
+  // ── 7. A4 — LAW J IS NOT A SUFFICIENT ADMISSION RULE ─────────────────────
+  //
+  // A4 grows the space to REFLEX corners. Law J asks only that the walk closes, and that admits
+  // two things it must not: non-simple walks (a repeated vertex, so "inside" is undefined) and
+  // NON-CONVEX forms, which violate law F outright.
+  //
+  // This is the measurement that decides it: take every simple non-convex 4-sided form, draw it,
+  // recover it, and see whether the recovered form is the SAME form. Where it is not — while the
+  // recovery reproduces the field exactly (rho = 0) — two distinct forms draw one field, and NO
+  // recovery method can separate them. A model-space limit, not a method limit.
+  println("");
+  println("7. A4 — non-convex forms VIOLATE law F, so law J alone cannot be the doorstep");
+  println("   scale  simple non-convex  recovered  SAME FIELD, OTHER FORM  refused");
+  nlawf = 0;
+  for sc in 1..4 {
+    ntot = 0; nrec = 0; nwrong = 0; nref = 0;
+    for ci in 0..4913 {
+      turns: vector<integer> = [];
+      rest = ci; tot = 0;
+      for tj in 0..3 {
+        dg = ((rest % 17) ?? 0) - 5;
+        rest = (rest / 17) ?? 0;
+        turns += [dg]; tot = tot + dg;
+      }
+      lastt = 12 - tot;
+      if lastt >= -5 && lastt <= 11 {
+        turns += [lastt];
+        lens: vector<integer> = [];
+        for lj in 0..4 { lens += [sc * 2 - 1]; }
+        af = form_new(0, lens, turns);
+        if form_closes(af) && form_is_simple(af) && !form_is_convex(af) {
+          ntot = ntot + 1;
+          ac = hexset_chunk(-40, -40, 81, 81);
+          form_fill(af, 0, 0, ac);
+          ar = rebuild_construct(ac);
+          if ar.rb_regime == 1 {
+            if form_write(ar.rb_form, "z") == form_canon_text(af, "z") { nrec = nrec + 1; }
+            else { nwrong = nwrong + 1; }
+          } else { nref = nref + 1; }
+        }
+      }
+    }
+    println("   {sc * 2 - 1:>5} {ntot:>18} {nrec:>10} {nwrong:>23} {nref:>8}");
+    nlawf = nlawf + nwrong;
+    if ntot <= 0 { println("  FAIL: no simple non-convex forms found — A4 has nothing to say"); ok = false; }
+  }
+  // THE ASSERTION: admitting non-convex forms must be shown to BREAK law F. If it did not, the
+  // convexity restriction would be unjustified and should be dropped.
+  println("   law F violations found among non-convex forms: {nlawf}");
+  if nlawf <= 0 {
+    println("  FAIL: no non-convex form collided — the convexity restriction defends nothing"
+            + " and must not be imposed"); ok = false;
+  }
+  // and the ADMISSIBLE set must be clean: every convex admitted form recovers as itself.
+  ncvx = 0; ncvxbad = 0;
+  cvf = forms_sides(4, 2);
+  for vi in 0..len(cvf) {
+    vf = cvf[vi] ?? form_new(0, [], []);
+    if form_admissible(vf) {
+      ncvx = ncvx + 1;
+      vc = hexset_chunk(-40, -40, 81, 81);
+      form_fill(vf, 0, 0, vc);
+      vr = rebuild_construct(vc);
+      if vr.rb_regime != 1 || form_write(vr.rb_form, "z") != form_canon_text(vf, "z") {
+        ncvxbad = ncvxbad + 1;
+      }
+    }
+  }
+  println("   CONTROL the ADMISSIBLE (convex, simple) 4-sided set: {ncvx} forms,"
+          + " {ncvxbad} that fail to recover as themselves");
+  if ncvxbad != 0 {
+    println("  FAIL: an admissible form does not recover as itself — the restriction is not"
+            + " enough, or the recovery is wrong"); ok = false;
+  }
+  if ncvx <= 0 { println("  FAIL: the admissible set is empty"); ok = false; }
+  println("   => `fits?` must refuse NON-CONVEX and NON-SIMPLE forms at the doorstep (K-FIT):");
+  println("      they cannot be recovered even in principle, so they must never be authored.");
 
   println("");
   if ok { println("=== CENSUS OK ==="); }
