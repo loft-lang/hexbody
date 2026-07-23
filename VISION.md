@@ -62,11 +62,11 @@ State the boundary honestly, or the pitch over-promises:
 
 The target is a body that is **an enemy and a platform at once** — you stand on a moving,
 articulated creature, grip its shaking arm, are thrown off when it shakes hard enough, climb
-to a weak point. Team Ico did it the bespoke way: sixteen hand-authored set-pieces in
-controlled arenas. hexbody's divergence is exactly the axis they couldn't touch — because the
-platforms are *produced field geometry*, a colossus can be procedural, it can crush your
-(produced) buildings and derive the wreckage, and a decoupled limb becomes a free falling
-body. Those are combinatorial things sixteen hand-made set-pieces can never be.
+to a weak point. *Shadow of the Colossus* reached it beautifully with hand-authored set-pieces
+in controlled arenas. hexbody's difference is architectural: because the platforms are *produced
+field geometry*, a colossus can be procedural — it can crush your (produced) buildings and derive
+the wreckage, and a decoupled limb becomes a free falling body. Those are combinatorial things a
+fixed set of hand-made set-pieces isn't reaching for.
 
 "An enemy changes into the platform" is the architectural claim that **one moving body is read
 by many systems at once** — combat sees a hurtbox, traversal sees a standable surface, AI sees
@@ -91,7 +91,8 @@ houses tumbling down an embankment still read unmistakably as a train wreck.
 So it plays three roles at once — a **demo** that sells the capability breadth in one image
 (disaster game, physics toy, mecha game); an **acceptance test**, because if it works the stack
 integrates; and a **forcing function**, because you cannot fake it, so building it forces every
-piece to exist and compose. It is the diorama that both drives and proves the substrate.
+piece to exist and compose. It is the diorama that both drives and proves the substrate — and
+it is where the case for hexbody is *made*, by showing it, not argued in prose.
 
 It is the **first full-stack target**, deliberately *ahead* of the colossus: smaller — one
 train, one embankment, one tumble, versus a whole procedural climbable colossus — but exercising
@@ -106,12 +107,12 @@ The indie path depends on **produced geometry reaching *shippable aesthetic qual
 and stated baldly that sounds like the least-proven claim in the thesis — as if it needed a
 whole new 3D art-craft invented from nothing.
 
-It doesn't, and the reason is **kitbashing**. The difference between a Bethesda *shipped* house
+It doesn't, and the reason is **kitbashing**. The difference between a *shipped* open-world house
 and our current model is not sculpting — it is **set dressing**: a house's massing is snapped
 together from a *modular kit* (walls, corners, doorways, trims) and then dressed with props.
-That is literally how Bethesda ships — a modular kit assembled per house — and it is
-**produced, not stored**: the content bill scales with the *kit* (a few dozen reusable pieces),
-not with the house. It is the same thesis as everything else here, applied to appearance, and
+That modular-kit workflow is how large open-world environments ship — and it is **produced, not
+stored**: the content bill scales with the *kit* (a few dozen reusable pieces), not with the
+house. It is the same thesis as everything else here, applied to appearance, and
 **we have already designed and started it** — the props system, the stencils, the part-tree,
 the bundles are the kit vocabulary.
 

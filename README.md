@@ -13,11 +13,11 @@ enemy-that-is-also-a-platform — **before any art exists**, then take one of tw
 - **indie path (the mission)** — refine the produced geometry itself until it ships. No art
   department, no mesh pipeline, no swap. The produced geometry *is* the shippable art.
 
-Why this is possible here and not in a AAA engine: **our geometry is structured field data,
-not an opaque mesh, so the collision proxy is *computable* from it.** FromSoft and Team Ico
-author every collision volume by hand because a bag of triangles can't be reasoned about;
-hexbody derives them all from one representation, so arbitrary, procedurally-placed bodies of
-any scale — a person, a cart, a blimp, a colossus — get proxies for free.
+Why this is possible: **our geometry is structured field data, not an opaque mesh, so the
+collision proxy is *computable* from it.** Where all you have is a mesh, collision volumes are
+authored by hand because a bag of triangles can't be reasoned about; hexbody derives them all
+from one representation, so arbitrary, procedurally-placed bodies of any scale — a person, a
+cart, a blimp, a colossus — get proxies for free.
 
 The **why and the goals** are in [`VISION.md`](VISION.md); the **how** — the mechanism, the
 proxy contract, the destruction models, the roadmap — is in

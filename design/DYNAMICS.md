@@ -40,7 +40,7 @@ for. So crossing the line is allowed here (the feature earns it) **only with a s
 
 > **Simulate to a plausible rest, not to frame-perfect physics.** The goal is *where the wagons
 > end up* — a believable pile — not a joule-accurate reconstruction. Fidelity is "reads right and
-> settles," not "matches reality." That scope is what stops this becoming a Havok clone.
+> settles," not "matches reality." That scope is what stops this becoming a full rigid-body physics engine.
 
 Everything below serves that scope.
 

@@ -114,14 +114,14 @@ work, catch any that break the moment they break.
 
 ---
 
-## 5. What this makes true, and why no incumbent does it
+## 5. What this makes true
 
-Bethesda's editor shows you the grid-snapped mesh you just placed. This shows you your building
-in *every orientation it will ship in*, morphed to fit, residual flagged, **from one authoring
-pass.** That is **author once, ship any orientation, trust it** — the indie-ship path made
-concrete on screen, and part of the gold, precisely because the incumbent's editor cannot do it
-(its mesh is opaque; ours is derived from structured field data, so the variants are computable
-and the collision follows for free).
+This shows you your building in *every orientation it will ship in*, morphed to fit, residual
+flagged, **from one authoring pass** — **author once, ship any orientation, trust it**, the
+indie-ship path made concrete on screen, and part of the gold. It is possible because the
+geometry is derived from structured field data, so the variants are computable and the collision
+follows for free; where all you have is an opaque mesh, each orientation is authored and its
+collision re-fitted by hand.
 
 It is also the concrete form of the whole promise: the developer manipulates intent, sees
 outcome, never touches mechanism — and *sees*, live, that the sealed engine got it right.
