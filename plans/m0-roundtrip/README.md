@@ -88,7 +88,14 @@ than going silently ungated.
   run to a single verdict.
 - **A collision is a result, not a failure.** The restrictions are the *output* of this plan, not
   its precondition. Defining the admitted space up front and then enumerating it would presuppose
-  exactly the bounds we are trying to find (`ROUNDTRIP` §8.1).
+  exactly the bounds we are trying to find (`ROUNDTRIP` §8.1). The bounds are not the problem —
+  there is plenty of room inside them.
+- **Every restriction found lands in `fits?` immediately, on the same rung.** A rung is not done
+  when the collision is understood; it is done when the limit is **enforceable at the door**
+  (`ROUNDTRIP` §5.2, law **C₂**). Otherwise the ladder accumulates known-but-unenforced limits and
+  the editor can still author something that breaks later.
+- **Each rung must also close under `Ops`**, not merely round-trip. A form that survives A5 alone
+  but not `flip(A5)` is **refused at A5**, not discovered at rung A8 — that is `rt_closure`.
 - **Its output is not a throwaway probe.** `Cyc` and `period` are the **shared artifact** that
   `rt_trip` *and* the editor's `fits?` both consume (`K-FIT`: `authorable ⊆ fits?`). Building them
   twice — once for the gate, once for the editor — is the `N > 1` silent-divergence failure.

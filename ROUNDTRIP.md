@@ -385,15 +385,47 @@ to mutate by approximation (§6 **G**, **H**), so transfer across the flipped ha
 free — it is what `rt_drift` measures. Should it fail, the census must be run over all 12 of `O`
 rather than over 6 and transferred.
 
-`fits?` and `snap` are **one chokepoint**, consulted by the round-trip gate *and* by the editor.
-The editor may be **stricter**, never looser:
+### 5.2 The limit sits at the doorstep
+
+**The bounds are not the problem.** There is a great deal of room inside them, and a restriction
+found by the census (§8.1) is a **fact to record**, not a defect to engineer away. What matters is
+not how large `𝕄*` is, but that **nothing outside it ever gets in.**
+
+> **The editor refuses at authoring time.** Not a warning, not a later validation pass, not a
+> failure at `rebuild`. If a thing cannot survive, it cannot be made.
 
 ```
                  authorable  ⊆  { m : fits?(m) }                             (K-FIT)
 ```
 
-A model with `¬fits?` is **flagged with its residual `ρ`**, never silently snapped — same contract
-shape as `K-SEAT`'s `(z₀, T′, residual)`.
+**Why the door and not a downstream check.** Deferred breakage separates the symptom from its
+cause: a building authored on Monday looks correct, round-trips correctly, and breaks after a
+flip, or when combined with its neighbour, or after it takes damage. By then nothing on screen
+points at the authoring choice that caused it. A refusal at the door costs one dialogue; the same
+limit discovered three steps later costs a debugging session and a corrupted save.
+
+**"Eventually broken" is the operative word — hence law C₂.** It is not enough that `m`
+round-trips *today*. `𝕄*` must be **closed under everything that will later be done to it**:
+
+| `op ∈ Ops` | the deferred break it would otherwise cause |
+|---|---|
+| `flip` | authored fine, wrong after a mirrored placement (laws **G**, **H**) |
+| `place` | fine in the local frame, wrong once seated on the world lattice |
+| `combine` | fine alone, broken beside its neighbour — rung **A8**, the least visible axis |
+| `damage` | fine intact, un-re-canonicalisable as a ruin (**E₃**) |
+| `seat` | fine on flat ground, unseatable on the real terrain (`K-SEAT`) |
+
+If `m` fits but `flip(m)` does not, **`m` is refused** — because the flip *will* happen. Admitting
+it would be trading a certain later failure for a momentary convenience.
+
+**There are exactly two doors into `𝕄*`**, and both are guarded: the **editor** (guarded by
+`fits?`) and **`rebuild`** (which lands in `𝕄*` by law **E₁**, by construction). Nothing else
+constructs a model. That is what makes the guarantee enforceable rather than aspirational.
+
+**What a refusal looks like.** Refuse, **name the restriction**, and offer the nearest fitting
+alternative with its residual `ρ` — the `K-SEAT` shape, `(z₀, T′, residual)`. Never silently snap
+(that hides the limit and the author never learns it), never reject blankly (that hides the
+reason). A limit the author can see is a limit they can design within.
 
 ## 6. Laws
 
@@ -403,7 +435,8 @@ Let `m` range over `𝕄*`, `f` over `𝔽`, `T` over `𝕋`, `v` over `Λ`.
 |---|---|---|
 | **A** | canonicity | `∀m. read(write(m)) = m`  ∧  `∀T. write(read(T)) = T` |
 | **B** | projection | `∀m ∈ 𝕄. σ(σ(m)) = σ(m)`  ∧  `ρ(σ(m)) = 0` |
-| **C** | fitting = fixed point | `∀m ∈ 𝕄. m ∈ 𝕄* ⟺ σ(m) = m` |
+| **C₁** | fitting = fixed point | `∀m ∈ 𝕄. m ∈ 𝕄* ⟺ σ(m) = m` |
+| **C₂** | closure under operations | `∀m ∈ 𝕄*, ∀op ∈ Ops. op(m) ∈ 𝕄*` — where `Ops = {flip, place, combine, damage, seat}`. What is admitted must survive **everything that will later be done to it** (§5.2) |
 | **D** | round trip | `∀m. rebuild(draw(m)) = m`   ⟺   `draw ∘ rebuild ∘ draw = draw` |
 | **E₁** | totality | `∀f ∈ 𝔽. rebuild(f) ∈ 𝕄*` — `rebuild` is **total**; it never fails, never returns a non-fitting model |
 | **E₂** | exactness on undamaged fields | `∀f ∈ im(draw). rebuild ∘ draw ∘ rebuild = rebuild`, with `ρ = 0` |
@@ -433,11 +466,11 @@ an invertible transform of a house, and no amount of care makes it one.
 
 | | proposition | from |
 |---|---|---|
-| **P1** | `𝕄* = im(σ) = im(rebuild)` — the fitting set need not be axiomatised; it *is* the image | B, C, E₁ |
+| **P1** | `𝕄* = im(σ) = im(rebuild)` — the fitting set need not be axiomatised; it *is* the image | B, C₁, E₁ |
 | **P2** | `draw│𝕄*` is injective (law F) | D |
 | **P3** | `write(rebuild(draw(read(T)))) = T` — **the round-trip gate is a text `diff`** | A, D |
 | **P4** | round-trip equality is byte equality; no `ε` exists in the gate | C1, P3 |
-| **P5** | `σ│𝕄* = id` — re-snapping an authored model is a no-op; the editor cannot jitter under repeated edit | B, C |
+| **P5** | `σ│𝕄* = id` — re-snapping an authored model is a no-op; the editor cannot jitter under repeated edit | B, C₁ |
 | **P6** | `write, read` are mutually inverse bijections `𝕄* ≅ 𝕋` | A |
 
 *Proof of P2.* `draw(m₁) = draw(m₂)` ⟹ `m₁ = rebuild(draw(m₁)) = rebuild(draw(m₂)) = m₂`. ∎
@@ -515,7 +548,9 @@ work always has something green rather than one long red run to a single verdict
 |---|---|---|---|---|
 | `rt_canon` | A | — | text diff | reorder a field (violate C2) → diff |
 | `rt_project` | B | — | equality + `ρ = 0` | perturb by ½ step → `ρ ≠ 0` |
-| `rt_fits` | C | — | `fits?` vs `σ(m) = m` | **A:** a cycle in the collision set → `fits?` false · **B:** `n < period(d)` → `fits?` false |
+| `rt_fits` | C₁ | — | `fits?` vs `σ(m) = m` | **A:** a cycle in the collision set → `fits?` false · **B:** `n < period(d)` → `fits?` false |
+| **`rt_closure`** | **C₂** | both | `∀m ∈ 𝕄*, ∀op ∈ Ops. fits?(op(m))` — over the census output | admit a form whose `flip` leaves `𝕄*` → fires at the door, not after the flip |
+| `rt_door` | C₂ | — | every editor authoring op yields `fits?`; a refusal names its restriction and offers `(m′, ρ)` | let the editor emit a non-fitting model → `rt_trip` breaks downstream instead |
 | **`rt_trip`** | **D** | both | **`write(rebuild(draw(read(T)))) ≟ T`** | a non-fitting model bypassing `σ` → diff |
 | `rt_total` | E₁ | both | `σ(rebuild(f)) = rebuild(f)` for arbitrary `f` | hand-corrupt an `EdgeSet` → still lands in `𝕄*`, never fails |
 | `rt_ruin` | E₂,E₃ | A | `ρ = 0` on `im(draw)`; `ρ` **reported** off it | crumble a wall → `ρ > 0` and is surfaced, not swallowed |

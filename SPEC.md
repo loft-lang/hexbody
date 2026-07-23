@@ -84,7 +84,7 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 | **K-PROXY** | a `Body` provides a **proxy**; the proxy is the interface — field-derived in the prototype, mesh/authored in a shipped game; its error bound is stated; a consumer runs a conformance gate on their mesh |
 | **K-JOINT** | the **joint value** is the interface; downstream (proxy, collision, render) is blind to whether it came from a constraint (derived) or a track (authored) |
 | **K-SEAT** | `seat(stencil, terrain) → (z0, T', residual)`; `z0` minimises the chosen earthwork objective; `T'` drains; `residual` flags an unseatable plot |
-| **K-FIT** | `fits?(m) → bool` and `snap(m) → (m*, residual)` are **one chokepoint**, consulted by the round-trip gate *and* by the editor. The editor may be stricter, never looser: `authorable ⊆ { m : fits?(m) }`. A non-fitting model is **flagged with its residual**, never silently snapped ([`ROUNDTRIP.md`](ROUNDTRIP.md) §5) |
+| **K-FIT** | `fits?(m) → bool` and `snap(m) → (m*, residual)` are **one chokepoint**, consulted by the round-trip gate *and* by the editor. **The limit sits at the doorstep: the editor refuses at authoring time** — never a warning, never a downstream check. `authorable ⊆ { m : fits?(m) }`, and `𝕄*` is **closed under `Ops = {flip, place, combine, damage, seat}`** (law **C₂**), so what is admitted survives everything later done to it. A refusal **names its restriction** and offers the nearest fitting alternative with its residual — never a silent snap, never a blank rejection ([`ROUNDTRIP.md`](ROUNDTRIP.md) §5.2) |
 
 ---
 
