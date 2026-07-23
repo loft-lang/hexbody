@@ -162,21 +162,39 @@ filled: **a closed turtle `Form` → a filled region**, the hexagonal-tower prim
   already canonical. The first draft restated it privately and the compiler caught the
   redefinition — exactly the `X26` shape, caught by the language this time.
 
-## S4 · turtle → walls — `src/hexform.loft` · S
+## S4 ✅ · turtle → walls, and the corner — `src/hexform.loft` · S · **DONE**
 
-Boundary edges of the filled region, reusing `housedraw::draw_walls` unchanged.
+Boundary edges of the filled region, reusing `housedraw::draw_walls` **unchanged**. The new work
+is the requirement `tests/house.loft` never checked: **what happens where two runs meet**
+(`DESIGN.md` §10.4, four parts).
 
-- **gate** `tests/form.loft`: the house outline gives **38 boundary edges**, matching
-  `tests/house.loft`.
-- **control**: buffer a band instead of taking the boundary → 2 components, 0 enclosed (`I3`'s
-  own control, now reachable from the new path).
-- **CORNERS MUST BE PRECISE** — the requirement `tests/house.loft` does not currently check
-  anywhere (`DESIGN.md` §10.4). Four parts: (1) the boundary is **one closed loop**, no gap at a
-  corner; (2) the corner **angle is exact** — 90° for a `Plan`; (3) the corner cell is claimed
-  **exactly once**, neither doubled nor dropped; (4) the **miter point** of the two fitted
-  surfaces sits on the exact corner. Parts 1 and 3 are checkable here on the strip; parts 2 and 4
-  need the fitted surface, so **write them into the gate red at S4** and let S8 turn them green —
-  the same discipline as `rt_trip`.
+- **gate** `tests/form.loft` §14–§17, every control fires.
+- **part 1 — the boundary is ONE CLOSED LOOP.** Measured over seven turtle shapes (both heading
+  classes): `ends = 0`, `branches = 0`, `loops = 1`, every one. Vertices key by exact doubled
+  `(k,m)` integers, so "the same corner" is integer equality, not a float compare.
+  - `branches = 0` re-measures crawler's **no-pinch** claim (a hex vertex touches exactly three
+    mutually adjacent cells, so a boundary cannot pinch — asserted there over 412 forms, T2).
+  - **control**: punch a **strictly interior** cell out → the boundary becomes **2 loops**, which
+    is `I3`'s named failure.
+- **part 3 — the corner cell is claimed EXACTLY ONCE.** `housedraw::side_edges` classifies each
+  boundary edge to a side, and nothing had ever checked the four runs **partition** the boundary:
+  `5×4 → 38 = 9+10+9+10`, `4×4 → 38 = 11+8+11+8`, `6×4 → 46 = 11+12+11+12`. Control: three of the
+  four sides cover only 28 of 38.
+- **`I3`'s own control, now reachable**: the BAND rule against the BOUNDARY rule. An edge wall
+  costs **no floor**; a band wall eats what it should enclose — hexagon n=1 keeps 1 of 7 cells,
+  **triangle n=2 keeps 0 of 6**: a house with no room.
+- **parts 2 and 4 are written now and enforced later.** The corner ANGLE and the MITER POINT need
+  the fitted surface (S8). §10.4 says write them red at S4; a permanently red suite is not a
+  signal, so they are a **tripwire** instead: `hexform::SURFACE_LANDED` is `false`, the gate prints
+  both as PENDING, and flipping it at S8 makes the gate FAIL until the real checks are written.
+  They cannot be forgotten and `make test` stays live. *(Flip it today if literal red is wanted —
+  the section is already written.)*
+- **the mistake worth recording**: the first hole control did not fire. `form_fill` anchors the
+  turtle's **start vertex** at the given cell, so `(0,0)` is a **corner** of the shape, not its
+  middle — removing it only dents the boundary. The same slip was in S3 §12b, which reported
+  "punch the centre out" while removing a boundary cell; the section still passed because the
+  area identity holds for any set. Both now find a **strictly interior** cell (all six neighbours
+  filled) instead.
 
 ## S5 · field digest + the level-1 census — `src/formcensus.loft` + `tests/census.loft` *(new)* · S
 

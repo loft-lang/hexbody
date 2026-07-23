@@ -1431,7 +1431,7 @@ mistake in our own gate: green for the wrong reason.
 What it *does* check is the boundary **convention** — that the corner table, the edge table and the
 neighbour table agree — which is the `X26` class, the one every other check was blind to. Its
 control is therefore a deliberately wrong corner pairing (`i` with `i+2`), which collapses it to
-294 against 216. Recorded as **X34**, stated with that limit rather than as inherited.
+288 against 216. Recorded as **X34**, stated with that limit rather than as inherited.
 
 ### L11, caught by the compiler this time
 
@@ -1439,6 +1439,76 @@ The first draft restated the doubled-`(k,m)` corner table privately. `hex_field`
 `corner_k`/`corner_m` — the canonical one — and the compiler rejected the redefinition outright.
 That is the `X26` shape again (a private copy of a library table), caught for free because the
 library owned the name.
+
+## 10.14 S4 — the boundary, and the corner that was never checked
+
+The wall is the boundary of the fill, taken as **edges** (`I3`), and `housedraw::draw_walls`
+already does that — reused unchanged. The new work is the requirement §10.4 raised and nothing
+gated: **what happens where two runs meet.**
+
+### Part 1 — the boundary is one closed loop
+
+| check | why it is the corner test | measured |
+|---|---|---|
+| `ends = 0` | a run that stopped before the corner cell leaves a dangling vertex | 0, all 7 shapes |
+| `branches = 0` | the boundary never pinches at a vertex | 0, all 7 shapes |
+| `loops = 1` | one shape, no hole | 1, all 7 shapes |
+
+Vertices key by their exact doubled-`(k,m)` integers, so "the same corner" is integer equality —
+the same discipline as the OD-12 chain check, no float quantisation anywhere. `branches = 0`
+re-measures crawler's **no-pinch** property (a hex vertex touches exactly three mutually adjacent
+cells, so unlike a square grid the boundary cannot pinch; asserted there over 412 forms at T2).
+
+The control punches a **strictly interior** cell and the boundary becomes **2 loops** — `I3`'s
+named failure, now reachable from this path.
+
+### Part 3 — the corner cell is claimed exactly once
+
+`housedraw::side_edges` assigns every boundary edge to one of four sides, and **nothing had ever
+checked that the four runs partition the boundary**. If two adjacent runs both claim the corner it
+is doubled; if neither does, it is dropped.
+
+```
+5x4  ->  38 = 9 + 10 + 9 + 10
+4x4  ->  38 = 11 + 8 + 11 + 8
+6x4  ->  46 = 11 + 12 + 11 + 12
+```
+
+Exact in every case; the control (three of the four sides) covers only 28 of 38.
+
+### `I3`'s control, now reachable: the band eats the house
+
+| shape | cells | floor kept, **edge** wall | floor kept, **band** wall |
+|---|---|---|---|
+| hexagon n=1 | 7 | **7** | 1 |
+| hexagon n=2 | 19 | **19** | 7 |
+| triangle n=2 | 6 | **6** | **0** |
+
+A boundary-as-edges wall costs **no floor at all**; a band of cells eats what it should enclose,
+and on a small shape leaves nothing — a house with no room. That is why `I3` says boundary, never
+buffer.
+
+### Parts 2 and 4 — a tripwire, not a red suite
+
+The corner **angle** and the **miter point** need the fitted analytic surface, which lands at S8.
+§10.4 says to write them into the gate red at S4. Taken literally that makes `make test` red on
+every run from here to S8 — and a suite that is always red stops being read, so a real regression
+would hide in it.
+
+Instead they are a **tripwire**: `hexform::SURFACE_LANDED` is `false`, the gate prints both as
+PENDING with their failure modes, and flipping the constant at S8 makes the gate **fail** until the
+real checks replace the pending branch. The requirement cannot be forgotten, and the suite stays a
+live signal in the meantime. *(This is a deliberate reading of §10.4, not a quiet drop — flipping
+the constant today gives the literal red the doc asks for.)*
+
+### The slip worth recording
+
+The first hole control did not fire, and the reason was mine: `form_fill` anchors the turtle's
+**start vertex** at the given cell, so `(0,0)` is a **corner** of the shape, not its middle.
+Removing it dents the boundary instead of making a hole. **S3 §12b had the same slip** — it
+reported "punch the centre out" while removing a boundary cell, and passed anyway because the area
+identity holds for *any* cell set. Both now search for a strictly interior cell (all six
+neighbours filled). A control that cannot fire is worth exactly as much as no control.
 
 ## 11. Known conflicts in the current tree
 

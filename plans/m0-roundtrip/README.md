@@ -10,16 +10,16 @@ mechanics spine rather than running beside it (decided 2026-07-23).
 
 The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** holds only the
 **settled** core — definitions, the propositions that follow from them, and the constraints
-`X1`–`X34` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X34`) — while
+`X1`–`X37` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X37`) — while
 **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar, `fits?`,
 the seam, the corpus, the method, the gates, and the open decisions.
 
-**Progress: S0, S1, S2b, S2c, S3 done** ([`STEPS.md`](STEPS.md)). Four gates green through
+**Progress: S0, S1, S2b, S2c, S3, S4 done** ([`STEPS.md`](STEPS.md)). Four gates green through
 `tools/run_tests.sh`:
 
 | gate | covers |
 |---|---|
-| `tests/form.loft` | the 12 headings (`X1`/`X2`/`X20` re-measured to T1), `X24`/`X25`, and **S3**'s turtle fill (`X33`/`X34`) |
+| `tests/form.loft` | the 12 headings (`X1`/`X2`/`X20` re-measured to T1), `X24`/`X25`, **S3**'s turtle fill (`X33`/`X34`) and **S4**'s boundary + corner (`X35`–`X37`) |
 | `tests/wall.loft` | the 24-direction wall — `X26`–`X32`, the first constraints hexbody *discovered* rather than inherited, including **two defects every other gate was green through** |
 | `tests/box.loft` | the box in 12 directions, thin wall and thick wall |
 | `tests/house.loft` | law **I**, 12/12 equivariant in cells *and* edges |
@@ -32,9 +32,12 @@ Three things are settled in [`DESIGN.md`](DESIGN.md):
   connected chain *along* the line, not a comb of pickets across it.
 - **§10.13 — S3.** The turtle fills the triangle / rhombus / hexagon the lattice holds **exactly**
   (the family `Plan` provably cannot express), each matching a predicted closed form.
+- **§10.14 — S4.** The boundary is **one closed loop**, the side runs **partition** it (a corner
+  edge claimed exactly once), and a band wall eats the floor an edge wall keeps. Corner parts 2
+  and 4 are a **tripwire** on `SURFACE_LANDED`, enforced when the fitted surface lands.
 
-Next is **S4** (turtle → walls, where **corners must be precise**). `rebuild`, the census and the
-corpus do not exist yet.
+Next is **S5** (field digest + the level-1 census). `rebuild`, the census and the corpus do not
+exist yet.
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"

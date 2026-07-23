@@ -373,3 +373,131 @@ pub fn set_shoelace2(cells: HexSet) -> integer {
 pub fn tri_cells(n: integer) -> integer { ((n + 1) * (n + 2) / 2) ?? 0 }
 pub fn rhombus_cells(a: integer, b: integer) -> integer { (a + 1) * (b + 1) }
 pub fn hexagon_cells(n: integer) -> integer { 3 * n * n + 3 * n + 1 }
+
+// ── S4 — THE BOUNDARY OF A FILLED REGION, AND WHETHER ITS CORNERS ARE PRECISE ─
+//
+// The wall is the boundary of the fill (`I3`), taken as EDGES — `housedraw::draw_walls` already
+// does that and is reused unchanged.  What was never checked anywhere is what happens WHERE TWO
+// RUNS MEET (`DESIGN.md` §10.4): the corner.  These are the topology primitives parts 1 and 3
+// need, over the cell set directly, so no EdgeSet has to be threaded through.
+//
+// A vertex is keyed by its exact doubled-(k,m) integer position, so "the same corner" is integer
+// equality — no float quantisation, the same discipline as the OD-12 chain check.
+const VKEY_OFF = 500;
+const VKEY_SPAN = 2000;
+
+fn vkey(k: integer, m: integer) -> integer { (k + VKEY_OFF) * VKEY_SPAN + (m + VKEY_OFF) }
+
+// The two endpoint keys of boundary edge `dir` of cell (q,r), as a pair.
+fn bedge_a(q: integer, r: integer, dir: integer) -> integer {
+  (c1, c2) = hex_edge_corners(dir);
+  vkey(lattice_k(q, r) + corner_k(c1), lattice_m(q, r) + corner_m(c1))
+}
+
+fn bedge_b(q: integer, r: integer, dir: integer) -> integer {
+  (c1, c2) = hex_edge_corners(dir);
+  vkey(lattice_k(q, r) + corner_k(c2), lattice_m(q, r) + corner_m(c2))
+}
+
+// Every boundary vertex of the region, one entry per incident edge — so an entry's multiplicity
+// IS that vertex's degree.
+fn boundary_vertices(cells: HexSet) -> vector<integer> {
+  vs: vector<integer> = [];
+  for br in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for bq in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if hexset_get(cells, bq, br) {
+        for bd in 0..6 {
+          (nq, nr) = hex_neighbor(bq, br, bd);
+          if !hexset_get(cells, nq, nr) {
+            vs += [bedge_a(bq, br, bd)];
+            vs += [bedge_b(bq, br, bd)];
+          }
+        }
+      }
+    }
+  }
+  vs
+}
+
+fn degree_count(vs: vector<integer>, want_lo: integer, want_hi: integer) -> integer {
+  n = 0;
+  for di in 0..len(vs) {
+    firstd = true;
+    for dk in 0..di { if (vs[dk] ?? 0) == (vs[di] ?? 0) { firstd = false; } }
+    if firstd {
+      deg = 0;
+      for dj in 0..len(vs) { if (vs[dj] ?? 0) == (vs[di] ?? 0) { deg = deg + 1; } }
+      if deg >= want_lo && deg <= want_hi { n = n + 1; }
+    }
+  }
+  n
+}
+
+// PART 1a — dangling ends.  A closed loop has NONE: every boundary vertex is entered and left.
+pub fn boundary_ends(cells: HexSet) -> integer { degree_count(boundary_vertices(cells), 1, 1) }
+
+// PART 1b — pinches.  crawler's tracer relies on a hex boundary never pinching at a vertex
+// (each vertex touches exactly 3 mutually adjacent cells), verified there over 412 forms — a T2
+// claim, re-measured here as a gate rather than assumed.
+pub fn boundary_branches(cells: HexSet) -> integer { degree_count(boundary_vertices(cells), 3, 99) }
+
+// PART 1c — how many separate closed loops the boundary forms.  ONE means the region is a single
+// simply-connected shape; TWO means it has a hole (the outer loop plus the hole's), which is `I3`'s
+// named failure.  Label propagation over the edge graph — the edge count is small and this needs
+// no auxiliary structure.
+pub fn boundary_loops(cells: HexSet) -> integer {
+  ea: vector<integer> = [];
+  eb: vector<integer> = [];
+  for lr in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for lq in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if hexset_get(cells, lq, lr) {
+        for ld in 0..6 {
+          (nq, nr) = hex_neighbor(lq, lr, ld);
+          if !hexset_get(cells, nq, nr) {
+            ea += [bedge_a(lq, lr, ld)];
+            eb += [bedge_b(lq, lr, ld)];
+          }
+        }
+      }
+    }
+  }
+  ne = len(ea);
+  if ne == 0 { return 0; }
+  comp: vector<integer> = [];
+  for ci in 0..ne { comp += [ci]; }
+  changed = true;
+  while changed {
+    changed = false;
+    for pi in 0..ne {
+      for pj in 0..ne {
+        if pi != pj {
+          shares = (ea[pi] ?? 0) == (ea[pj] ?? 0) || (ea[pi] ?? 0) == (eb[pj] ?? 0)
+                || (eb[pi] ?? 0) == (ea[pj] ?? 0) || (eb[pi] ?? 0) == (eb[pj] ?? 0);
+          if shares && (comp[pj] ?? 0) < (comp[pi] ?? 0) {
+            comp[pi] = comp[pj] ?? 0;
+            changed = true;
+          }
+        }
+      }
+    }
+  }
+  nloops = 0;
+  for qi in 0..ne {
+    firstq = true;
+    for qk in 0..qi { if (comp[qk] ?? 0) == (comp[qi] ?? 0) { firstq = false; } }
+    if firstq { nloops = nloops + 1; }
+  }
+  nloops
+}
+
+// ── PARTS 2 AND 4 — WRITTEN NOW, ENFORCED LATER ────────────────────────────
+//
+// The corner ANGLE (part 2) and the MITER POINT (part 4) need the fitted analytic surface, which
+// does not exist until S8.  `DESIGN.md` §10.4 says to write them into the gate red at S4.
+//
+// A PERMANENTLY RED SUITE IS NOT A SIGNAL, so instead of failing every run from here to S8 they
+// are a TRIPWIRE: while `SURFACE_LANDED` is false the gate prints them as PENDING and asserts
+// nothing about them; flipping this to true at S8 makes the gate FAIL until the real checks are
+// written.  They cannot be forgotten, and `make test` stays a live signal in the meantime.
+// (If a red suite is wanted instead, flip this today — the gate section is already written.)
+pub const SURFACE_LANDED = false;

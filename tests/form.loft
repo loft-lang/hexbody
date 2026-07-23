@@ -17,12 +17,37 @@
 //                           boundary CONVENTION, not the fill (the fill's check is the
 //                           closed forms). Control: a wrong corner pairing (X33)
 //  13  S3: anchor invariance the same form fills the same count on both row parities
+//  14  S4: turtle -> walls  the boundary is ONE CLOSED LOOP (corner part 1)
+//  15  S4: band vs boundary I3's control — a band wall eats the floor it should enclose
+//  16  S4: side runs        the four runs PARTITION the boundary (corner part 3)
+//  17  S4: corner 2 and 4   written now as a tripwire, enforced when the surface lands (S8)
 use hex_field;
 use hex_grid;
 use hexform;
+use housedraw;
 
 // The doubled-coordinate delta from (q,r) to its neighbour in direction d.
 fn iabs2(v: integer) -> integer { if v < 0 { -v } else { v } }
+
+// A STRICTLY INTERIOR cell — all six neighbours filled. Removing one makes a real hole.
+// `form_fill` anchors the turtle's START VERTEX at the given cell, so (0,0) is a CORNER of the
+// shape, not its middle; removing that only dents the boundary. This is what the hole controls
+// need, and getting it wrong is why the first version of section 14's control did not fire.
+fn interior_cell(cells: HexSet) -> (integer, integer, boolean) {
+  for vr in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for vq in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if hexset_get(cells, vq, vr) {
+        allin = true;
+        for vd in 0..6 {
+          (xq, xr) = hex_neighbor(vq, vr, vd);
+          if !hexset_get(cells, xq, xr) { allin = false; }
+        }
+        if allin { return (vq, vr, true); }
+      }
+    }
+  }
+  (0, 0, false)
+}
 
 fn nb_delta_k(q: integer, r: integer, d: integer) -> integer {
   lattice_k(nb_q(q, r, d), nb_r(q, r, d)) - lattice_k(q, r)
@@ -473,7 +498,9 @@ fn main() {
   fhole = form_new(0, [2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2]);
   ghole = form_fill(fhole, 0, 0, chole);
   shole_solid = set_shoelace2(chole);
-  hexset_set(chole, 0, 0, false);                       // punch the centre cell out
+  (hq, hr, hfound) = interior_cell(chole);              // a STRICTLY interior cell
+  if !hfound { println("  FAIL: no interior cell to punch"); ok = false; }
+  hexset_set(chole, hq, hr, false);
   shole = set_shoelace2(chole);
   println("   solid hexagon: {ghole} cells, shoelace {shole_solid} = 12*{ghole}");
   println("   with a hole:   {hexset_count(chole)} cells, shoelace {shole} = 12*"
@@ -541,6 +568,174 @@ fn main() {
   println("   CONTROL a side-4 triangle instead: {gdiff} cells (must differ from {base_n})");
   if gdiff == base_n {
     println("  FAIL: control did not fire — the count cannot tell two shapes apart"); ok = false;
+  }
+
+  // ── 14. S4 — THE BOUNDARY IS ONE CLOSED LOOP (corner part 1) ──────────────
+  //
+  // The wall is the boundary of the fill, taken as EDGES — `housedraw::draw_walls` unchanged.
+  // What `tests/house.loft` never checks is what happens WHERE TWO RUNS MEET, and part 1 of that
+  // is the cheapest and most basic: the boundary must be ONE CLOSED LOOP with no gap at a corner.
+  //
+  //   ends == 0      every vertex is entered and left — a run never stops before the corner cell
+  //   branches == 0  the boundary never pinches (crawler relies on this over 412 forms, T2)
+  //   loops == 1     one shape, no hole
+  println("");
+  println("14. TURTLE -> WALLS — the boundary is one closed loop (corner part 1)");
+  println("   shape           cells  edges  ends  branches  loops  closed?");
+  nloopbad = 0;
+  for wi in 0..7 {
+    fw = form_new(0, [2, 2, 2], [4, 4, 4]);
+    if wi == 1 { fw = form_new(0, [3, 3, 3], [4, 4, 4]); }
+    if wi == 2 { fw = form_new(0, [4, 5, 4, 5], [2, 4, 2, 4]); }
+    if wi == 3 { fw = form_new(0, [1, 1, 1, 1, 1, 1], [2, 2, 2, 2, 2, 2]); }
+    if wi == 4 { fw = form_new(0, [2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2]); }
+    if wi == 5 { fw = form_new(0, [3, 3, 3, 3, 3, 3], [2, 2, 2, 2, 2, 2]); }
+    if wi == 6 { fw = form_new(1, [3, 3, 3], [4, 4, 4]); }
+    nmw = "triangle n=2";
+    if wi == 1 { nmw = "triangle n=3"; }
+    if wi == 2 { nmw = "rhombus 4x5 "; }
+    if wi == 3 { nmw = "hexagon n=1 "; }
+    if wi == 4 { nmw = "hexagon n=2 "; }
+    if wi == 5 { nmw = "hexagon n=3 "; }
+    if wi == 6 { nmw = "tri n=3 vert"; }
+    wcells = hexset_chunk(-30, -30, 61, 61);
+    wedges = edgeset_new(-30, -30, 61, 61);
+    gw = form_fill(fw, 0, 0, wcells);
+    nedge = draw_walls(wcells, wedges, 3);
+    ends = boundary_ends(wcells);
+    brn = boundary_branches(wcells);
+    lps = boundary_loops(wcells);
+    closed = ends == 0 && brn == 0 && lps == 1;
+    println("   {nmw} {gw:>7} {nedge:>6} {ends:>5} {brn:>9} {lps:>6}  {closed}");
+    if !closed { nloopbad = nloopbad + 1; }
+    if nedge <= 0 { println("  FAIL: {nmw} produced no wall"); ok = false; }
+  }
+  if nloopbad != 0 {
+    println("  FAIL: {nloopbad} shapes do not have a single closed boundary loop"); ok = false;
+  }
+
+  // CONTROL: punch the centre out of a hexagon. The boundary must become TWO loops — the outer
+  // one and the hole's — which is `I3`'s named failure, and the check must see it.
+  chl = hexset_chunk(-30, -30, 61, 61);
+  fhl = form_new(0, [2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2]);
+  form_fill(fhl, 0, 0, chl);
+  (lq, lr, lfound) = interior_cell(chl);
+  if !lfound { println("  FAIL: no interior cell to punch"); ok = false; }
+  hexset_set(chl, lq, lr, false);
+  println("   CONTROL punch the centre out: loops {boundary_loops(chl)}, ends"
+          + " {boundary_ends(chl)}, branches {boundary_branches(chl)} (want 2 loops)");
+  if boundary_loops(chl) != 2 {
+    println("  FAIL: control did not fire — a region with a hole still reads as one loop");
+    ok = false;
+  }
+
+  // ── 15. S4 — THE BAND RULE EATS THE HOUSE (I3's control) ──────────────────
+  //
+  // `I3` says the wall is the BOUNDARY of the region, never a buffered band of cells. The band
+  // rule is what that forbids, and here is why: an edge wall costs NO floor, while a band wall
+  // eats the cells it occupies — and on a small shape it eats the whole thing, enclosing nothing.
+  println("");
+  println("15. BAND vs BOUNDARY — I3's control: a band wall eats the floor it should enclose");
+  println("   shape          cells  floor kept (edge wall)  floor kept (band wall)");
+  nbandbad = 0;
+  for bi in 0..3 {
+    fb = form_new(0, [1, 1, 1, 1, 1, 1], [2, 2, 2, 2, 2, 2]);
+    if bi == 1 { fb = form_new(0, [2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2]); }
+    if bi == 2 { fb = form_new(0, [2, 2, 2], [4, 4, 4]); }
+    nmb = "hexagon n=1";
+    if bi == 1 { nmb = "hexagon n=2"; }
+    if bi == 2 { nmb = "triangle n=2"; }
+    cb = hexset_chunk(-30, -30, 61, 61);
+    gb = form_fill(fb, 0, 0, cb);
+    // the BAND rule: every cell with a neighbour outside becomes wall, so it stops being floor
+    band_wall = 0;
+    for kr in -30..31 {
+      for kq in -30..31 {
+        if hexset_get(cb, kq, kr) {
+          onb = false;
+          for kd in 0..6 {
+            (mq, mr) = hex_neighbor(kq, kr, kd);
+            if !hexset_get(cb, mq, mr) { onb = true; }
+          }
+          if onb { band_wall = band_wall + 1; }
+        }
+      }
+    }
+    band_floor = gb - band_wall;
+    println("   {nmb} {gb:>8} {gb:>21} {band_floor:>23}");
+    if band_floor >= gb { nbandbad = nbandbad + 1; }
+  }
+  if nbandbad != 0 {
+    println("  FAIL: control did not fire — the band rule cost no floor, so I3 defends nothing");
+    ok = false;
+  }
+  println("   the edge wall keeps every cell; the band wall leaves 0 on a small shape —"
+          + " a house with no room");
+
+  // ── 16. S4 — THE CORNER CELL IS CLAIMED EXACTLY ONCE (corner part 3) ──────
+  //
+  // A boundary edge belongs to exactly one SIDE. If two adjacent runs both claim the corner it
+  // is doubled; if neither does, it is dropped. `housedraw::side_edges` is the classifier, and
+  // nothing has ever checked that its four runs PARTITION the boundary — this does.
+  println("");
+  println("16. SIDE RUNS PARTITION THE BOUNDARY — the corner cell claimed exactly once");
+  println("   plan     boundary  side0 side1 side2 side3   sum   partition?");
+  npart = 0;
+  for pw in 0..3 {
+    wid = 5; dep = 4;
+    if pw == 1 { wid = 4; dep = 4; }
+    if pw == 2 { wid = 6; dep = 4; }
+    cp = hexset_chunk(-30, -30, 61, 61);
+    ep = edgeset_new(-30, -30, 61, 61);
+    tp = labels_new(-30, -30, 61, 61);
+    plp = plan_new(0, 0, wid, dep, 0, false);
+    draw_floor(plp, cp, tp, 1);
+    nb4 = draw_walls(cp, ep, 3);
+    run0 = side_run_len(side_edges(plp, cp, 0));
+    run1 = side_run_len(side_edges(plp, cp, 1));
+    run2 = side_run_len(side_edges(plp, cp, 2));
+    run3 = side_run_len(side_edges(plp, cp, 3));
+    runsum = run0 + run1 + run2 + run3;
+    okp = runsum == nb4;
+    println("   {wid}x{dep} {nb4:>11} {run0:>6} {run1:>5} {run2:>5} {run3:>5} {runsum:>6}   {okp}");
+    if !okp { npart = npart + 1; }
+  }
+  if npart != 0 {
+    println("  FAIL: the four side runs do not partition the boundary — a corner edge is"
+            + " doubled or dropped"); ok = false;
+  }
+  // CONTROL: three sides cannot cover the boundary, or the sum above proves nothing
+  cc = hexset_chunk(-30, -30, 61, 61);
+  ec = edgeset_new(-30, -30, 61, 61);
+  tc = labels_new(-30, -30, 61, 61);
+  plc = plan_new(0, 0, 5, 4, 0, false);
+  draw_floor(plc, cc, tc, 1);
+  nbc = draw_walls(cc, ec, 3);
+  s3only = side_run_len(side_edges(plc, cc, 0)) + side_run_len(side_edges(plc, cc, 1))
+         + side_run_len(side_edges(plc, cc, 2));
+  println("   CONTROL only three of the four sides: {s3only} of {nbc} (must be short)");
+  if s3only == nbc {
+    println("  FAIL: control did not fire — three sides already cover the boundary"); ok = false;
+  }
+
+  // ── 17. S4 — CORNER PARTS 2 AND 4, WRITTEN NOW, ENFORCED AT S8 ────────────
+  //
+  // The corner ANGLE (part 2) and the MITER POINT (part 4) need the fitted analytic surface,
+  // which does not exist until S8. They are written here as a TRIPWIRE rather than as a
+  // permanently red assertion: a suite that is red every run stops being a signal, but a check
+  // that goes red the moment the surface lands cannot be forgotten either.
+  println("");
+  println("17. CORNER PARTS 2 AND 4 — pending the fitted surface (S8)");
+  if SURFACE_LANDED {
+    println("  FAIL: the fitted surface has landed, so corner parts 2 (exact angle) and 4"
+            + " (miter point on the exact corner) must now be CHECKED here, not pending");
+    ok = false;
+  } else {
+    println("   PENDING part 2 — the corner angle is exact: 90 deg for a Plan, 60/120 for a");
+    println("           rhombus. Needs the two fitted lines; fails if they meet at the wrong");
+    println("           angle. Turn on by flipping hexform::SURFACE_LANDED at S8.");
+    println("   PENDING part 4 — the miter point, where the two fitted surfaces intersect, sits");
+    println("           on the exact model corner; fails if the recovered corner drifts.");
   }
 
   println("");
