@@ -69,6 +69,11 @@ render or the mesh."*
 
 Everything below is this invariant defended at each site it could be broken.
 
+The same `(side, t)` anchoring carries two things beyond this file: it is **affine-invariant**
+(a ratio survives any morph), which is what lets a building be *oriented by a minimal morph
+instead of a mirror* and lets an editor show every orientation from one authoring pass — see
+[`EDITOR.md`](EDITOR.md).
+
 ---
 
 ## 2. The wall in two not-equal directions — why the feature is blind to it

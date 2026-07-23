@@ -110,6 +110,22 @@ window overrides opacity but not `solid` and carries a vertical `[sill, head]` i
 scalar height cannot. Full design, the concrete measured end-result, the chokepoint, and the
 gates: **[`design/FEATURES.md`](design/FEATURES.md).**
 
+## Orientation, and the editor that shows it
+
+A building is authored **once** and **never mirrored** — orientation is achieved by keeping the
+same building (topology, layout, features, handedness: all details) and **morphing its two axes
+minimally** to fit the lattice at the target angle. The morph is the bridge from the 6 exact
+rotations to *many* orientations while staying lattice-exact (so proxies, features, and
+destruction all survive it), it is bounded (zero at the 6 exact rotations, gated in % at the
+worst angle), and it deletes the mirror's handedness residual entirely at the cost of true
+mirror-symmetry. Because a feature is `(side, t)` — a ratio, which an affine morph preserves
+exactly — a feature added once appears correctly in every morphed orientation *for free*.
+
+That is what makes the **editor** possible: the developer edits one canonical building and sees
+it live in every orientation it will ship in, side by side, single-authored, with the residual
+flagged as a correctable punch-list — the mantra delivered (*seal the mechanism, expose the
+outcome*). Full design: **[`design/EDITOR.md`](design/EDITOR.md).**
+
 ## Destruction models — derived, field-native, mass-aware
 
 Destruction is *field mutation + re-derivation*, and each model is **derived from the intact
