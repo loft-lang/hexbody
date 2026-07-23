@@ -101,6 +101,13 @@ presuppose exactly the bounds being sought.
 *(The straight/arc surface — crawler `BUILDING.md` §4, the old "M0 fit" — is the recovery for
 domain B linework and one part of this, not a milestone of its own.)*
 
+> **On reusing `../moros`.** moros already has a walkable in-world editor, direct-against-Map
+> collision (`collide.loft`), player physics, picking, tools and a renderer — much of what M2 and
+> M4 describe. **It is mostly untested**, so it is a **cherry-pick source, not a foundation**:
+> lift a layer where applicable, then gate it here with a control that must fire. The milestones
+> below stay; what changes is that several of them may start from working code rather than from
+> nothing. Trust tiers: [`ROUNDTRIP.md`](ROUNDTRIP.md) §7.
+
 ## M1 — the moving body *(the first brick)*
 
 A `Body` with one revolute joint (a wheel) that moves by **derived** motion and carries an

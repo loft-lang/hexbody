@@ -28,6 +28,17 @@ of work**. Far more design and prototyping is still in crawler than has been mov
 > characterised there already, and often prototyped. Specifying from scratch what already exists
 > is the most likely way to waste effort in this repo.
 
+**Two siblings, two levels of trust — do not confuse them.**
+
+| repo | status | how to use it |
+|---|---|---|
+| **`../crawler`** | introduced the **rigor layer** — measured, prototyped, gated | **cite as settled prior art** (`ROUNDTRIP.md` §7.1) |
+| **`../moros`** | a working engine, but **mostly untested** | the **shape** is real, the **behaviour** is not verified. **Cherry-pick a layer where applicable, then gate it here to our standard** (§7.2) |
+
+hexbody is the **strictest** of the three: every gate carries a control that must fire, every
+constant is measured, every claim is falsifiable. **Adopting moros code without re-gating it
+forfeits exactly the thing this project is for.** moros is a source, never a foundation.
+
 - **`crawler/plans/5-geometry/`** — the plan hexbody was seeded from, **plus Python prototypes
   that cover much of M0**: `matcher.py` (recover surfaces from a traced boundary → `rebuild`),
   `directions.py` (the 24-direction question: a hex grid has 12 natural directions, so 12 of the

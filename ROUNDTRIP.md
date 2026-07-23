@@ -339,9 +339,20 @@ roughly the hex corner offset."*
 > **The trap:** using R2's machinery where R1 applies — fitting a line to a stencil whose turtle
 > description we hold throws away an exact answer and reintroduces a tolerance nothing needs.
 
-## 7. Constraints from `../crawler` — measured, prototyped or gated
+## 7. Constraints from the sibling repos — and how far each is trustworthy
 
-Prior art. **Not open**; re-deriving these is waste.
+Prior art, in **two tiers**. Re-deriving the first tier is waste; adopting the second tier
+without re-gating it is the mistake this project exists to avoid.
+
+| tier | source | status | how to use it |
+|---|---|---|---|
+| **measured** | `../crawler` — `X1`–`X10`, `X16`–`X17` | **measured, prototyped or gated** — crawler introduced the rigor layer | **cite as settled** |
+| **schema** | `../moros` — `X11`–`X15` | **read from code; the implementation is mostly untested** | the *shape* is real; the *behaviour* is not verified. **Cherry-pick where applicable, then gate it here to our standard** |
+
+`X15` is the exception inside its tier: it is moros's own written admission of a defect, so it is
+trustworthy **as a warning** even though the surrounding code is unverified.
+
+### 7.1 Measured in `../crawler`
 
 | # | constraint | source |
 |---|---|---|
@@ -355,13 +366,18 @@ Prior art. **Not open**; re-deriving these is waste.
 | **X8** | a way is an exact **centreline plus offsets**, never a rasterised band | `5-geometry/ways.py` |
 | **X9** | **width-normalise before ranking by heading**, or the table inverts — this reversed a conclusion in crawler before it was caught | `directions.py` METHOD NOTE |
 | **X10** | the triangle-subdivision **wall band model is validated in 2D**; corner tests pass | `WALLS.md` |
+| **X16** | **a graph is not a field and cannot be fitted like one** — *"the roof matcher recovers a cone by solving for five parameters, but a skeleton has a variable number of nodes and no amount of least-squares will produce one"*. This is why mechanism is authored/derived, never recovered | `hexskel` |
+| **X17** | the part representation exists: *"two levels, no more: an **anchor**, and parts in the anchor's frame"*, with the granularity rule — *split where something moves independently, merge where it does not* | `hexpart` |
+
+### 7.2 Schema read from `../moros` — the shape is real, the behaviour is untested
+
+| # | constraint | source |
+|---|---|---|
 | **X11** | the foxel **exists**: `Hex`/`HexAddress`/`Chunk`, layers are `cy`, walls are the three owned edges | moros `moros_map/src/types.loft` |
 | **X12** | the **wall shape vocabulary** is `WallDef.wd_body` (`SOLID…THICK_CURVED…`), and **thickness lives in the palette** (`wd_thickness`), not the cell | moros `moros_map/src/palette.loft` |
 | **X13** | **trees are items** (`ItemDef.id_kind = TREE`) and **roofs are materials** (`MaterialDef.md_category = roof`) — OD-3 and OD-2 confirmed against code, not inferred | moros `palette.loft` |
 | **X14** | items carry a **5-bit rotation, 0–23** — the 24-set is already in the storage | moros `types.loft` |
 | **X15** | **a Map↔`hex_field` round trip already exists and is lossy**: *"What crosses today: occupancy, height, material. Items, item rotation and the three wall bytes do NOT."* Its test is **green for the wrong reason** — see `DESIGN.md` §11 | moros `moros_map.loft` § *the shared document format* |
-| **X16** | **a graph is not a field and cannot be fitted like one** — *"the roof matcher recovers a cone by solving for five parameters, but a skeleton has a variable number of nodes and no amount of least-squares will produce one"*. This is why mechanism is authored/derived, never recovered | crawler `hexskel` |
-| **X17** | the part representation exists: *"two levels, no more: an **anchor**, and parts in the anchor's frame"*, with the granularity rule — *split where something moves independently, merge where it does not* | crawler `hexpart` |
 
 ## 8. Relation to `SPEC.md`
 
