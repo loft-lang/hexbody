@@ -28,8 +28,13 @@ edge-neighbour directions (`nb_q`/`nb_r`); odd `h` are the six vertex directions
 - **control**: perturb one entry → the involution fails.
 - **why first**: everything downstream indexes this table, and it is pure data — the cheapest
   possible thing to be wrong about, and the cheapest to check.
-- **watch**: `r & 1` makes the step vectors **row-dependent**. `e(h)` is a function of `(h, r&1)`,
-  not of `h` alone. Getting this wrong is the single likeliest bug in the whole ladder.
+- **watch, two traps, both silent**:
+  1. `r & 1` makes the step vectors **row-dependent** — `e(h)` is a function of `(h, r&1)`, not of
+     `h` alone (odd-r offset, `ROUNDTRIP` §1).
+  2. **A negative index reads from the END of a loft vector; it does not return `null`.** The
+     running heading `h = h0 + Σ turn` goes negative routinely, since turns are `−5..6`. Normalise
+     to `0..11` — `((h % 12) + 12) % 12` — *before* indexing. Both traps return a plausible wrong
+     answer rather than failing, which is why they are S0's gate rather than S3's debugging.
 
 ## S1 · law **J**, closure — `src/hexform.loft` · XS
 

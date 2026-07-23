@@ -83,6 +83,39 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 a checkable item — not in a paragraph. A gate defending no spec item, or a spec item no gate
 defends, is the thing to fix.
 
+## Conventions — verified against `../crawler`, `../moros`, `loft-libs-*`
+
+**Two project kinds, two test conventions. hexbody is the *application* kind**, like crawler.
+
+| | **library** (`gridmesh`, `hex_field`) | **application** (crawler, hexbody) |
+|---|---|---|
+| layout | `loft.toml` `[library] entry`, `src/<name>.loft`, `tests/<topic>.loft` | `src/*.loft`, no `tests/` |
+| a test is | `fn test_*()` + `assert(cond, "msg")` | a **program**: `ok` flag, printed counts, final `=== NAME OK ===` |
+| run by | the package test harness | a runner that **greps the marker** |
+| header | `// Copyright …` + `// SPDX-License-Identifier: LGPL-3.0-or-later` | a purpose block, no copyright (hexbody has no `LICENSE`) |
+
+- **Module names**: `hex*` for geometry algorithms (`hexedge`, `hexway`, `hexroof`, `hexform`);
+  `house*` for the building layer. **The test drops the `hex` prefix** — `hexedge` → `edgetest`,
+  `hexroof` → `rooftest`, so `hexform` → **`formtest`**.
+- **Struct field prefixes**: a 2-letter tag from the struct name, on *every* field —
+  `HexSet`→`hs_`, `Plan`→`pl_`, `Chunk`→`ck_`, `SideRun`→`sr_`, `Surfaces`→`sf_`,
+  `WallDef`→`wd_`, `Skeleton`→`sk_`. Universal across all four repos.
+- **Gate runner**: hexbody's `Makefile` inlines the single-gate form. crawler scales it with
+  `tools/run_tests.sh` — a table of `file|marker|log|fail-text|label` and `[n/N]` labels.
+  **Adopt that table once hexbody has 3+ gates**, which `STEPS.md` reaches at S5.
+
+### loft rules most likely to bite the S0–S8 code
+
+- **`v[i]` with a negative `i` reads from the END — it does not return null.** A running heading
+  `h = h0 + Σ turn` goes negative routinely (turns are `−5..6`), so `table[h]` silently returns the
+  wrong vector. **Normalise to `0..11` first**: `((h % 12) + 12) % 12`.
+- **Loop variables must be distinctly named per function** — two loops over different element
+  types sharing a name is a compile error, and same-type reuse across a function is one slot.
+- **UPPER_CASE locals warn** unless declared `const`. File-scope constants are `UPPER_CASE`.
+- `text`, never `string`. Match arms use `=>`, never `->`. No nested `fn`.
+- Scalars and vectors are **non-null by default**; write `?` only where null is genuinely wanted,
+  and never write the retired `not null`.
+
 ## Run
 
 ```sh
