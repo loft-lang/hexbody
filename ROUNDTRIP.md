@@ -205,7 +205,7 @@ world terrain and linework, and the maps between them.
 | out of scope | why | owner |
 |---|---|---|
 | how a pose **evolves** — integration, contacts, settling | this model defines the *representation* of orientation, never its dynamics | `DYNAMICS`, `L1`/`L2` |
-| **joint values** and the part-tree | `Body = ⟨original, pose, joints⟩`; the joint value is its own interface, and only `original` round-trips | `K-JOINT` |
+| **mechanism** — the part-tree, joints, couplings, anchors | a **graph**, not a field: sparse and of **variable arity**, so the foxel cannot hold it and no fit can recover it (a cone is five parameters; a part-graph has no parameter vector). Authored or derived, never recovered. `Body = ⟨original, pose, joints⟩` — only `original` round-trips | `K-JOINT`, crawler `hexpart`/`hexskel` |
 | the **collision proxy** | derived, never stored. *But:* with an exact `𝕄*` the proxy is better derived from the **model** than from the rasterization — analytic, with a closed-form error bound instead of a measured one. That refines `ARCHITECTURE`'s *"derived from the field"*, and is a consequence of this contract rather than a contradiction of it | `K-PROXY` |
 | **authored motion tracks** | the consumer's, by construction | `L5` |
 | **set dressing** — sub-hex props | objects below the resolution floor, parented to a surface, render-only (§2.4.0.1). Does not round-trip, is not collision truth, is not bounded by `fits?` | crawler `PROPS.md` |
@@ -294,6 +294,8 @@ Prior art. **Not open**; re-deriving these is waste.
 | **X13** | **trees are items** (`ItemDef.id_kind = TREE`) and **roofs are materials** (`MaterialDef.md_category = roof`) — OD-3 and OD-2 confirmed against code, not inferred | moros `palette.loft` |
 | **X14** | items carry a **5-bit rotation, 0–23** — the 24-set is already in the storage | moros `types.loft` |
 | **X15** | **a Map↔`hex_field` round trip already exists and is lossy**: *"What crosses today: occupancy, height, material. Items, item rotation and the three wall bytes do NOT."* Its test is **green for the wrong reason** — see `DESIGN.md` §11 | moros `moros_map.loft` § *the shared document format* |
+| **X16** | **a graph is not a field and cannot be fitted like one** — *"the roof matcher recovers a cone by solving for five parameters, but a skeleton has a variable number of nodes and no amount of least-squares will produce one"*. This is why mechanism is authored/derived, never recovered | crawler `hexskel` |
+| **X17** | the part representation exists: *"two levels, no more: an **anchor**, and parts in the anchor's frame"*, with the granularity rule — *split where something moves independently, merge where it does not* | crawler `hexpart` |
 
 ## 8. Relation to `SPEC.md`
 

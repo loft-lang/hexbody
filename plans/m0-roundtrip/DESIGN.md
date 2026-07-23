@@ -560,6 +560,58 @@ or to write `hex_field` documents that moros then loads? The comment says the tw
 model … with the cell as a storage concern over the field"*, so either can be the seam — but the
 census must be written against whichever one is authoritative.
 
+## 10.3 Connections — vehicles and robot limbs: a graph beside the field, not slots in it
+
+**The question:** couplings and joints are *sparse* — a wagon has two, a limb has one — but each
+must hold a **specific point**. Where do they live, when storage is a dense per-cell foxel?
+
+**They cannot live in the foxel, and crawler already says why.** `hexskel`'s opening line is the
+principle:
+
+> *"This is the first **graph** in the whole system. Everything before it was a **field**: a value
+> per cell, per edge, per chunk. A tree's branch structure is **not a field and cannot be fitted
+> like one** — the roof matcher recovers a cone by solving for five parameters, but a skeleton has
+> a **variable number of nodes** and no amount of least-squares will produce one."*
+
+That is the whole answer in two sentences, and it has a sharp consequence for this contract:
+
+| | fabric | **mechanism** | dressing |
+|---|---|---|---|
+| shape | **field** — dense, fixed arity per cell | **graph** — sparse, **variable** arity | sparse sub-hex objects |
+| examples | walls, floors, roofs, terrain | couplings, hinges, axles, the part-tree | drainpipes, lamps |
+| in the foxel | **yes** | **no** | no |
+| recoverable | yes — R1 exact, R2 fitted | **no — a fit needs fixed arity; a graph has none** | no |
+| bounded by `fits?` | yes | no | no |
+
+**So mechanism is authored or derived, never recovered.** This is not a gap to close: it is a
+category difference. A cone is five parameters, so `roof_match` can solve for it; a part-graph has
+no parameter vector to solve for, so no amount of fitting produces one. Law **D** is over *fabric*
+— a model with anchors does not violate it, because anchors were never in `draw`'s image.
+
+**crawler already has the representation.** `hexpart`: *"Two levels, no more: an **anchor**, and
+parts in the anchor's frame"*, with the **granularity rule** deciding what earns a part —
+*"split where something moves independently, merge where it does not… merge too far and animation
+is impossible, split too far and every prop pays for degrees of freedom it does not have."*
+`hexhinge` places a leaf at a continuous `(hx, hy)`; `hexlink` derives a whole valve gear in
+closed form from one wheel phase.
+
+### 10.3.1 The open part — how an anchor is *addressed*
+
+`hexpart`/`hexhinge` use **float** local coordinates, which is right at the mesh level but breaks
+**P4** if an anchor is written into `𝕋`: byte-equality has no floats to compare.
+
+The likely resolution, and it reuses machinery that already exists: **address an anchor the way a
+feature is addressed** — `(side, t)` with `t` a reduced rational, plus a step-count height. That
+is **affine-invariant** (`SPEC` **I2**), so a coupling survives orientation *exactly*, which
+`I10` requires — *"a coupling point stays coincident every tick"* — and it keeps `𝕋` float-free.
+The float `(hx, hy)` then becomes what it should be: a **derived evaluation** of an exact
+address, exactly as metres are derived from step counts.
+
+**What is genuinely undecided:** whether an anchor is addressed against the **boundary** (`side`,
+`t`) — natural for a drawbar on a wagon's front face — or against a **cell/vertex** — natural for
+an axle inside the footprint. A hinge is on a wall; an axle is not. It may need both, and then the
+question is whether that is one address type with two forms or two kinds of anchor.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |
