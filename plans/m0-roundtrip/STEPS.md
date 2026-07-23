@@ -196,17 +196,37 @@ is the requirement `tests/house.loft` never checked: **what happens where two ru
   area identity holds for any set. Both now find a **strictly interior** cell (all six neighbours
   filled) instead.
 
-## S5 · field digest + the level-1 census — `src/formcensus.loft` + `tests/census.loft` *(new)* · S
+## S5 ✅ · field digest + the level-1 census — `src/formcensus.loft` + `tests/census.loft` · S · **DONE**
 
-A digest over `(cells, edges)`, then enumerate level 1 — the minimal closed form at every `h0`,
-both classes — and count collisions.
+`rt_census_a` at `n = 1`. The level is finite, so law **F** is **decided** here, not sampled.
 
-- **gate** `tests/census.loft`: **reports the frontier** (largest level that round-trips, first colliding
-  form). At level 1 the expected result is *the orientation-images of one triangle collide with
-  each other and nothing else* — which is law **I**, re-seen from the census side.
-- **control**: drop `turn` from the match key → collisions appear immediately.
-- **note**: this is `rt_census_a` at `n = 1`. Growing `n` is the ladder; the machinery is written
-  once, here.
+- **gate** `tests/census.loft`, four sections, every control fires.
+- **the enumeration is exhaustive**: every 3-sided unit form, all 12 starting headings × every
+  turn triple summing to 12 — **660 proposed, law J admitted 30**. Law J is the admission filter
+  and the control confirms it rejects 630, so it filters something.
+- **the digest is canonical up to ORIENTATION and TRANSLATION**, and that is the design decision:
+  a stencil is authored once and *placed* at one of the 12 orientations, so orientation-images are
+  the same stencil (law **I**). It is **exact** — the sorted cell list compared element by element,
+  no modular hash, because a hash collision in a census looks exactly like a law F violation.
+- **cells determine edges at this level**, so the digest is over cells alone: by `I3` the wall IS
+  the boundary of the fill. That stops holding when edges carry their own material (a door, A5),
+  and the digest gains a material component there — recorded, not assumed.
+- **THE FRONTIER: 30 admitted forms draw 3 distinct shapes; 183 colliding pairs, 0 unexplained.
+  Law F holds at level 1.**
+- **the finding, and it is for S6**: the stated expectation was *"the orientation-images of one
+  triangle collide with each other and nothing else"*. The measurement is a **refinement** of it —
+  collisions are the orientation-images **and the cyclic re-spellings**. A closed cycle has no
+  distinguished first corner, so `[2,5,5]`, `[5,5,2]` and `[5,2,5]` are one triangle walked from
+  three places. **The canonical text must fix the starting CORNER, not just the winding (C3)** —
+  otherwise one stencil is written ~10 ways and reads as many. Recorded as `X38`.
+- **the mistake this caught in my own check**: the first version asserted that a collision across
+  `h0` parity was a law F violation, on the assumption that `h0` parity classifies the form. It
+  does not — `h0 = 0` with turns `2,5,5` runs headings 0, 2, **7**, mixing both classes. The gate
+  went red on 72 "violations" that were nothing of the kind. Law F had to be stated correctly
+  before it could be checked at all.
+- **controls**: keying on the cell COUNT instead of the shape collapses 3 shapes to 2; dropping the
+  turn sequence from the identity collapses 30 forms to 12; and the re-spelling test itself is
+  checked both ways (`[4,4,4]` is not a re-spelling of `[2,5,5]`; `[5,5,2]` is).
 
 ## S6 · canonical text — `src/formtext.loft` + `tests/text.loft` *(new)* · S
 

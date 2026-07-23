@@ -121,6 +121,8 @@ items marked ⚠ below depend on one.
    | `form.loft` §14, §16 | **I-CORNER** parts 1 and 3 (`X35`, `X36`) |
    | `form.loft` §15 | **I3** — the band rule eats the floor (`X37`) |
    | `form.loft` §17 | **I-CORNER** parts 2 and 4 — the S8 tripwire |
+   | `census.loft` §1 | **I-CLOSE** — law J as the admission filter (660 proposed, 30 admitted) |
+   | `census.loft` §2–§3 | law **F** decided at level 1 (`X38`); **I-EXTEND**'s census obligation |
    | `wall.loft` §1, §2, §5 | **I-DOMAIN** *(`D`; the even/odd split, measured)* |
    | `wall.loft` §2b | **I-EDGE**, **L11** |
    | `wall.loft` §3, §4 | **I3** *(three slots, an edge stored once by its owner)* |

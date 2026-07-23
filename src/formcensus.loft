@@ -1,0 +1,198 @@
+// formcensus — THE FIELD DIGEST, AND THE CENSUS THAT DECIDES LAW F AT A LEVEL.
+//
+// Law **F** is injectivity: `draw(m1) = draw(m2) => m1 = m2`. It follows from **D**, but its
+// COVERAGE is a measurement — how far out the admitted space stays injective. The census is that
+// measurement, and because the admitted space is finite at each level, law F is **decided** there,
+// not sampled (`DESIGN.md` §8).
+//
+// THE DIGEST IS CANONICAL UP TO ORIENTATION AND TRANSLATION, and that is the whole design
+// decision. A stencil is authored ONCE and placed at one of the 12 orientations (`O`), so two
+// forms that differ only by where they were dropped or which way they face are **the same
+// stencil** — law **I**. A digest that distinguished them would report the 12 orientations as 12
+// different shapes and law I would be invisible from here. So the digest quotients by `O` and by
+// translation, and what survives is the shape itself.
+//
+// CELLS DETERMINE EDGES AT THIS LEVEL, so the digest is over cells alone. By `SPEC` **I3** the
+// wall IS the boundary of the filled region — the edge set is a function of the cell set, so
+// digesting cells digests both. That stops being true when edges carry their own MATERIAL (a door,
+// rung A5), and the digest gains a material component there; recorded rather than assumed.
+//
+// EXACT, NOT HASHED. The digest is the sorted cell list itself, compared element by element — no
+// modular hash anywhere. A hash collision in a census would look exactly like a law F violation,
+// which is the one mistake this file exists to detect.
+use hex_field;
+use hexform;
+
+// A cell's position packed into one sortable integer. The span is wide enough for any census
+// shape (levels 1-3 stay inside a few dozen cells of the origin) and the offset keeps it positive.
+const CKEY_OFF = 400;
+const CKEY_SPAN = 1600;
+
+fn ckey(k: integer, m: integer) -> integer { (k + CKEY_OFF) * CKEY_SPAN + (m + CKEY_OFF) }
+
+// ── the 12 orientations, exactly ───────────────────────────────────────────
+//
+// `o` is `flip * 6 + rot`: reflect first (`X2`, `k -> -k`), then rotate `rot` times by 60 degrees
+// (`X1`, `k' = (k-m)/2, m' = (3k+m)/2`). Both are exact integer maps on the doubled lattice — the
+// reason a stencil rotates and reflects with no resampling and no drift.
+pub fn orient_k(k: integer, m: integer, o: integer) -> integer {
+  ok2 = k;
+  om2 = m;
+  if o >= 6 { ok2 = refl_k(k); om2 = refl_m(m); }
+  for oi in 0..(o % 6) {
+    nk = ((ok2 - om2) / 2) ?? 0;
+    nm = ((3 * ok2 + om2) / 2) ?? 0;
+    ok2 = nk;
+    om2 = nm;
+  }
+  ok2
+}
+
+pub fn orient_m(k: integer, m: integer, o: integer) -> integer {
+  ok3 = k;
+  om3 = m;
+  if o >= 6 { ok3 = refl_k(k); om3 = refl_m(m); }
+  for oj in 0..(o % 6) {
+    nk2 = ((ok3 - om3) / 2) ?? 0;
+    nm2 = ((3 * ok3 + om3) / 2) ?? 0;
+    ok3 = nk2;
+    om3 = nm2;
+  }
+  om3
+}
+
+// Insertion sort on integers — the cell counts here are tens, and a sort that is obviously
+// correct beats a fast one. (Scalars only: loft's #338 in-place struct swap does not apply.)
+fn sort_keys(v: vector<integer>) -> vector<integer> {
+  out: vector<integer> = [];
+  for si in 0..len(v) {
+    x = v[si] ?? 0;
+    out += [x];
+    pos = len(out) - 1;
+    while pos > 0 && (out[pos - 1] ?? 0) > (out[pos] ?? 0) {
+      tmp = out[pos - 1] ?? 0;
+      out[pos - 1] = out[pos] ?? 0;
+      out[pos] = tmp;
+      pos = pos - 1;
+    }
+  }
+  out
+}
+
+// Lexicographic order on two sorted key vectors — shorter is smaller on a common prefix.
+fn vec_less(a: vector<integer>, b: vector<integer>) -> boolean {
+  na = len(a);
+  nb2 = len(b);
+  lim = if na < nb2 { na } else { nb2 };
+  for li in 0..lim {
+    av = a[li] ?? 0;
+    bv = b[li] ?? 0;
+    if av < bv { return true; }
+    if av > bv { return false; }
+  }
+  na < nb2
+}
+
+// The cell set under orientation `o`, translated so its bounding-box corner sits at the origin,
+// as a SORTED key vector. Translation normalisation makes the digest position-free; sorting makes
+// it independent of the scan order the cells happened to be found in.
+fn oriented_keys(cells: HexSet, o: integer) -> vector<integer> {
+  ks: vector<integer> = [];
+  ms: vector<integer> = [];
+  for gr in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for gq in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if hexset_get(cells, gq, gr) {
+        rk = lattice_k(gq, gr);
+        rm = lattice_m(gq, gr);
+        ks += [orient_k(rk, rm, o)];
+        ms += [orient_m(rk, rm, o)];
+      }
+    }
+  }
+  n = len(ks);
+  if n == 0 { return ks; }
+  mink = ks[0] ?? 0;
+  minm = ms[0] ?? 0;
+  for mi in 0..n {
+    if (ks[mi] ?? 0) < mink { mink = ks[mi] ?? 0; }
+    if (ms[mi] ?? 0) < minm { minm = ms[mi] ?? 0; }
+  }
+  raw: vector<integer> = [];
+  for ri in 0..n { raw += [ckey((ks[ri] ?? 0) - mink, (ms[ri] ?? 0) - minm)]; }
+  sort_keys(raw)
+}
+
+// THE DIGEST: the lexicographically smallest of the 12 oriented, translated, sorted key vectors.
+// Two cell sets have the same digest **iff** one is an orientation-image of the other — which is
+// exactly "the same stencil", and makes law I visible from the census side.
+pub fn field_digest(cells: HexSet) -> vector<integer> {
+  best = oriented_keys(cells, 0);
+  for di in 1..12 {
+    cand = oriented_keys(cells, di);
+    if vec_less(cand, best) { best = cand; }
+  }
+  best
+}
+
+pub fn digest_eq(a: vector<integer>, b: vector<integer>) -> boolean {
+  if len(a) != len(b) { return false; }
+  for ei in 0..len(a) { if (a[ei] ?? 0) != (b[ei] ?? 0) { return false; } }
+  true
+}
+
+pub fn digest_text(d: vector<integer>) -> text {
+  s = "";
+  for ti in 0..len(d) {
+    if ti > 0 { s = s + "."; }
+    s = s + "{d[ti] ?? 0}";
+  }
+  s
+}
+
+// ── the form's own identity, and the DEGRADED key the control needs ────────
+//
+// A collision is two forms with DIFFERENT identities that draw the SAME field. The identity is the
+// form as written; `form_key_noturn` drops the turn sequence from it, which is the control
+// `DESIGN.md` §9 names — a key that cannot see corners makes distinct shapes look like one form.
+pub fn form_key(f: Form) -> text {
+  s = "h{f.fm_h0}|";
+  lens = f.fm_len;
+  turns = f.fm_turn;
+  for ki in 0..len(lens) { s = s + "{lens[ki] ?? 0},"; }
+  s = s + "|";
+  for kj in 0..len(turns) { s = s + "{turns[kj] ?? 0},"; }
+  s
+}
+
+pub fn form_key_noturn(f: Form) -> text {
+  s = "h{f.fm_h0}|";
+  lens = f.fm_len;
+  for kl in 0..len(lens) { s = s + "{lens[kl] ?? 0},"; }
+  s
+}
+
+// The DEGRADED digest for the second control: cell COUNT alone. A census keyed on a summary
+// instead of the shape collides immediately — both level-1 triangle classes have 3 cells — which
+// is what proves the real digest is carrying the weight.
+pub fn count_digest(cells: HexSet) -> integer { hexset_count(cells) }
+
+// Are two turn sequences the SAME CLOSED CYCLE, written from a different corner?
+//
+// A cycle has no distinguished first corner: `[2,5,5]`, `[5,5,2]` and `[5,2,5]` are one shape
+// walked from three different starting points.  The enumeration cannot know that — it sweeps
+// (h0, turns) — so the census MUST, or it reports a stencil as several and its collisions as law F
+// failures.  This is the census discovering a requirement on the canonical text (S6): fixing the
+// winding (C3) is not enough, the starting CORNER has to be fixed too.
+pub fn turns_cyclic_eq(a: vector<integer>, b: vector<integer>) -> boolean {
+  n = len(a);
+  if len(b) != n { return false; }
+  if n == 0 { return true; }
+  for cs in 0..n {
+    same = true;
+    for ci in 0..n {
+      if (a[(ci + cs) % n] ?? 0) != (b[ci] ?? 0) { same = false; }
+    }
+    if same { return true; }
+  }
+  false
+}

@@ -1510,6 +1510,62 @@ reported "punch the centre out" while removing a boundary cell, and passed anywa
 identity holds for *any* cell set. Both now search for a strictly interior cell (all six
 neighbours filled). A control that cannot fire is worth exactly as much as no control.
 
+## 10.15 S5 — the level-1 census, and the requirement it found for the canonical text
+
+Law **F** is injectivity, and its *coverage* is a measurement, not a theorem: how far out does the
+admitted space stay injective? Because each level is finite, the census **decides** F there rather
+than sampling it.
+
+### The digest, and why it quotients by orientation
+
+A stencil is authored **once** and *placed* at one of the 12 orientations, so two forms differing
+only by orientation or position are **the same stencil** (law **I**). The digest therefore
+quotients by `O` and by translation, and what survives is the shape. A digest that distinguished
+them would report the 12 orientations as 12 shapes and law I would be invisible from here.
+
+It is **exact** — the sorted cell list compared element by element, no modular hash. A hash
+collision in a census looks *exactly* like a law F violation, which is the one mistake this file
+exists to detect. And at this level cells determine edges (`I3`: the wall is the boundary of the
+fill), so digesting cells digests both; that stops holding when edges carry their own material
+(a door, rung A5), and the digest gains a material component there.
+
+### The frontier
+
+```
+660 proposed   ->  law J admits 30  ->  3 distinct shapes
+183 colliding pairs, 0 unexplained  ->  LAW F HOLDS AT LEVEL 1
+```
+
+The three shapes are the edge-class triangle (3 cells), the vertex-class triangle (4 cells — a
+`√3` longer step encloses more), and a third 3-cell cycle from the `(2,5,5)` turn family.
+
+### What the census found — a requirement on S6
+
+The stated expectation was *"the orientation-images of one triangle collide with each other and
+nothing else."* The measurement **refines** it: collisions are the orientation-images **and the
+cyclic re-spellings**.
+
+A closed cycle has no distinguished first corner. `[2,5,5]`, `[5,5,2]` and `[5,2,5]` are one
+triangle walked from three different places, and the enumeration — which sweeps `(h0, turns)` —
+cannot know that. So:
+
+> **The canonical text must fix the starting CORNER, not just the winding.** C3 already picks one
+> of the two winding directions (`Σ turn = +12`); that is necessary and not sufficient. Without a
+> corner rule one stencil is written ~10 ways and reads as many. Recorded as `X38`; it lands in S6.
+
+### The mistake, and why it is worth writing down
+
+The first version of the check asserted that a collision across `h0` **parity** was a law F
+violation — on the assumption that `h0` parity classifies the form into the edge or vertex class.
+**It does not.** A form's sides run at `h0`, `h0 + t₀`, `h0 + t₀ + t₁`, so `h0 = 0` with turns
+`2,5,5` runs headings 0, 2 and **7** — both classes at once. Only when every turn is even does the
+form stay in one class.
+
+The gate went red on 72 "violations" that were nothing of the kind. **Law F had to be stated
+correctly before it could be checked at all**, and the wrong statement was confident and specific
+enough to look like a real finding. That is the census hazard `X9` warns about in a different
+dress: a confident, ranked, wrong table.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |
