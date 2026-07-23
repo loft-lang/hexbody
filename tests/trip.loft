@@ -31,22 +31,34 @@ fn main() {
   ok = true;
   println("=== rt_trip — the round trip, against the committed corpus ===");
 
-  dir = "{source_dir()}/../corpus/a1";
-  names = list_dir(dir);
+  // Every committed level, so raising `formfit::LEVEL` without extending the corpus — or the
+  // reverse — fails here rather than passing quietly.
   ts: vector<text> = [];
   fs: vector<text> = [];
   cases: vector<text> = [];
-  for ni in 0..len(names) {
-    nm = names[ni] ?? "";
-    if nm.ends_with(".t") {
-      base = nm.replace(".t", "");
+  for lv in 1..3 {
+    dir = "{source_dir()}/../corpus/a{lv}";
+    // SNAPSHOT THE NAMES BEFORE READING ANY FILE.  Opening a file invalidates a live
+    // `list_dir` result from the second listing onward — `len(names)` drops to 0 mid-loop and
+    // most entries are silently skipped (crawler LOFT-HANDOFF H6). This loaded 3 of 22 before
+    // the snapshot was added, and the corpus simply looked smaller than it is.
+    names = list_dir(dir);
+    picks: vector<text> = [];
+    for ni in 0..len(names) {
+      nm = names[ni] ?? "";
+      if nm.ends_with(".t") { picks += [nm.replace(".t", "")]; }
+    }
+    nlv = len(picks);
+    for pi in 0..nlv {
+      base = picks[pi] ?? "";
       cases += [base];
       ts += [file("{dir}/{base}.t").content().trim()];
       fs += [file("{dir}/{base}.f").content().trim()];
     }
+    println("   corpus/a{lv}: {nlv} committed entries");
   }
   n = len(cases);
-  println("   {n} committed entries in corpus/a1");
+  println("   {n} entries in total");
   if n <= 0 {
     println("  BROKEN: the corpus is empty — run src/corpusgen.loft and COMMIT the result");
     println("=== TRIP BROKEN ===");
@@ -61,7 +73,7 @@ fn main() {
     tt = ts[ri] ?? "";
     rf = form_read(tt);
     if len(rf.fm_len) == 0 { nbad = nbad + 1; }
-    else if form_write(rf, "a1") != tt { nbad = nbad + 1; }
+    else if form_write(rf, (cases[ri] ?? "a1-00").split('-')[0] ?? "a1") != tt { nbad = nbad + 1; }
   }
   println("   {n} entries, {nbad} mismatches");
   if nbad != 0 {
@@ -152,7 +164,7 @@ fn main() {
     m0 = form_read(tt);                                    // read(T)
     fc = hexset_chunk(Q0, R0, W, H);
     form_fill(m0, 0, 0, fc);                               // draw(...)
-    got = rebuild_text(fc, "a1");                          // write(rebuild(...))
+    got = rebuild_text(fc, (cases[ti] ?? "a1-00").split('-')[0] ?? "a1");   // write(rebuild(...))
     if got != tt {
       ntrip = ntrip + 1;
       if ntrip <= 3 {

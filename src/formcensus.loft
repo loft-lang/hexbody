@@ -22,6 +22,7 @@
 // which is the one mistake this file exists to detect.
 use hex_field;
 use hexform;
+use formtext;
 
 // A cell's position packed into one sortable integer. The span is wide enough for any census
 // shape (levels 1-3 stay inside a few dozen cells of the origin) and the offset keeps it positive.
@@ -235,3 +236,77 @@ pub fn field_exact_text(cells: HexSet) -> text { digest_text(field_exact(cells))
 pub fn field_norm(cells: HexSet) -> vector<integer> { oriented_keys(cells, 0) }
 
 pub fn field_norm_text(cells: HexSet) -> text { digest_text(field_norm(cells)) }
+
+// ── THE LEVEL LADDER — the enumeration, parameterised ──────────────────────
+//
+// A1 fixed every side at length 1.  A2 grows `len` on the same shape, and asks the question the
+// rung ladder poses: **does length alone ever collide?**  The enumeration is otherwise identical —
+// 3 sides, all 12 starting headings, every turn triple summing to 12, filtered by law J — so the
+// levels nest: `forms_upto(1)` is a subset of `forms_upto(2)`.
+//
+// A form's LEVEL is its longest side, so level `n` is exactly what `forms_upto(n)` adds to
+// `forms_upto(n-1)`.  That keeps `corpus/a1` untouched forever (the never-regenerate rule) while
+// `corpus/a2` holds only what is new.
+pub fn form_maxlen(f: Form) -> integer {
+  lens = f.fm_len;
+  mx = 0;
+  for mi in 0..len(lens) { if (lens[mi] ?? 0) > mx { mx = lens[mi] ?? 0; } }
+  mx
+}
+
+// Every admitted 3-sided form with all side lengths in 1..maxlen, canonicalised and deduplicated.
+pub fn forms_upto(maxlen: integer) -> vector<Form> {
+  out: vector<Form> = [];
+  texts: vector<text> = [];
+  for la in 1..maxlen + 1 {
+    for lb in 1..maxlen + 1 {
+      for lc in 1..maxlen + 1 {
+        for eh in 0..12 {
+          for ea in 1..12 {
+            for eb in 1..12 {
+              ec = 12 - ea - eb;
+              if ec >= 1 && ec <= 11 {
+                ef = form_new(eh, [la, lb, lc], [ea, eb, ec]);
+                if form_closes(ef) {
+                  cf = form_canon(ef);
+                  ct = form_write(cf, "x");
+                  seen = false;
+                  for si in 0..len(texts) { if (texts[si] ?? "") == ct { seen = true; } }
+                  if !seen { texts += [ct]; out += [cf]; }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  out
+}
+
+// Only the forms NEW at this level — longest side exactly `n`.
+pub fn forms_at_level(n: integer) -> vector<Form> {
+  all = forms_upto(n);
+  out: vector<Form> = [];
+  for fi in 0..len(all) {
+    ff = all[fi] ?? form_new(0, [], []);
+    if form_maxlen(ff) == n { out += [ff]; }
+  }
+  out
+}
+
+// Is `b` a cyclic shift of `a` REVERSED — the signature of a MIRROR pair?
+//
+// The flip is one of the 12 orientations (`O` = 6 rotations x {id, flip}), and mirroring a turtle
+// walk reverses its turn sequence.  At level 1 this never shows: every admitted form has equal
+// sides, so it is achiral and its mirror is just a rotation.  Unequal sides make a form and its
+// mirror genuinely different texts — `turn 3,5,4` against `turn 3,4,5` — that draw mirror-image
+// fields and therefore share a SHAPE digest.  That is law **I**, not a law F failure.
+pub fn turns_reverse_eq(a: vector<integer>, b: vector<integer>) -> boolean {
+  n = len(a);
+  if len(b) != n { return false; }
+  if n == 0 { return true; }
+  rev: vector<integer> = [];
+  for ri in 0..n { rev += [a[n - 1 - ri] ?? 0]; }
+  turns_cyclic_eq(rev, b)
+}

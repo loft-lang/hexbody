@@ -1,17 +1,27 @@
-// census — THE GATE FOR formcensus, STEP S5.  Every check has a control that must fire.
+// census — THE GATE FOR formcensus.  Every check has a control that must fire.
 //
-// This is `rt_census_a` at n = 1.  It ENUMERATES level 1 exhaustively — every 3-sided form with
-// unit sides, at every starting heading, over every turn triple — keeps the ones law J admits,
-// draws each, and compares the resulting fields.  Because the level is finite, law F is DECIDED
-// here, not sampled.
+// `rt_census_a`, grown by level.  Each level is finite, so law **F** is DECIDED there, not
+// sampled.  Level `n` is every 3-sided form whose longest side is `n`, over all 12 starting
+// headings and every turn triple summing to 12, filtered by law J.
 //
 //   1  the enumeration is exhaustive and law J is the admission filter
-//   2  the frontier: how many distinct SHAPES the admitted forms draw, and where they collide
-//   3  every collision is one cycle RE-SPELLED — the correct statement of law F here
+//   2  THE FRONTIER, per level: forms, distinct shapes, and whether `draw` stays INJECTIVE
+//   3  what the shape-collisions are made of — rotations, and (from level 2) MIRRORS
 //   4  controls: a summary digest collides at once; a turn-blind key merges distinct forms
+//
+// WHAT CHANGED AT A2, AND WHY THE OLD CHECK WAS LEVEL-1-SPECIFIC.  The first version asserted
+// that every shape-collision is a cyclic RE-SPELLING of one turn sequence.  That holds at level 1
+// only because equal sides make every admitted form ACHIRAL.  From level 2 unequal sides produce
+// chiral forms, and a form and its mirror share a shape digest with REVERSED turns — so the old
+// test reported 36 "unexplained" collisions that are simply the flip doing its job.
+//
+// It was also the wrong instrument: shape-collisions are grouped BY `field_digest`, which
+// quotients by orientation, so "every collision is an orientation-image" is a tautology.  The
+// non-vacuous law F question is whether `draw` is INJECTIVE, and that is `field_norm` — section 2.
 use hex_field;
 use hexform;
 use formcensus;
+use formtext;
 
 const W = 61;
 const H = 61;
@@ -22,20 +32,11 @@ fn main() {
   ok = true;
   println("=== formcensus — the level-1 census, and law F decided at that level ===");
 
-  // ── 1. ENUMERATE LEVEL 1 EXHAUSTIVELY ─────────────────────────────────────
-  //
-  // The minimal stencil is 3 sides (law J needs sum(turn) = 12 and a closing vector sum, and two
-  // sides bound nothing).  Level 1 fixes every side at length 1 and sweeps the whole space: all
-  // 12 starting headings x every turn triple that sums to 12.  Law J is the ADMISSION filter —
-  // the enumeration proposes, `form_closes` disposes.
+  // ── 1. THE ADMISSION FILTER ───────────────────────────────────────────────
   println("");
-  println("1. ENUMERATION — every 3-sided unit form, all headings, all turn triples");
+  println("1. ENUMERATION — law J is the admission filter, not a formality");
   nprop = 0;
-  keys: vector<text> = [];
-  h0s: vector<integer> = [];
-  t0s: vector<integer> = [];
-  t1s: vector<integer> = [];
-  t2s: vector<integer> = [];
+  nadm = 0;
   for eh in 0..12 {
     for ea in 1..12 {
       for eb in 1..12 {
@@ -43,185 +44,186 @@ fn main() {
         if ec >= 1 && ec <= 11 {
           nprop = nprop + 1;
           ef = form_new(eh, [1, 1, 1], [ea, eb, ec]);
-          if form_closes(ef) {
-            keys += [form_key(ef)];
-            h0s += [eh];
-            t0s += [ea];
-            t1s += [eb];
-            t2s += [ec];
-          }
+          if form_closes(ef) { nadm = nadm + 1; }
         }
       }
     }
   }
-  nadm = len(keys);
-  println("   proposed {nprop} forms, law J admitted {nadm}");
-  if nadm <= 0 { println("  FAIL: nothing was admitted — the enumeration is empty"); ok = false; }
-  // CONTROL: the admission filter must REJECT most of what is proposed, or it filters nothing
+  println("   at level 1: proposed {nprop}, law J admitted {nadm}");
+  if nadm <= 0 { println("  FAIL: nothing admitted"); ok = false; }
   if nadm >= nprop {
-    println("  FAIL: control did not fire — law J admitted everything, so it is not a filter");
-    ok = false;
+    println("  FAIL: control did not fire — law J admitted everything"); ok = false;
   }
-  println("   CONTROL law J rejected {nprop - nadm} of {nprop} — it is a real filter");
+  println("   CONTROL law J rejected {nprop - nadm} of {nprop}");
 
-  // ── 2. DRAW EACH, AND DIGEST THE FIELD ────────────────────────────────────
+  // ── 2. THE FRONTIER — law F, level by level ───────────────────────────────
   //
-  // The digest is canonical up to orientation and translation, so two forms share a digest iff
-  // one draws an orientation-image of the other's field — i.e. iff they are the same stencil.
+  // The real law F question: is `draw` INJECTIVE over the admitted set?  That is `field_norm` —
+  // translation quotiented (placement is not the stencil's business), orientation NOT.  If two
+  // canonical forms ever shared a `field_norm`, `rebuild` could not tell them apart and the
+  // frontier would be BELOW that level.
   println("");
-  println("2. THE FRONTIER — how many distinct SHAPES the admitted forms draw");
-  println("   h0  turns      cells  digest");
-  digs: vector<text> = [];
-  cellns: vector<integer> = [];
-  for di in 0..nadm {
-    df = form_new(h0s[di] ?? 0, [1, 1, 1], [t0s[di] ?? 0, t1s[di] ?? 0, t2s[di] ?? 0]);
-    dc = hexset_chunk(Q0, R0, W, H);
-    dn = form_fill(df, 0, 0, dc);
-    dt = digest_text(field_digest(dc));
-    digs += [dt];
-    cellns += [dn];
-    if di < 14 {
-      println("   {h0s[di] ?? 0:>2}  {t0s[di] ?? 0},{t1s[di] ?? 0},{t2s[di] ?? 0}   "
-              + "{dn:>7}  {dt}");
+  println("2. THE FRONTIER — forms, shapes, and whether draw stays injective");
+  println("   lvl  forms  shapes  distinct fields  injective?");
+  nfrontier = 0;
+  for ml in 1..4 {
+    fs = forms_upto(ml);
+    nlvl = len(fs);
+    digs: vector<text> = [];
+    norms: vector<text> = [];
+    for fi in 0..nlvl {
+      ff = fs[fi] ?? form_new(0, [], []);
+      cc = hexset_chunk(Q0, R0, W, H);
+      form_fill(ff, 0, 0, cc);
+      digs += [digest_text(field_digest(cc))];
+      norms += [field_norm_text(cc)];
     }
+    nshape = 0;
+    for si in 0..nlvl {
+      f1 = true;
+      for sk in 0..si { if (digs[sk] ?? "") == (digs[si] ?? "") { f1 = false; } }
+      if f1 { nshape = nshape + 1; }
+    }
+    nnorm = 0;
+    for ni in 0..nlvl {
+      f2 = true;
+      for nk in 0..ni { if (norms[nk] ?? "") == (norms[ni] ?? "") { f2 = false; } }
+      if f2 { nnorm = nnorm + 1; }
+    }
+    inj = nnorm == nlvl;
+    println("   {ml:>3} {nlvl:>6} {nshape:>7} {nnorm:>16}  {inj}");
+    if !inj { nfrontier = nfrontier + 1; }
   }
-  if nadm > 14 { println("   ... {nadm - 14} more"); }
-
-  // distinct digests = distinct shapes
-  nshape = 0;
-  for si in 0..nadm {
-    firsts = true;
-    for sk in 0..si { if (digs[sk] ?? "") == (digs[si] ?? "") { firsts = false; } }
-    if firsts { nshape = nshape + 1; }
+  if nfrontier != 0 {
+    println("  FAIL: `draw` is NOT injective at some level — the frontier is below it, and"
+            + " `rebuild` cannot be exact there"); ok = false;
   }
-  println("   {nadm} admitted forms draw {nshape} DISTINCT shapes");
 
-  // ── 3. COLLISIONS ARE EXACTLY THE RE-SPELLINGS OF ONE CYCLE (law F) ──────
+  // ── 3. WHAT THE SHAPE-COLLISIONS ARE MADE OF ──────────────────────────────
   //
-  // A collision is two enumerated forms drawing the same field.  Law F is violated only if two
-  // GENUINELY DIFFERENT stencils collide — so the question is what "different" means, and the
-  // census is what answers it.
+  // Forms grouped by `field_digest` are orientation-images by construction, so the question is
+  // not WHETHER they are related but HOW — and the answer changes at level 2.
   //
-  // The digest already quotients by the 12 orientations, so an orientation-image never counts as
-  // different.  What the enumeration ALSO produces is the same closed cycle written from a
-  // different starting corner: `[2,5,5]`, `[5,5,2]`, `[5,2,5]` are one triangle walked from three
-  // places.  Those are the same stencil too.
+  //   rotation  same turn sequence, different h0
+  //   MIRROR    REVERSED turn sequence — the flip, one of the 12 orientations
   //
-  // So the law F check is: EVERY colliding pair must be a cyclic re-spelling of one cycle.  A
-  // collision between two cycles that are NOT re-spellings of each other would be the real thing.
+  // Level 1 has no mirrors: equal sides make every admitted form achiral. Unequal sides at
+  // level 2 make chirality visible for the first time.
   println("");
-  println("3. COLLISIONS — every one must be the same cycle written from another corner");
-  ncoll = 0;
-  nunexplained = 0;
-  for ci in 0..nadm {
-    for cj in 0..nadm {
-      if ci < cj && (digs[ci] ?? "") == (digs[cj] ?? "") {
-        ncoll = ncoll + 1;
-        ta: vector<integer> = [t0s[ci] ?? 0, t1s[ci] ?? 0, t2s[ci] ?? 0];
-        tb: vector<integer> = [t0s[cj] ?? 0, t1s[cj] ?? 0, t2s[cj] ?? 0];
-        if !turns_cyclic_eq(ta, tb) {
-          nunexplained = nunexplained + 1;
-          if nunexplained <= 3 {
-            println("   UNEXPLAINED: h0={h0s[ci] ?? 0} turns {t0s[ci] ?? 0},{t1s[ci] ?? 0},"
-                    + "{t2s[ci] ?? 0} and h0={h0s[cj] ?? 0} turns {t0s[cj] ?? 0},"
-                    + "{t1s[cj] ?? 0},{t2s[cj] ?? 0} share a field but are different cycles");
-          }
+  println("3. COLLISION STRUCTURE — rotations, and from level 2 also MIRRORS");
+  println("   lvl  collisions  rotation  mirror  neither");
+  nneither = 0;
+  for pl in 1..4 {
+    ps = forms_upto(pl);
+    np = len(ps);
+    pdigs: vector<text> = [];
+    for pi in 0..np {
+      pf = ps[pi] ?? form_new(0, [], []);
+      pc = hexset_chunk(Q0, R0, W, H);
+      form_fill(pf, 0, 0, pc);
+      pdigs += [digest_text(field_digest(pc))];
+    }
+    nc = 0; nrot = 0; nmir = 0; nnei = 0;
+    for ai in 0..np {
+      for aj in 0..np {
+        if ai < aj && (pdigs[ai] ?? "") == (pdigs[aj] ?? "") {
+          nc = nc + 1;
+          fa = ps[ai] ?? form_new(0, [], []);
+          fb = ps[aj] ?? form_new(0, [], []);
+          if turns_cyclic_eq(fa.fm_turn, fb.fm_turn) { nrot = nrot + 1; }
+          else if turns_reverse_eq(fa.fm_turn, fb.fm_turn) { nmir = nmir + 1; }
+          else { nnei = nnei + 1; }
         }
       }
     }
-  }
-  println("   {ncoll} colliding pairs, {nunexplained} NOT explained by re-spelling");
-  if nunexplained != 0 {
-    println("  FAIL: two genuinely different cycles draw the same field — law F is violated at"
-            + " level 1, and the frontier is BELOW level 1"); ok = false;
-  }
-  if ncoll == 0 {
-    println("  FAIL: no collisions at all — the digest is not quotienting by orientation, so"
-            + " law I cannot be seen from here"); ok = false;
-  }
-  // CONTROL: the explanation must be able to REJECT. Two forms whose turns are genuinely
-  // different cycles must not read as cyclic-equivalent.
-  ctl_a: vector<integer> = [4, 4, 4];
-  ctl_b: vector<integer> = [2, 5, 5];
-  println("   CONTROL is [4,4,4] a re-spelling of [2,5,5]? {turns_cyclic_eq(ctl_a, ctl_b)}"
-          + " (must be false);  of [5,5,2]? {turns_cyclic_eq(ctl_b, [5, 5, 2])} (must be true)");
-  if turns_cyclic_eq(ctl_a, ctl_b) {
-    println("  FAIL: control did not fire — the re-spelling test accepts different cycles");
-    ok = false;
-  }
-  if !turns_cyclic_eq(ctl_b, [5, 5, 2]) {
-    println("  FAIL: the re-spelling test rejects a genuine re-spelling"); ok = false;
-  }
-  // Every colliding class must be internally consistent: same digest => same cell count.
-  nsizebad = 0;
-  for zi in 0..nadm {
-    for zj in 0..nadm {
-      if zi < zj && (digs[zi] ?? "") == (digs[zj] ?? "")
-         && (cellns[zi] ?? -1) != (cellns[zj] ?? -2) { nsizebad = nsizebad + 1; }
+    println("   {pl:>3} {nc:>11} {nrot:>9} {nmir:>7} {nnei:>8}");
+    nneither = nneither + nnei;
+    if pl == 1 && nmir != 0 {
+      println("  FAIL: level 1 reported a mirror pair — its forms are achiral"); ok = false;
+    }
+    if pl == 2 && nmir == 0 {
+      println("  FAIL: level 2 reported NO mirror pair — chirality should appear with unequal"
+              + " sides, so the mirror test is not working"); ok = false;
     }
   }
-  println("   forms sharing a digest but differing in cell count: {nsizebad} (must be 0)");
-  if nsizebad != 0 {
-    println("  FAIL: the digest identifies fields of different size — it is not a shape key");
-    ok = false;
+  println("   every collision is a rotation or a mirror: {nneither == 0}");
+  if nneither != 0 {
+    println("  FAIL: {nneither} shape-collisions are neither a rotation nor a mirror — two"
+            + " unrelated cycles draw the same shape"); ok = false;
+  }
+  // CONTROL: the mirror test must be able to say NO, or "all explained" is free.
+  println("   CONTROL is [3,4,5] the mirror of [3,4,5]? {turns_reverse_eq([3, 4, 5], [3, 4, 5])}"
+          + "  of [3,5,4]? {turns_reverse_eq([3, 4, 5], [3, 5, 4])} (want false, true)");
+  if turns_reverse_eq([3, 4, 5], [3, 4, 5]) {
+    println("  FAIL: control did not fire — the mirror test accepts a non-mirror"); ok = false;
+  }
+  if !turns_reverse_eq([3, 4, 5], [3, 5, 4]) {
+    println("  FAIL: the mirror test rejects a genuine mirror"); ok = false;
   }
 
-  // ── 4. THE CONTROLS ───────────────────────────────────────────────────────
+  // ── 4. THE CONTROLS — the digest and the key must both be doing work ──────
   //
   // CONTROL A — a SUMMARY digest instead of the shape.  Keying the census on the cell COUNT is
-  // the cheapest wrong thing to do, and it collides immediately: every level-1 form has 3 cells,
-  // so a count-keyed census reports one shape where there are several.
+  // the cheapest wrong thing to do, and it collides immediately: many distinct forms enclose the
+  // same number of cells.
   println("");
   println("4. CONTROLS — the digest must be the shape, and the key must see the corners");
-  nshape_count = 0;
-  cdigs: vector<integer> = [];
-  for ai in 0..nadm {
-    af = form_new(h0s[ai] ?? 0, [1, 1, 1], [t0s[ai] ?? 0, t1s[ai] ?? 0, t2s[ai] ?? 0]);
-    ac = hexset_chunk(Q0, R0, W, H);
-    form_fill(af, 0, 0, ac);
-    cdigs += [count_digest(ac)];
+  cf2 = forms_upto(2);
+  ncf = len(cf2);
+  sdigs: vector<text> = [];
+  cnts: vector<integer> = [];
+  ckeys: vector<text> = [];
+  nkeys: vector<text> = [];
+  for ci2 in 0..ncf {
+    cff = cf2[ci2] ?? form_new(0, [], []);
+    ccc = hexset_chunk(Q0, R0, W, H);
+    form_fill(cff, 0, 0, ccc);
+    sdigs += [field_norm_text(ccc)];
+    cnts += [count_digest(ccc)];
+    ckeys += [form_key(cff)];
+    nkeys += [form_key_noturn(cff)];
   }
-  for bi in 0..nadm {
-    firstb = true;
-    for bk in 0..bi { if (cdigs[bk] ?? -1) == (cdigs[bi] ?? -2) { firstb = false; } }
-    if firstb { nshape_count = nshape_count + 1; }
+  nreal = 0;
+  for ri2 in 0..ncf {
+    fr = true;
+    for rk in 0..ri2 { if (sdigs[rk] ?? "") == (sdigs[ri2] ?? "") { fr = false; } }
+    if fr { nreal = nreal + 1; }
   }
-  println("   CONTROL A keyed on CELL COUNT: {nshape_count} shapes, against {nshape} real ones");
-  if nshape_count >= nshape {
-    println("  FAIL: control did not fire — a cell-count key is as discriminating as the shape"
-            + " digest, so the digest is doing no work"); ok = false;
+  ncount = 0;
+  for bi in 0..ncf {
+    fb2 = true;
+    for bk in 0..bi { if (cnts[bk] ?? -1) == (cnts[bi] ?? -2) { fb2 = false; } }
+    if fb2 { ncount = ncount + 1; }
+  }
+  println("   CONTROL A keyed on CELL COUNT: {ncount} classes, against {nreal} real fields");
+  if ncount >= nreal {
+    println("  FAIL: control did not fire — a cell-count key is as discriminating as the field,"
+            + " so the digest is doing no work"); ok = false;
   }
 
   // CONTROL B — a TURN-BLIND identity.  `DESIGN.md` §9 names this one: drop the turn sequence
   // from the match key and distinct forms stop being distinguishable as forms.
-  nid_full = 0;
-  nid_noturn = 0;
-  nkeys: vector<text> = [];
-  for ni in 0..nadm {
-    nf = form_new(h0s[ni] ?? 0, [1, 1, 1], [t0s[ni] ?? 0, t1s[ni] ?? 0, t2s[ni] ?? 0]);
-    nkeys += [form_key_noturn(nf)];
+  nfull = 0;
+  nblind = 0;
+  for fi2 in 0..ncf {
+    ff2 = true;
+    for fk in 0..fi2 { if (ckeys[fk] ?? "") == (ckeys[fi2] ?? "") { ff2 = false; } }
+    if ff2 { nfull = nfull + 1; }
   }
-  for fi in 0..nadm {
-    firstf = true;
-    for fk in 0..fi { if (keys[fk] ?? "") == (keys[fi] ?? "") { firstf = false; } }
-    if firstf { nid_full = nid_full + 1; }
+  for gi in 0..ncf {
+    fg = true;
+    for gk in 0..gi { if (nkeys[gk] ?? "") == (nkeys[gi] ?? "") { fg = false; } }
+    if fg { nblind = nblind + 1; }
   }
-  for gi in 0..nadm {
-    firstg = true;
-    for gk in 0..gi { if (nkeys[gk] ?? "") == (nkeys[gi] ?? "") { firstg = false; } }
-    if firstg { nid_noturn = nid_noturn + 1; }
-  }
-  println("   CONTROL B identities: {nid_full} with turns, {nid_noturn} without");
-  if nid_noturn >= nid_full {
-    println("  FAIL: control did not fire — dropping the turn sequence lost nothing, so the"
-            + " match key never needed corners"); ok = false;
+  println("   CONTROL B identities at level 2: {nfull} with turns, {nblind} without");
+  if nblind >= nfull {
+    println("  FAIL: control did not fire — dropping the turn sequence lost nothing"); ok = false;
   }
 
   println("");
-  println("   FRONTIER: level 1 is DECIDED — {nadm} admitted forms, {nshape} distinct shapes,");
-  println("   {ncoll} collisions, ALL of them one cycle re-spelled. Law F holds at level 1.");
-  println("   FOUND HERE, for S6: the canonical text must fix the starting CORNER, not just the");
-  println("   winding (C3) — or one stencil is written {nadm / nshape} ways and looks like many.");
+  println("   FRONTIER: `draw` is injective at every level scanned, so law F holds and");
+  println("   `rebuild` can be exact.  Length alone never collides; what unequal sides add is");
+  println("   CHIRALITY, and a mirror is one of the 12 orientations.");
 
   println("");
   if ok { println("=== CENSUS OK ==="); }

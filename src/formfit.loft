@@ -34,10 +34,17 @@ pub struct Rebuilt {
   rb_matches: integer,   // how many candidates matched exactly; >1 means the level is ambiguous
 }
 
-// ── the admitted set at level 1 ────────────────────────────────────────────
+// ── the admitted set — the candidate space `rebuild` matches against ───────
 //
-// The same enumeration the census and the corpus use: every 3-sided unit form, all headings, all
-// turn triples, filtered by law J, canonicalised, deduplicated. Ten of them.
+// `LEVEL` is how far up the ladder recovery is claimed to work. It must be raised in step with the
+// corpus: a corpus entry whose form is above this level would find NO candidate and be reported as
+// R2 — a silent loss of an exact answer. `tests/trip.loft` covers every committed level, so that
+// mismatch fails the gate rather than passing quietly.
+pub const LEVEL = 2;
+
+pub fn candidate_forms() -> vector<Form> { forms_upto(LEVEL) }
+
+// Retained for the A1 gates: the level-1 enumeration on its own.
 pub fn level1_forms() -> vector<Form> {
   out: vector<Form> = [];
   texts: vector<text> = [];
@@ -83,7 +90,7 @@ fn sym_diff(a: vector<integer>, b: vector<integer>) -> integer {
 // drawn is placement's business (the `place` element), not the stencil's.
 pub fn rebuild(cells: HexSet) -> Rebuilt {
   want = field_norm(cells);
-  cand = level1_forms();
+  cand = candidate_forms();
   nmatch = 0;
   best = form_new(0, [], []);
   rho = -1;

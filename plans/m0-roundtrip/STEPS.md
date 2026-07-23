@@ -337,6 +337,51 @@ is an **exact match against the enumerated set**, not a fit. No tolerance appear
   signature filed as crawler `LOFT-HANDOFF` **H4**. Hoisting fixed it. The discrepancy between two
   loops doing the same thing is what exposed it; a single loop would have read as a real defect.
 
+## A2 ✅ · grow `len` on the same shape — **DONE** *(rung, not a step: the machinery was written at S5–S8)*
+
+The rung ladder's question: **does length alone ever collide?** The answer is **no** — and what
+unequal sides *do* add is something level 1 could not show.
+
+- **the enumeration is parameterised**: `forms_upto(n)` / `forms_at_level(n)` — a form's LEVEL is
+  its longest side, so the levels nest and `corpus/a1` stays untouched forever.
+
+  | level | forms | shapes | distinct fields | `draw` injective? |
+  |---|---|---|---|---|
+  | 1 | 10 | 3 | 10 | ✅ |
+  | 2 | 32 | 7 | 32 | ✅ |
+  | 3 | 60 | 12 | 60 | ✅ |
+
+- **law F holds at every level scanned.** `draw` is injective — every canonical form has its own
+  field — so `rebuild` can stay exact and the frontier is not below level 3.
+- **THE FINDING: unequal sides introduce CHIRALITY.** Collisions by *shape* digest split into
+  rotations and **mirrors**, and the mirrors appear only from level 2:
+
+  | level | collisions | rotation | mirror | neither |
+  |---|---|---|---|---|
+  | 1 | 17 | 17 | **0** | 0 |
+  | 2 | 100 | 64 | **36** | 0 |
+  | 3 | 198 | 126 | **72** | 0 |
+
+  Level 1 has none because equal sides make every admitted form **achiral** — its mirror is just a
+  rotation. Unequal sides make a form and its mirror genuinely different texts (`turn 3,5,4`
+  against `turn 3,4,5`) that draw mirror-image fields. The flip is one of the 12 orientations, so
+  they share a shape digest: **law I, not a law F failure.**
+- **the S5 check was level-1-specific, and was also the wrong instrument.** It asserted every
+  shape-collision is a cyclic *re-spelling*; that holds only while forms are achiral, and it
+  reported 36 "unexplained" collisions at level 2 that are simply the flip. It was tautological
+  besides — collisions are *grouped by* an orientation-quotienting digest, so "every collision is
+  an orientation-image" cannot fail. The non-vacuous law F question is injectivity of `draw`
+  (`field_norm`), which is what the census now asserts.
+- **the corpus grew**: `corpus/a2/` holds the **22** forms new at level 2; `rt_trip` now covers
+  **32 entries across both levels**, all byte-for-byte, all R1 with `ρ = 0` and exactly one match.
+- **`corpusgen` now REFUSES to overwrite a level that already has entries** — the never-regenerate
+  rule enforced mechanically instead of trusted to memory.
+- **a loft defect cost real coverage** (crawler `LOFT-HANDOFF` **H6**): reading a file invalidates
+  a live `list_dir` result from the second listing on, so the gate loaded **3 of 22** a2 entries
+  and reported a clean pass on what it saw. A gate that silently tests a third of its corpus and
+  says OK is worse than one that fails. Worked around by snapshotting the names before any file
+  read; 20-line standalone repro filed.
+
 ## Order, and where it can go wrong
 
 ```

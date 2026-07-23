@@ -10,20 +10,20 @@ mechanics spine rather than running beside it (decided 2026-07-23).
 
 The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** holds only the
 **settled** core — definitions, the propositions that follow from them, and the constraints
-`X1`–`X41` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X41`) — while
+`X1`–`X42` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X42`) — while
 **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar, `fits?`,
 the seam, the corpus, the method, the gates, and the open decisions.
 
-**Progress: S0–S8 done — the round trip CLOSES at level 1** ([`STEPS.md`](STEPS.md)). Seven gates green through `tools/run_tests.sh`:
+**Progress: S0–S8 done, rungs A1 + A2 closed — the round trip holds over 32 committed entries** ([`STEPS.md`](STEPS.md)). Seven gates green through `tools/run_tests.sh`:
 
 | gate | covers |
 |---|---|
 | `tests/form.loft` | the 12 headings (`X1`/`X2`/`X20` re-measured to T1), `X24`/`X25`, **S3**'s turtle fill (`X33`/`X34`) and **S4**'s boundary + corner (`X35`–`X37`) |
 | `tests/wall.loft` | the 24-direction wall — `X26`–`X32`, the first constraints hexbody *discovered* rather than inherited, including **two defects every other gate was green through** |
 | `tests/box.loft` | the box in 12 directions, thin wall and thick wall |
-| `tests/census.loft` | the level-1 census — **law F decided at level 1** (`X38`) |
+| `tests/census.loft` | the census grown by level — **law F decided at levels 1–3** (`X38`, `X42`) |
 | `tests/text.loft` | the canonical text — `write(read(T)) = T` byte-for-byte (`X39`) |
-| `tests/trip.loft` | `rt_trip` — `write(rebuild(draw(read(T)))) = T` byte-for-byte over the **committed** corpus (`X41`) |
+| `tests/trip.loft` | `rt_trip` — byte-for-byte over **32 committed entries** in `corpus/a1` + `corpus/a2` (`X41`) |
 | `tests/house.loft` | law **I**, 12/12 equivariant in cells *and* edges |
 
 Three things are settled in [`DESIGN.md`](DESIGN.md):
@@ -54,9 +54,13 @@ Three things are settled in [`DESIGN.md`](DESIGN.md):
   byte-for-byte, 10/10, every entry R1 with `ρ = 0`. It is a **match, not a fit** — licensed by the
   census having decided the level finite and injective.
 
-**Phase A rung A1 is complete.** The blueprint gate's concrete end-result — *a stencil's canonical
-text survives `read → draw → rebuild → write` byte-identically* — now holds at level 1. Next is
-either **A2** (grow `len` on the same shape) or **S4b** (the wall surface by averaging).
+- **§10.19 — A2.** Length alone never collides — `draw` is injective at levels 1–3. What unequal
+  sides add is **chirality**, invisible at level 1 where every form is achiral.
+
+**Rungs A1 and A2 are closed.** The blueprint gate's concrete end-result — *a stencil's canonical
+text survives `read → draw → rebuild → write` byte-identically* — holds over **32 committed
+entries**. Next is either **A3** (grow side count: 4, 5, 6 — the houses rung) or **S4b** (the wall
+surface by averaging).
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"
@@ -118,8 +122,8 @@ already moved arcs from the last rung to the middle, because the scene has a tow
 
 | A·n | level | scene | first question it answers |
 |---|---|---|---|
-| **A1** | the minimal closed cycle — equilateral triangle, `len 1`, `turn 4` × 3, both heading classes | — | does *anything* round-trip? |
-| **A2** | grow `len` on the same shape | — | does length alone ever collide? |
+| **A1** ✅ | the minimal closed cycle — equilateral triangle, `len 1`, `turn 4` × 3, both heading classes | — | **yes, byte-for-byte** (`X41`) |
+| **A2** ✅ | grow `len` on the same shape | — | **no — but unequal sides introduce CHIRALITY** (`X42`) |
 | **A3** | grow side count — 4 (today's house), 5, 6 | **houses** | — |
 | **A4** | unequal sides, and non-convex — the L-shaped house | **houses** | where does a reflex corner stop being recoverable? |
 | **A5** | features (doors, windows) on straight sides | **houses** | does the `surf`-slot collision bite here? |
@@ -137,7 +141,7 @@ crawler `plans/8-landform-morphogenesis/`).
 
 | Phase | Effort | Verify | Status |
 |---|---|---|---|
-| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1 ✅ closed — next (A2)** |
+| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1, A2 ✅ closed — next (A3)** |
 | **B** — linework census: `period`, `D`, `Sep`; the straight/arc recovery | M | `rt_census_b`; `eave_spread == 0` on the recovered line | Blocked on A |
 | **C** — `write` / `read`, canonical text frozen | S | `rt_canon`, `rt_project`, `rt_fits`, `rt_close` | Blocked on A, B, **OD-2** |
 | **D** — `rt_trip` written **empty** (red), before `rebuild` exists | XS | needs no ground truth — only `write`/`read`/`draw`/`rebuild` + `diff` | Blocked on C |

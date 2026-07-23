@@ -30,46 +30,52 @@ const H = 61;
 const Q0 = -30;
 const R0 = -30;
 
-fn main() {
-  dir = "{source_dir()}/../corpus/a1";
-  mkdir_all(dir);
-  println("writing the level-1 corpus to {dir}");
+// THE LEVEL THIS RUN WRITES.  Bump it, run once, commit; never re-run for a level that already
+// has entries — the guard below refuses rather than trusting anyone to remember.
+const LEVEL = 2;
 
-  // Enumerate level 1 exactly as the census does, canonicalise, and keep one entry per distinct
-  // canonical text.  The enumeration order is deterministic, so the case numbering is stable.
-  texts: vector<text> = [];
-  digests: vector<text> = [];
-  for eh in 0..12 {
-    for ea in 1..12 {
-      for eb in 1..12 {
-        ec = 12 - ea - eb;
-        if ec >= 1 && ec <= 11 {
-          ef = form_new(eh, [1, 1, 1], [ea, eb, ec]);
-          if form_closes(ef) {
-            cf = form_canon(ef);
-            ct = form_write(cf, "a1");
-            seen = false;
-            for si in 0..len(texts) { if (texts[si] ?? "") == ct { seen = true; } }
-            if !seen {
-              cc = hexset_chunk(Q0, R0, W, H);
-              form_fill(cf, 0, 0, cc);
-              texts += [ct];
-              digests += [field_exact_text(cc)];
-            }
-          }
-        }
-      }
-    }
+fn main() {
+  dir = "{source_dir()}/../corpus/a{LEVEL}";
+
+  // THE NEVER-REGENERATE RULE, ENFORCED RATHER THAN DOCUMENTED.  A gate whose baseline can be
+  // rewritten compares new output against new output and always passes (`X15`).  If this level
+  // already has entries, refuse: a change here is a DECISION, made by deleting the directory on
+  // purpose after reading the diff.
+  existing = list_dir(dir);
+  nold = 0;
+  for xi in 0..len(existing) { if (existing[xi] ?? "").ends_with(".t") { nold = nold + 1; } }
+  if nold > 0 {
+    println("REFUSING: corpus/a{LEVEL} already holds {nold} committed entries.");
+    println("They are the baseline `tests/trip.loft` diffs against; regenerating them would make");
+    println("the gate compare new output with new output. To change them deliberately, delete the");
+    println("directory by hand first and read the diff before committing.");
+    return;
   }
 
+  mkdir_all(dir);
+  println("writing the level-{LEVEL} corpus to {dir}");
+
+  // Only the forms NEW at this level — longest side exactly LEVEL — so earlier levels stay
+  // untouched and a1 u a2 is the whole admitted set up to here.
+  fs = forms_at_level(LEVEL);
+  texts: vector<text> = [];
+  digests: vector<text> = [];
+  for fi in 0..len(fs) {
+    cf = fs[fi] ?? form_new(0, [], []);
+    ct = form_write(cf, "a{LEVEL}");
+    cc = hexset_chunk(Q0, R0, W, H);
+    form_fill(cf, 0, 0, cc);
+    texts += [ct];
+    digests += [field_exact_text(cc)];
+  }
   for wi in 0..len(texts) {
     idx = "{wi}";
     if wi < 10 { idx = "0{wi}"; }
-    ft = file("{dir}/a1-{idx}.t");
+    ft = file("{dir}/a{LEVEL}-{idx}.t");
     ft.write("{texts[wi] ?? \"\"}\n");
-    ff = file("{dir}/a1-{idx}.f");
+    ff = file("{dir}/a{LEVEL}-{idx}.f");
     ff.write("{digests[wi] ?? \"\"}\n");
-    println("  a1-{idx}.t / .f");
+    println("  a{LEVEL}-{idx}.t / .f");
   }
   println("wrote {len(texts)} entries — COMMIT THEM; the gate reads these bytes, never regenerates them");
 }
