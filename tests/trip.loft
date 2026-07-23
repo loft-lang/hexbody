@@ -160,14 +160,30 @@ fn main() {
   // Build the candidate space ONCE — enumerating it is the expensive part, and doing it per
   // lookup would be quadratic over the corpus.
   cands = candidate_forms();
+  // INDEXED RECOVERY: draw each candidate ONCE into a digest -> form map, then recover by probe.
+  // The scan re-drew every candidate on every lookup — O(N) fills per field, O(N^2) over the
+  // corpus. Law F is checked here, once over the whole space, instead of per lookup.
+  idx = index_build(cands);
   println("   candidate space: {len(cands)} admitted forms");
+  println("   index: {idx.ri_count} entries, {idx.ri_fills} fills to build,"
+          + " {idx.ri_collisions} digest collisions");
+  println("   the scan would have cost {len(cands) * n} fills for {n} lookups"
+          + " — the index costs {idx.ri_fills}");
+  if idx.ri_collisions != 0 {
+    println("  FAIL: two candidates share a field digest — law F fails over the candidate"
+            + " space, and an indexed lookup would silently return whichever won");
+    ok = false;
+  }
+  if idx.ri_count != len(cands) {
+    println("  FAIL: the index dropped candidates — {idx.ri_count} of {len(cands)}"); ok = false;
+  }
   ntrip = 0;
   for ti in 0..n {
     tt = ts[ti] ?? "";
     m0 = form_read(tt);                                    // read(T)
     fc = hexset_chunk(Q0, R0, W, H);
     form_fill(m0, 0, 0, fc);                               // draw(...)
-    got = rebuild_text_with(cands, fc, (cases[ti] ?? "a1-00").split('-')[0] ?? "a1");
+    got = rebuild_indexed_text(idx, cands, fc, (cases[ti] ?? "a1-00").split('-')[0] ?? "a1");
     if got != tt {
       ntrip = ntrip + 1;
       if ntrip <= 3 {
@@ -190,7 +206,7 @@ fn main() {
     // this way because it reads plainly, not because it is required.
     rm = form_read(ts[ri2] ?? "");
     form_fill(rm, 0, 0, rc);
-    rr = rebuild_with(cands, rc);
+    rr = rebuild_indexed(idx, cands, rc);
     if rr.rb_regime == REGIME_R1 && rr.rb_rho == 0 && rr.rb_matches == 1 { nr1 = nr1 + 1; }
   }
   println("   {nr1} of {n} recovered as R1, rho = 0, exactly one match");
@@ -211,7 +227,7 @@ fn main() {
   hexset_set(blob, 2, 0, true);
   hexset_set(blob, 3, 0, true);
   hexset_set(blob, 0, 1, true);
-  br2 = rebuild_with(cands, blob);
+  br2 = rebuild_indexed(idx, cands, blob);
   println("   a 5-cell hand-drawn blob -> regime R{br2.rb_regime}, rho {br2.rb_rho},"
           + " matches {br2.rb_matches}");
   if br2.rb_regime != REGIME_R2 {
@@ -220,18 +236,49 @@ fn main() {
   if br2.rb_rho <= 0 {
     println("  FAIL: R2 reported no residual — rho must be > 0 and surfaced"); ok = false;
   }
-  if rebuild_text_with(cands, blob, "a1") != "" {
+  if rebuild_indexed_text(idx, cands, blob, "a1") != "" {
     println("  FAIL: an R2 guess was spelled as if it were an authored stencil"); ok = false;
   }
   // and the control must not be vacuous: a REAL corpus field still comes back R1
   chk = hexset_chunk(Q0, R0, W, H);
   cm = form_read(ts[0] ?? "");
   form_fill(cm, 0, 0, chk);
-  cr2 = rebuild_with(cands, chk);
+  cr2 = rebuild_indexed(idx, cands, chk);
   println("   CONTROL a real corpus field -> regime R{cr2.rb_regime}, rho {cr2.rb_rho}"
           + " (must be R1, 0)");
   if cr2.rb_regime != REGIME_R1 {
     println("  FAIL: control did not fire — rebuild calls everything R2"); ok = false;
+  }
+
+  // ── 6. CONTROL — THE INDEX MUST AGREE WITH THE SCAN IT REPLACES ──────────
+  //
+  // A faster recovery that quietly answers differently is worse than a slow one. Every corpus
+  // entry is recovered BOTH ways and the two must give the same form.
+  println("");
+  println("6. CONTROL — indexed recovery agrees with the scan it replaces");
+  ndis = 0;
+  for xi in 0..n {
+    xc = hexset_chunk(Q0, R0, W, H);
+    xm = form_read(ts[xi] ?? "");
+    form_fill(xm, 0, 0, xc);
+    a = rebuild_indexed(idx, cands, xc);
+    b = rebuild_with(cands, xc);
+    if a.rb_regime != b.rb_regime { ndis = ndis + 1; }
+    else if a.rb_regime == REGIME_R1
+            && form_write(a.rb_form, "z") != form_write(b.rb_form, "z") { ndis = ndis + 1; }
+  }
+  println("   {n} entries recovered both ways, {ndis} disagreements");
+  if ndis != 0 {
+    println("  FAIL: the index and the scan disagree — the fast path is not the same answer");
+    ok = false;
+  }
+  // and the R2 path must agree too, since that is where the index falls back to the scan
+  bi = rebuild_indexed(idx, cands, blob);
+  bs = rebuild_with(cands, blob);
+  println("   CONTROL the blob both ways: R{bi.rb_regime}/rho {bi.rb_rho} vs"
+          + " R{bs.rb_regime}/rho {bs.rb_rho} (must match)");
+  if bi.rb_regime != bs.rb_regime || bi.rb_rho != bs.rb_rho {
+    println("  FAIL: the index and the scan disagree on R2 content"); ok = false;
   }
 
   println("");

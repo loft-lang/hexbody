@@ -1832,14 +1832,61 @@ The 4-sided house `[4,5,4,5]` needs `maxlen 5` — roughly **1.2 M proposals**. 
 enumerate that class, so the R1 construction that has carried every rung so far **does not reach
 the shape the whole project is named for**.
 
-The way through is not a bigger enumeration but a **different recovery**: key the field by an
-invariant and *look the form up*, instead of drawing every candidate and comparing. The census
-already computes exactly such a key — `field_norm` — so indexed recovery is a re-use of machinery
-that exists, not new theory. What it needs is the inverse map (`field_norm → form`) built once,
-which is the natural next step and the first time recovery stops being brute force.
+The way through is not a bigger enumeration but a **different recovery**: read `(h0, lens, turns)`
+off the field's own geometry — boundary → corners → turtle — instead of drawing candidates and
+comparing at all. That is `hexmatch`-shaped work (`X21`), and it is the first time recovery would
+stop being brute force.
+
+> ⚠ **This paragraph originally named *indexed* recovery as the way through. That was wrong** —
+> see §10.21. An index fixes the per-lookup cost; it is *built by* the very enumeration that is too
+> expensive, so it leaves the house exactly as far away.
 
 Recorded as `X43`, with the side-count half gated in-repo (T1) and the 5×2 / 6×2 costs measured by
 a probe (T2), labelled as such.
+
+## 10.21 Indexed recovery — the per-lookup cost, and a correction
+
+`rebuild_with` re-**drew** every candidate on every lookup: O(N) fills per field, **O(N²) over a
+corpus — 14 161 fills for our 119 entries.** A candidate's field never changes, so its digest can
+be computed once into a `digest → form` map and recovery becomes a single probe.
+
+```
+index: 119 entries, 119 fills to build, 0 digest collisions
+the scan would have cost 14161 fills for 119 lookups — the index costs 119
+```
+
+**Exactness is unchanged.** The digest *is* the field, compared in full, so a hit is the same R1
+answer the scan gave — not a heuristic narrowing that would need a tolerance.
+
+**Law F moved from a per-lookup check to a build-time one, over the whole space.** Two candidates
+sharing a digest would silently overwrite each other in the map, so the build counts clashes and
+the gate asserts zero. That is strictly stronger than the old `rb_matches` count, which only ever
+looked where a corpus entry happened to land.
+
+An **R2 miss falls back to the scan**, and only then, purely to compute the residual — R2 is the
+exceptional path, so paying O(N) there costs nothing and keeps `ρ > 0` a real measurement.
+
+The control is that **both recoveries must agree**: 119 entries recovered each way, 0
+disagreements, plus the R2 blob matching on regime *and* residual. A faster recovery that quietly
+answers differently is worse than a slow one — which is why the gate still pays the O(N²) scan
+once, in the control. The *production* path no longer does.
+
+### The correction — this does not reach the house
+
+§10.20 said indexed recovery was what the house needs. **That was wrong**, and the error is worth
+naming because it conflated two different costs:
+
+| cost | fixed by an index? |
+|---|---|
+| **per-lookup** — redrawing N candidates for every field | **yes** — O(N²) → O(N) |
+| **space construction** — enumerating the admissible forms at all | **no** — the index is built *by* that walk |
+
+The house's class is ~1.2 M proposals to enumerate, and an index has to walk it to exist. So the
+house is exactly as far out of reach as before.
+
+What would reach it is **constructive** recovery: trace the boundary, recover the corners, read the
+turtle off them — O(boundary), independent of how large the admissible space is. That is
+`hexmatch`'s shape (`X21`, gated in crawler for R2), and it is the honest next step.
 
 ## 11. Known conflicts in the current tree
 

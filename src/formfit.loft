@@ -140,3 +140,75 @@ pub fn rebuild_text(cells: HexSet, name: text) -> text {
   if r.rb_regime != REGIME_R1 { return ""; }
   form_write(r.rb_form, name)
 }
+
+// ── INDEXED RECOVERY — draw the candidates ONCE, then look up ──────────────
+//
+// `rebuild_with` re-DRAWS every candidate on every lookup: O(N) fills per field, O(N^2) over a
+// corpus — 14161 fills for the 119 entries we hold. Nothing about that is necessary. A candidate's
+// field never changes, so its digest can be computed once and put in a map keyed by the digest.
+// Recovery then becomes a single probe.
+//
+// WHAT THIS DOES AND DOES NOT BUY, stated plainly because the A3 write-up overstated it:
+//
+//   IT FIXES   the per-lookup cost — O(N) fills to build the index, O(1) per recovery afterwards.
+//   IT DOES NOT FIX   the cost of ENUMERATING the candidate space. Building the index still walks
+//                     every admissible form once, so the 4-sided house's class (~1.2M proposals,
+//                     `X43`) is exactly as far out of reach as before. Reaching THAT needs
+//                     CONSTRUCTIVE recovery — reading (h0, lens, turns) off the field's own
+//                     geometry — which is a different piece of work, not a faster table.
+//
+// LAW F IS CHECKED AT BUILD TIME, ONCE, INSTEAD OF ASSUMED PER LOOKUP. Two candidates sharing a
+// digest would silently overwrite each other in the map, so the build COUNTS such clashes and the
+// gate asserts zero. That is strictly better than the old per-lookup `rb_matches` count: it is
+// checked once, over the whole space, rather than only where a corpus entry happened to look.
+pub struct IdxEntry {
+  ix_digest: text,      // `field_norm_text` of the form's drawn field — NOT named `key`
+  ix_form:   Form,
+}
+
+pub struct RecoveryIndex {
+  ri_map:        hash<IdxEntry[ix_digest]>,
+  ri_count:      integer,   // entries indexed
+  ri_collisions: integer,   // candidates whose digest was already taken — a law F failure
+  ri_fills:      integer,   // draws performed to build it (the cost, reported not guessed)
+}
+
+pub fn index_build(cand: vector<Form>) -> RecoveryIndex {
+  idx = RecoveryIndex { ri_map: [], ri_count: 0, ri_collisions: 0, ri_fills: 0 };
+  for ii in 0..len(cand) {
+    cf = cand[ii] ?? form_new(0, [], []);
+    cc = hexset_chunk(FQ0, FR0, FW, FH);
+    form_fill(cf, 0, 0, cc);
+    idx.ri_fills = idx.ri_fills + 1;
+    dg = field_norm_text(cc);
+    prior = idx.ri_map[dg];
+    if prior == null {
+      idx.ri_map += [IdxEntry { ix_digest: dg, ix_form: cf }];
+      idx.ri_count = idx.ri_count + 1;
+    } else {
+      idx.ri_collisions = idx.ri_collisions + 1;
+    }
+  }
+  idx
+}
+
+// THE FAST PATH: one probe. A hit is an exact R1 answer — the digest IS the field, compared in
+// full, so this is the same exactness the scan gave, not a heuristic narrowing.
+//
+// A MISS falls back to the scan, and only then, purely to compute the R2 residual. R2 is the
+// exceptional path (content no grammar form draws), so paying O(N) there costs nothing in
+// practice and keeps `rho > 0` a real measurement rather than a placeholder.
+pub fn rebuild_indexed(idx: RecoveryIndex, cand: vector<Form>, cells: HexSet) -> Rebuilt {
+  hit = idx.ri_map[field_norm_text(cells)];
+  if hit != null {
+    return Rebuilt { rb_regime: REGIME_R1, rb_form: hit.ix_form, rb_rho: 0, rb_matches: 1 };
+  }
+  rebuild_with(cand, cells)
+}
+
+pub fn rebuild_indexed_text(idx: RecoveryIndex, cand: vector<Form>,
+                            cells: HexSet, name: text) -> text {
+  r = rebuild_indexed(idx, cand, cells);
+  if r.rb_regime != REGIME_R1 { return ""; }
+  form_write(r.rb_form, name)
+}

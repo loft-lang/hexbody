@@ -412,11 +412,49 @@ unequal sides *do* add is something level 1 could not show.
   Sides 3–6 at maxlen 2 is **1442 forms and ~66 s just to enumerate**. Law F has not failed
   anywhere — what fails is the affordability of *deciding* it exhaustively.
 - **and that is what puts today's house out of reach.** The 4-sided house `[4,5,4,5]` needs
-  `maxlen 5` — roughly **1.2 M proposals** — so `rebuild` cannot enumerate its class. Reaching it
-  wants **indexed recovery** (key the field by an invariant and look the form up) rather than
-  enumerate-and-match. That is a real limit this rung found, recorded rather than papered over:
-  `DESIGN.md` §8's *"within the frontier law F is decided, not sampled"* now has a measured
-  boundary on where that frontier can be afforded.
+  `maxlen 5` — roughly **1.2 M proposals** — so `rebuild` cannot enumerate its class. That is a
+  real limit this rung found, recorded rather than papered over: `DESIGN.md` §8's *"within the
+  frontier law F is decided, not sampled"* now has a measured boundary on where that frontier can
+  be afforded.
+  - ⚠ **this bullet originally named indexed recovery as the way through, and that was wrong** —
+    see the correction under *Indexed recovery* below. An index still has to be BUILT by walking
+    the space, so it does not shrink the enumeration at all. The house needs **constructive**
+    recovery.
+
+## Indexed recovery ✅ · draw the candidates once — `src/formfit.loft` · S · **DONE**
+
+`rebuild_with` re-DREW every candidate on every lookup: **O(N) fills per field, O(N²) over a
+corpus — 14 161 fills for the 119 entries we hold.** A candidate's field never changes, so its
+digest can be computed once into a `digest → form` map and recovery becomes a single probe.
+
+- **measured**: `index: 119 entries, 119 fills to build, 0 digest collisions` — against the
+  **14 161** the scan would have cost. Exactness is unchanged: the digest *is* the field, compared
+  in full, so a hit is the same R1 answer the scan gave, not a heuristic narrowing.
+- **law F is now checked ONCE, over the whole candidate space, instead of per lookup.** Two
+  candidates sharing a digest would silently overwrite each other in the map, so the build counts
+  clashes and the gate asserts zero — strictly better than the old per-lookup `rb_matches`, which
+  only ever looked where a corpus entry happened to land.
+- **an R2 miss falls back to the scan**, and only then, purely to compute the residual. R2 is the
+  exceptional path, so paying O(N) there costs nothing and keeps `ρ > 0` a real measurement.
+- **control**: every corpus entry is recovered **both ways** and the two must agree — 119 entries,
+  0 disagreements, plus the R2 blob matching on regime *and* residual. A faster recovery that
+  quietly answers differently is worse than a slow one. That control is why the gate still pays
+  the O(N²) scan once; the *production* path no longer does.
+
+### ⚠ The correction: this does NOT reach the house
+
+A3's write-up said indexed recovery was "what the house needs". **That was wrong, and the mistake
+is worth naming**: it confused two different costs.
+
+| cost | fixed by an index? |
+|---|---|
+| **per-lookup** — redrawing N candidates for every field | **yes** — O(N²) → O(N) |
+| **space construction** — enumerating the admissible forms at all | **no** — the index is built *by* that walk |
+
+The house's class is ~1.2 M proposals to enumerate, and an index still has to walk it. So the house
+is exactly as far out of reach as before. Reaching it needs **constructive recovery** — reading
+`(h0, lens, turns)` off the field's own geometry (boundary → corners → turtle) — which is
+`hexmatch`-shaped work (`X21`), not a faster table.
 
 ## Order, and where it can go wrong
 

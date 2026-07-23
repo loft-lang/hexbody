@@ -38,7 +38,7 @@ crawler's prototypes and design docs are **design tries** — input, not authori
 | **T3 · designed** | a doc argues a construction | **input to design, never truth** |
 | **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
 
-**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X43`** — eight of them re-measured *here*, and
+**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X44`** — eight of them re-measured *here*, and
 `X26`–`X31` **discovered here**. Everything else the design leans on is still a try or a schema
 (notably the whole foxel schema, `X11`–`X15`), and the census is where it gets re-measured. Citing a T2 number as settled is
 the specific mistake to avoid — in either direction: re-deriving what is genuinely gated wastes
@@ -73,7 +73,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X43` **with trust tiers** | **authoritative** on any object or map |
+| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X44` **with trust tiers** | **authoritative** on any object or map |
 | **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
@@ -229,11 +229,17 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   (10/21/30/36 forms). `rt_trip` covers **119 committed entries** across `corpus/a1` + `a2` + `a3`.
 - **A3's finding (X43): the frontier is now COST, not correctness.** The two axes MULTIPLY —
   `sides × maxlen` is 1442 forms and ~66 s to enumerate at maxlen 2. **Today's house `[4,5,4,5]`
-  needs `maxlen 5` ≈ 1.2 M proposals, so enumerate-and-match cannot reach it.** Getting there wants
-  **indexed recovery**, not enumeration. Law F has not failed; *deciding* it exhaustively is what
-  stops being affordable.
-- **`rebuild_with` takes a prebuilt candidate set** — build it once per run, never per lookup.
-- Next: **indexed recovery** (what A3 says the house needs), **A4** (unequal/non-convex), or
+  needs `maxlen 5` ≈ 1.2 M proposals, so enumerate-and-match cannot reach it.** Law F has not
+  failed; *deciding* it exhaustively is what stops being affordable.
+- **Indexed recovery is DONE (X44)** — `index_build` draws each candidate once into a
+  `digest → form` map; recovery is a probe. **119 fills instead of 14 161**, 0 collisions, and the
+  index is checked to agree with the scan on every entry. Law F is now verified **once over the
+  whole space** at build time rather than per lookup.
+- ⚠ **The index does NOT reach the house, and A3's doc wrongly said it would.** It fixes the
+  *per-lookup* cost, not the cost of *enumerating* the space — an index is built by that same walk.
+  The house needs **constructive** recovery (boundary → corners → turtle, `hexmatch`-shaped,
+  `X21`), not a faster table.
+- Next: **constructive recovery** (what the house actually needs), **A4** (unequal/non-convex), or
   **S4b** (the wall surface by averaging) — see `STEPS.md` and `README.md`'s rung table.
 - **The foxel schema is the limit** (`ROUNDTRIP.md` §2.4): `layer* × point → (height, material,
   wall1, wall2, wall3, item)`. A model is admissible **iff it draws into that exactly**, which
@@ -244,7 +250,7 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
   relocated into the schema, and rung A5's real question.
 - **Constraints are in `ROUNDTRIP.md` §7 (X1–X31) with trust tiers.** T1 now holds `X1`, `X2`,
-  `X19`–`X22`, `X24`–`X43`; do not re-derive those. Everything else is still a try or a schema.
+  `X19`–`X22`, `X24`–`X44`; do not re-derive those. Everything else is still a try or a schema.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their
