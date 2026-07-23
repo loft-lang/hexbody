@@ -1,0 +1,11 @@
+[package]
+name = "hexbody"
+version = "0.0.1"
+description = "Movable, breakable geometry bodies with collision proxies derived from the geometry — a system-prototyping harness."
+
+# hex_field (the exact-integer field core) is consumed from the sibling working
+# tree via --lib in the Makefile, matching how crawler consumes it today. When the
+# stack stabilises this becomes a { path = "../loft-libs-world/hex_field" } dep
+# (loft#337 is fixed, so path deps work). graphics resolves from the registry.
+[dependencies]
+graphics = ">=0.5.0"
