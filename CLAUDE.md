@@ -19,6 +19,30 @@ the geometry itself**. Split out of `crawler` 2026-07-23; `crawler` is its first
   `stores not freed at program exit` warning on every run is one of these: known, loft-side.
 - **Commit and push only when asked.** Commit messages end with the org `Co-Authored-By` trailer.
 
+## Check `../crawler` first — it is the reservoir, not just the origin
+
+hexbody was split out of crawler on 2026-07-23 and is a **young extraction of a long-running body
+of work**. Far more design and prototyping is still in crawler than has been moved.
+
+> **Before designing or building anything here, look in crawler.** The problem has usually been
+> characterised there already, and often prototyped. Specifying from scratch what already exists
+> is the most likely way to waste effort in this repo.
+
+- **`crawler/plans/5-geometry/`** — the plan hexbody was seeded from, **plus Python prototypes
+  that cover much of M0**: `matcher.py` (recover surfaces from a traced boundary → `rebuild`),
+  `directions.py` (the 24-direction question: a hex grid has 12 natural directions, so 12 of the
+  24 are off-axis by 15°), `deviation.py` (the residual `ρ`), `roundness.py` / `collision_fit.py`
+  / `road_arcs.py` (footprints by **best collision match**, not best shape match), `ways.py`
+  (centreline + offsets, never a rasterised band), `hexforms.py` (the test bench).
+- **`crawler/plans/11-3d-world/`** — `BUILDING.md` §4, `HOUSE.md`, `DRAWING.md`, `RESULTS.md`.
+- **`crawler/WALLS.md`** — the triangle-subdivision wall model, the exact construction.
+- **`STENCILS.md` · `FORMS.md` · `PROPS.md` · `SCALE.md` · `EXTRACTION.md`** — stencils, the
+  exact-parts kit, props (bears on OD-3), the L8 scale contract, the extraction seam.
+- **`plans/9-canopy-trees/TREES.md`** (OD-3) · **`plans/8-landform-morphogenesis/`** (OD-4).
+- **`DESIGN-PROTOCOL.md`** — the blueprint-phase method `plans/README.md` binds to.
+
+Full map with one-liners: [`README.md`](README.md) § *Lineage*.
+
 ## The doc hierarchy — build from the formal files, not the prose
 
 | file | role | authority |

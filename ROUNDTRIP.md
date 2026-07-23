@@ -541,6 +541,17 @@ collision is not a defect to eliminate; it is the **boundary of `𝕄*` being lo
 threshold that is expected to be satisfiable; the census produces the table and the minimum length
 in metres that `L8` requires.
 
+> **Read `../crawler` before running either.** Much of this is already prototyped there, in
+> `crawler/plans/5-geometry/`: **`directions.py`** answers the 24-direction question directly
+> (a hex grid has **12** natural directions — 6 edge, 6 vertex, 30° apart — so **12 of the 24 are
+> off-axis by 15°**, which is where `H₁₂` in §1 comes from); **`matcher.py`** prototypes
+> *recovering straights and arcs from a traced boundary loop*, i.e. `rebuild` for domain A;
+> **`deviation.py`** measures `ρ`. Crawler also frames the tower/road fit on a **different
+> objective** than `Sep` assumes — `roundness.py` and `collision_fit.py` choose a footprint by
+> **best collision match, not best shape match**, and `ways.py` insists a way is an exact
+> centreline plus offsets, *never* derived from a rasterised band. Reconcile with those before
+> treating the constants here as unmeasured.
+
 ### 8.1 How the constants are found — grow, don't presuppose
 
 **Do not define the admitted space and then enumerate it.** That presupposes the bounds, and the
@@ -577,6 +588,38 @@ exactly because three lattice vectors 120° apart sum to zero — e.g. `(1,0) + 
 **reports the frontier** — the largest level that round-trips, and the exact form that first
 fails. Both outcomes are results. And because every level is a complete, gated increment, the
 work always has something green rather than one long red run to a single verdict.
+
+### 8.2 Where the rungs come from — the scene, not the desk
+
+§8.1 gives the **method** (smallest first, grow, combine). It does not give the **work-list**.
+Ordering rungs by mathematical minimality alone builds outward from what is formally smallest,
+which is not the same as what the world actually contains.
+
+> **The scene is the demand side.** The current work — **a landscape with houses, trees and a
+> tower** — is what decides which rungs exist and in what order. This document says what is
+> *possible*; the scene says what must be.
+
+That is not a demo of the infrastructure — it is the **instrument that finds the infrastructure's
+gaps**. A contract makes the axes you already see safe; only a real scene converts an axis nobody
+imagined into one you can gate. So it runs as a loop, not a reversal:
+
+```
+   scene reveals a requirement ──▶ contract makes it checkable ──▶ gate keeps it ──▶ next scene
+             ▲                                                                          │
+             └──────────────────────────────────────────────────────────────────────────┘
+```
+
+**What this scene already reveals** — three of these were not on the desk-derived ladder:
+
+| the scene has | it exercises | consequence |
+|---|---|---|
+| **houses** | polygonal stencils, features, `H₁₂` | already the ladder's spine |
+| **a tower** | **arcs**, immediately with features — the **doored-tower defect** (`design/FEATURES.md` §3): a wall with a door fitting **3 arcs instead of 1** | arcs were the ladder's *last* rung; the scene puts them in the **first build**, and the defect is a named law **D** failure to gate directly |
+| **trees** | a primitive class the grammar has **no verb for** | **OD-3** — likely a prop (VISION's set-dressing kit), which §2.2 puts outside `𝕄*`; that boundary is marked OPEN and this scene forces it |
+| **the landscape** | terrain in `𝔽_wld` with **no grammar production**, plus seating (`K-SEAT`) | **OD-4** — the same shape of question as **OD-2**: is a height field inside the exact round trip? |
+
+Two new open decisions, both surfaced **by the scene rather than by the desk** — which is the
+argument for the loop, made concretely rather than in principle.
 
 > **Dissolved.** An earlier draft asked whether house walls could carry the fine directions, given
 > sides of 4–5 steps. They cannot and need not: houses are `H₁₂` with **short spans permitted**,
@@ -669,6 +712,24 @@ A `tol: float` in a recovery function is exactly the `ε` that **P4** forbids.
 |---|---|
 | **(a)** roofs are **excluded** from the exact round trip | `𝕋` carries the roof *parameters*, and `Heights` is a derived render product never recovered — law **D** applies to the plan, not the roof |
 | **(b)** roofs are **included** — domain C with exact recovery | `roof_match`'s `tol` is replaced; every roof profile needs an exact inverse, and `Sep`-style separation constants for each |
+
+**OD-3 · are trees in `𝕄*` at all?**
+The scene has trees; the grammar has no verb for one, and §2.2 provisionally puts set-dressing
+props *outside* `𝕄*` as authored meshes. Both readings are live: a tree as an **instanced prop**
+(pose + kit piece, never field geometry, never round-tripped) or a tree as **field geometry** (a
+canopy occupying cells, which collision and destruction can then read). The first is far cheaper
+and matches VISION's kitbashing route; the second is what makes a tree *fellable* and its stump
+derivable. Deciding it draws the prop boundary §2.2 currently leaves open.
+**Do not decide this from here** — crawler holds `plans/9-canopy-trees/TREES.md`, a whole
+canopy-first tree design plus `src/canopy*.loft`, and `PROPS.md` (*"small detail without a library
+of model files"*). Read both first; this decision is probably already made there.
+
+**OD-4 · is terrain inside the exact round trip?**
+`𝔽_wld` holds terrain, and there is no `⟨terrain⟩` production. Structurally identical to **OD-2**
+(roofs): a height field is a continuous surface sampled to `Heights`, so either it sits outside
+the exact round trip and is never recovered, or it is a **domain C** with an exact inverse.
+Answering OD-2 and OD-4 together is likely — they are the same question about `Heights` asked
+twice. **Prior art:** crawler `plans/8-landform-morphogenesis/`.
 
 ### 11.2 Known conflicts in the current tree
 

@@ -35,13 +35,48 @@ exactly**; `snap` is the only lossy step and it reports its residual. `SPEC` say
 achieved*, `ROUNDTRIP` says *what the objects are and which equations hold* — and on any question
 about an object, a map, or a law, `ROUNDTRIP` is authoritative.
 
-## Lineage
+## Lineage — and the reservoir still in `../crawler`
 
 - **Built on `hex_field`** (the exact-integer field core: `HexSet`, `EdgeSet`, `Heights`,
   `Labels`, `Stencil`) in the sibling repo `../loft-libs-world`, branch `dev`.
 - **Split out of `crawler`** (2026-07-23), which is the **first consumer and the proof**: if
-  crawler can build its own colossus on hexbody, the harness thesis is demonstrated. crawler
-  still holds its own copies of these files pending migration — see *Status*.
+  crawler can build its own colossus on hexbody, the harness thesis is demonstrated.
+
+> **Most of this project's substance originated in `../crawler`, and far more of it is still
+> there than has been moved.** hexbody is a young extraction of a long-running body of design and
+> prototyping. **Read crawler before building anything here** — the odds are good that the problem
+> has already been characterised, and often already prototyped.
+
+**Design docs still in crawler, directly on hexbody's remit:**
+
+| doc | what it holds |
+|---|---|
+| `plans/5-geometry/` | the geometry plan hexbody was seeded from — **plus Python prototypes**, below |
+| `plans/11-3d-world/` | `BUILDING.md` (§4 the wall run vs the wall), `HOUSE.md`, `DRAWING.md`, `DRAWING-API.md`, `RESULTS.md` — ~2 400 lines |
+| `WALLS.md` | the **triangle-subdivision wall model** — the exact construction, not an approximation |
+| `STENCILS.md` | layered, composable stencils → castles |
+| `FORMS.md` | a kit of exact, interlocking hex parts — no seams by construction |
+| `PROPS.md` | small detail without a library of model files *(bears on `ROUNDTRIP` OD-3, trees)* |
+| `plans/9-canopy-trees/` | `TREES.md` — canopy-first trees *(OD-3)* |
+| `plans/8-landform-morphogenesis/` | terrain *(OD-4)* |
+| `SCALE.md` | the scale contract behind `SPEC` **L8** |
+| `EXTRACTION.md` | the library-extraction seam — where shared code is meant to land |
+| `DESIGN-PROTOCOL.md` | the blueprint-phase method `plans/README.md` binds to |
+| `LOFT-HANDOFF.md` · `FILING.md` · `LOFT-NOTES.md` | toolchain defect filing and the loft survival guide |
+
+**Prototypes in `crawler/plans/5-geometry/` — read these before building M0:**
+
+| file | what it prototypes |
+|---|---|
+| `matcher.py` | **recover surfaces from a traced cell boundary** — boundary loop → straights + arcs. This is `rebuild` for domain A |
+| `directions.py` | **can a wall/road run in all 24 directions?** — a hex grid has 12 natural directions (6 edge, 6 vertex, 30° apart), so 12 of the 24 are off-axis by 15°. Substantially the domain-B census |
+| `deviation.py` | per-point distance from an emitted outline to the ideal form — the residual `ρ` |
+| `roundness.py` · `collision_fit.py` | tower footprints chosen by **best collision match**, not best shape match |
+| `road_arcs.py` · `ways.py` | road arcs by the same collision-match ladder; ways as an exact centreline **plus offsets**, never a rasterised band |
+| `hexforms.py` | the blueprint-phase test bench — validated exact vector maps |
+
+**Code duplicated, not yet extracted:** `hexedge` / `hexway` / `hexroof` are byte-identical copies
+of crawler's. Their proper home is `loft-libs-world` — see *Status*.
 
 ## Status
 

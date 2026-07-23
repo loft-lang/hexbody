@@ -32,8 +32,20 @@ once recovery lands.
   **I-DOMAIN**, **I-POSE**, **I-SEAM**, **I-ARBIT**, **K-FIT**; honoured: **L8** (metres), **L3**
   (scoped — the field is the *world's* truth; a body's is its original + pose).
 - `src/housedraw.loft` (the rasterizer that already exists), `src/houseshot.loft` (the visual).
-- Domain B source design: crawler `plans/11-3d-world/BUILDING.md` §4 — the two exact overheads,
-  `2/√3` and `3√3/4`. Ported, not re-derived.
+- **`../crawler` holds prototypes for much of this plan — read before building, not after.**
+  Specifying from scratch what already exists is the main way to waste effort here.
+
+  | crawler source | covers |
+  |---|---|
+  | `plans/5-geometry/matcher.py` | **recover straights + arcs from a traced boundary loop** — this is phase **E**, `rebuild`, already prototyped |
+  | `plans/5-geometry/directions.py` | the 24-direction question: 12 natural hex directions (6 edge, 6 vertex, 30° apart), so 12 of 24 are off-axis by 15° — substantially phase **B** |
+  | `plans/5-geometry/deviation.py` | per-point distance to the ideal form — the residual `ρ` |
+  | `plans/5-geometry/roundness.py`, `collision_fit.py`, `road_arcs.py` | tower and road footprints by **best collision match, not best shape match** — a *different objective* than `Sep` assumes; reconcile before rung A6 |
+  | `plans/5-geometry/ways.py` | a way is an exact centreline **plus offsets**, never derived from a rasterised band |
+  | `plans/5-geometry/hexforms.py`, `golden/`, `out/` | the blueprint-phase test bench and its outputs |
+  | `WALLS.md` | the **triangle-subdivision wall model** — the exact construction |
+  | `plans/11-3d-world/BUILDING.md` §4 | the two exact overheads, `2/√3` and `3√3/4`. Ported, not re-derived |
+  | `STENCILS.md`, `FORMS.md` | layered composable stencils → castles; the exact interlocking parts kit |
 
 ## Blueprint gate (exact-invariant — geometry, round trip)
 
@@ -54,19 +66,28 @@ once recovery lands.
 its level, round-trips every form, and is a complete gated increment — so the work always has
 something green, and the boundary is *discovered* rather than assumed.
 
-| A·n | level | first question it answers |
-|---|---|---|
-| **A1** | the minimal closed cycle — equilateral triangle, `len 1`, `turn 4` × 3, both heading classes | does *anything* round-trip? |
-| **A2** | grow `len` on the same shape | does length alone ever collide? |
-| **A3** | grow side count — 4 (today's house), 5, 6 | — |
-| **A4** | unequal side lengths | — |
-| **A5** | non-convex — reflex turns | where does a concave corner stop being recoverable? |
-| **A6** | features (doors, windows) on the cycle | does the `surf`-slot collision bite here? |
-| **A7** | arcs | the line/arc separation bound `Sep` |
-| **A8** | **combination** — two stencils adjacent (who owns the shared edge?), stencil against linework, stencil on terrain | **where things that work alone stop working together** |
+**The rungs come from the scene, not the desk** (`ROUNDTRIP` §8.2). The current work — **a
+landscape with houses, trees and a tower** — decides which rungs exist and in what order. That
+already moved arcs from the last rung to the middle, because the scene has a tower.
+
+| A·n | level | scene | first question it answers |
+|---|---|---|---|
+| **A1** | the minimal closed cycle — equilateral triangle, `len 1`, `turn 4` × 3, both heading classes | — | does *anything* round-trip? |
+| **A2** | grow `len` on the same shape | — | does length alone ever collide? |
+| **A3** | grow side count — 4 (today's house), 5, 6 | **houses** | — |
+| **A4** | unequal sides, and non-convex — the L-shaped house | **houses** | where does a reflex corner stop being recoverable? |
+| **A5** | features (doors, windows) on straight sides | **houses** | does the `surf`-slot collision bite here? |
+| **A6** | **arcs** — the round tower shell | **the tower** | `Sep`; and crawler's objective is **collision match**, not shape match — reconcile first |
+| **A7** | **arc + feature — the doored tower** | **the tower** | the **named defect**: a wall with a door fitting **3 arcs instead of 1** (`design/FEATURES.md` §3) — a law **D** failure with prior art |
+| **A8** | **combination** — two stencils adjacent (who owns the shared edge?), stencil against linework, stencil on terrain | **the landscape** | **where things that work alone stop working together** |
 
 A8 is the rung that matters most and the one a single-object enumeration cannot see. Do not stop
 at "one complex stencil works."
+
+**Not yet on the ladder, because the scene raised them and they are undecided:** **trees**
+(OD-3 — a prop outside `𝕄*`, or field geometry needing a verb? crawler `plans/9-canopy-trees/`
+and `PROPS.md` likely already answer this) and **terrain** (OD-4 — no `⟨terrain⟩` production;
+crawler `plans/8-landform-morphogenesis/`).
 
 | Phase | Effort | Verify | Status |
 |---|---|---|---|
