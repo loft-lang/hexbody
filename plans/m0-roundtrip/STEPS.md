@@ -576,6 +576,52 @@ restriction the census finds is a fact to record, not a defect to engineer away.
 Counts are unchanged by the switch (10/32/60 by level, 10/21/30/36 by side count), which confirms
 the earlier enumerations were already inside the rule — they just had not said so.
 
+## A5 ✅ · features on straight sides — **DONE** *(the `surf`-slot question, answered)*
+
+The rung asked *does the `surf`-slot collision bite here?* **No — it was already fixed**, earlier
+in this plan: `place_opening` writes `edge_set_mat`, not `edge_set_surf`, so a feature IS the
+material on the wall slot (`OD-9`, closed). What A5 adds is whether that **survives the round
+trip**.
+
+### The feature grid — `t` is exact only at the edge centres
+
+The model stores `(side, t)` (`I2`); the field stores a **material on edges**. So `t` must come
+back out of a set of marked edges, and an arbitrary `t` cannot: every `t` in an interval of width
+`1/n` selects the same edge. What *is* exact:
+
+```
+the edge centres along a run of n edges sit at   t = (2i + 1) / 2n     (odd numerator)
+```
+
+Measured on a 5×4 plan's side 3 (`n = 10`): every stored edge's numerator is odd and in range; a
+door authored at `t = 7/20` recovers as **exactly 7/20**; a 3-edge window at `t = 1/2` recovers as
+**7, 9, 11** — consecutive centres. **Control**: a door authored at `t = 0.32`, between centres,
+**snaps** to `7/20` — so `fits?` must refuse off-centre `t`, exactly as §10.10 quantises line
+endpoints to what the storage can distinguish.
+
+The run is **not** stored in `t` order (`side_edges` fills it in cell-scan order), so a feature is
+indexed by its exact `t` numerator, never by its position in the run.
+
+### `I1`, measured both ways
+
+| | wall edges | dangling ends |
+|---|---|---|
+| plain wall | 38 | 0 |
+| **door re-materialled** | **38** | **0** |
+| **edge deleted instead** | 37 | **2** |
+
+The averaged surface (S4b) is untouched by the door — direction `(10,0)`, heading 0 — because a
+feature is a material, not a geometry change. **The doored-tower defect cannot arise from this
+path**, and the control shows the check can see it if it did.
+
+### A third wrong check in as many steps
+
+`wall_edge_count` first iterated only the **three owned** directions and read **19** where the
+boundary has **38** — a boundary edge can be owned by the *outside* cell, so half were missed. The
+geometry was, again, never in doubt. Recorded because the pattern is now consistent enough to be
+worth naming: **a count that disagrees with a gated number by a clean factor is a bug in the
+counter, not a discovery.**
+
 ## Order, and where it can go wrong
 
 ```

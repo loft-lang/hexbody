@@ -10,7 +10,7 @@ mechanics spine rather than running beside it (decided 2026-07-23).
 
 The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** holds only the
 **settled** core — definitions, the propositions that follow from them, and the constraints
-`X1`–`X47` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X47`) — while
+`X1`–`X48` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X48`) — while
 **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar, `fits?`,
 the seam, the corpus, the method, the gates, and the open decisions.
 
@@ -84,8 +84,12 @@ survives `read → draw → rebuild → write` byte-identically* — holds over 
   widening landing exactly. New: the *midpoint* band is 0 on one family and the full band on the
   other — the row stagger.
 
-**Rungs A1–A4 and S0–S8 + S4b are closed.** Next is **A5** (features — doors and windows on
-straight sides, where OD-9 and the `surf`-slot question bite).
+- **§10.25 — A5.** Features: a door's `t` is exact only at an edge centre `(2i+1)/2n`, every other
+  value snaps silently, and `I1` holds both ways (38/0 re-materialled, 37/2 deleted).
+
+**Rungs A1–A5 and S0–S8 + S4b are closed.** Next is **A6** (arcs — the round tower shell), which
+`DESIGN.md` flags as needing `Sep` reconciled against crawler's *collision-match* objective (`X7`)
+before it starts.
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"
@@ -151,7 +155,7 @@ already moved arcs from the last rung to the middle, because the scene has a tow
 | **A2** ✅ | grow `len` on the same shape | — | **no — but unequal sides introduce CHIRALITY** (`X42`) |
 | **A3** ✅ | grow side count — 4 (today's house), 5, 6 | **houses** | injective at every side count; **the frontier becomes COST** (`X43`) |
 | **A4** ✅ | unequal sides, and non-convex — the L-shaped house | **houses** | **at every size** — non-convex forms violate law F, so the DOORSTEP refuses them (`X46`) |
-| **A5** | features (doors, windows) on straight sides | **houses** | does the `surf`-slot collision bite here? |
+| **A5** ✅ | features (doors, windows) on straight sides | **houses** | **no — already fixed**; but `t` is exact only at edge centres (`X48`) |
 | **A6** | **arcs** — the round tower shell | **the tower** | `Sep`; and crawler's objective is **collision match**, not shape match — reconcile first |
 | **A7** | **arc + feature — the doored tower** | **the tower** | the **named defect**: a wall with a door fitting **3 arcs instead of 1** (`design/FEATURES.md` §3) — a law **D** failure with prior art |
 | **A8** | **combination** — two stencils adjacent (who owns the shared edge?), stencil against linework, stencil on terrain | **the landscape** | **where things that work alone stop working together** |
@@ -166,7 +170,7 @@ crawler `plans/8-landform-morphogenesis/`).
 
 | Phase | Effort | Verify | Status |
 |---|---|---|---|
-| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A4 ✅ closed — next A5 (features)** |
+| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A5 ✅ closed — next A6 (arcs)** |
 | **B** — linework census: `period`, `D`, `Sep`; the straight/arc recovery | M | `rt_census_b`; `eave_spread == 0` on the recovered line | Blocked on A |
 | **C** — `write` / `read`, canonical text frozen | S | `rt_canon`, `rt_project`, `rt_fits`, `rt_close` | Blocked on A, B, **OD-2** |
 | **D** — `rt_trip` written **empty** (red), before `rebuild` exists | XS | needs no ground truth — only `write`/`read`/`draw`/`rebuild` + `diff` | Blocked on C |

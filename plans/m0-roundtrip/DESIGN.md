@@ -2069,6 +2069,60 @@ Both wrong versions failed on geometry that was never in doubt. This is A4's les
 form: **when a check fails, establish what the claim actually is before assuming the subject is
 broken.** Twice in one step is worth writing down.
 
+## 10.25 A5 — features, and the grid a door can actually sit on
+
+The rung asked *does the `surf`-slot collision bite here?* **No — it was already fixed** earlier in
+this plan: `place_opening` writes `edge_set_mat`, not `edge_set_surf`, so a feature **is** the
+material on the wall slot (`OD-9`, closed). What A5 adds is whether that survives the round trip.
+
+### The model stores `(side, t)`; the field stores a material on edges
+
+So `t` has to come back out of a set of marked edges — and an arbitrary `t` cannot, because every
+`t` in an interval of width `1/n` selects the same edge. What is exact:
+
+```
+the edge centres of a run of n edges:   t = (2i + 1) / 2n      odd numerator over 2n
+```
+
+Measured on a 5×4 plan's side 3 (`n = 10`): every stored edge's numerator is odd and in range; a
+door authored at `t = 7/20` recovers as **exactly** `7/20`; a 3-edge window at `t = 1/2` recovers
+as **7, 9, 11** — consecutive centres.
+
+**The control is the important half**: a door authored at `t = 0.32`, between centres, **snaps** to
+`7/20`. So an off-centre `t` is not an error the round trip catches — it is silently moved. `fits?`
+must therefore refuse it at the doorstep, which is §10.10's rule for line endpoints applied to
+features: **quantise the model to what the storage can distinguish, rather than admitting a value
+that cannot come back.**
+
+One implementation note that matters for the canonical text: the run is **not** stored in `t`
+order — `side_edges` fills it in cell-scan order — so a feature must be indexed by its exact `t`
+numerator, never by its position in the run. C2's *"elements sorted by (kind, index, t)"* is doing
+real work here.
+
+### `I1` measured both ways
+
+| | wall edges | dangling ends |
+|---|---|---|
+| plain wall | 38 | 0 |
+| **door re-materialled** | **38** | **0** |
+| **edge deleted instead** | 37 | **2** |
+
+And the averaged surface of S4b is **untouched** by the door — direction `(10,0)`, heading 0 —
+because a feature is a material, not a geometry change. So the doored-tower defect cannot arise
+from this path, and the control shows the check would see it if it did.
+
+### A third wrong check in as many steps
+
+`wall_edge_count` first iterated only the **three owned** directions and read **19** where the
+boundary has **38** — a boundary edge can be owned by the *outside* cell, so half were missed.
+
+That is now three consecutive steps where a failing gate was my measurement rather than the
+subject (S4b twice, A5 once), against zero real defects found by those failures. The pattern is
+consistent enough to state as a rule:
+
+> **A count that disagrees with an already-gated number by a clean factor is a bug in the counter,
+> not a discovery.** Check the new measurement against the established one before believing it.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |

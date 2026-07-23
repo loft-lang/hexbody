@@ -205,3 +205,84 @@ pub fn surface_lsq_residual(p: Plan, cells: HexSet, side: integer) -> float {
   }
   acc
 }
+
+// ── A5 — FEATURES ON A STRAIGHT SIDE, AND WHAT OF THEM SURVIVES ────────────
+//
+// `OD-9` is closed: a door or window IS the material on the wall slot, not an annotation beside
+// one (`ROUNDTRIP` §2.4.1).  The edge is never removed, so a run cannot fragment — the doored-tower
+// defect is structurally impossible rather than merely avoided.  A5 asks the next question: does
+// the feature survive the ROUND TRIP?
+//
+// THE MODEL STORES `(side, t)` (`I2`, affine-invariant).  THE FIELD STORES A MATERIAL ON EDGES.
+// So recovery has to get `t` back out of a set of marked edges — and it cannot get an arbitrary
+// `t` back, because every `t` in an interval of width `1/n` selects the same edge.  What IS exact:
+//
+//     the edge centres along a run of n edges sit at   t = (2i + 1) / 2n
+//
+// exact rationals, odd numerator over `2n`.  `place_opening` snaps to the nearest, so a feature
+// authored at one of those `t` values round-trips exactly and one authored between them does not.
+// That is the same shape as the line-endpoint rule (§10.10): the doorstep quantises the model to
+// what the storage can distinguish, rather than letting a value in that cannot come back.
+//
+// The run is NOT stored in `t` order — `side_edges` fills it in cell-scan order — so a feature is
+// indexed by its exact `t` numerator, never by its position in the run.
+
+// The exact `t` of stored edge `i`, as the numerator over `2n`: an odd integer in `1 .. 2n-1`.
+// `sr_t` is a float only because `SideRun` holds it that way; the value is an exact rational and
+// this recovers the numerator without a tolerance being involved in the answer.
+pub fn feature_t_num(sr: SideRun, i: integer, n: integer) -> integer {
+  (round((sr.sr_t[i] ?? 0.0) * 2.0 * (n as float)) ?? 0.0) as integer
+}
+
+// Is `num/2n` a legal feature position — an edge centre, i.e. an ODD numerator in range?
+pub fn feature_t_admissible(num: integer, n: integer) -> boolean {
+  num > 0 && num < 2 * n && ((num % 2) + 2) % 2 == 1
+}
+
+// Recover a feature from the field: the `t` numerators of every edge on `side` carrying `kind`,
+// in ascending `t` order (C2's ordering, not the storage order).
+pub fn feature_find(p: Plan, cells: HexSet, edges: EdgeSet,
+                    side: integer, kind: integer) -> vector<integer> {
+  sr = side_edges(p, cells, side);
+  n = side_run_len(sr);
+  out: vector<integer> = [];
+  for fi in 0..n {
+    if edge_mat(edges, sr.sr_qa[fi] ?? 0, sr.sr_ra[fi] ?? 0,
+                       sr.sr_qb[fi] ?? 0, sr.sr_rb[fi] ?? 0) == kind {
+      out += [feature_t_num(sr, fi, n)];
+    }
+  }
+  // ascending t — insertion sort, the run is tens of edges at most
+  for si in 1..len(out) {
+    ps = si;
+    while ps > 0 && (out[ps - 1] ?? 0) > (out[ps] ?? 0) {
+      tmp = out[ps - 1] ?? 0;
+      out[ps - 1] = out[ps] ?? 0;
+      out[ps] = tmp;
+      ps = ps - 1;
+    }
+  }
+  out
+}
+
+// How many boundary edges carry a wall material at all — the run's length, which a re-materialled
+// feature must leave UNCHANGED.  Deleting an edge instead is what fragments a run.
+pub fn wall_edge_count(cells: HexSet, edges: EdgeSet) -> integer {
+  n = 0;
+  for wr in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for wq in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if hexset_get(cells, wq, wr) {
+        // ALL SIX directions, as `draw_walls` does.  A boundary edge is visited exactly once
+        // because only the inside cell is in the set — iterating just the three OWNED directions
+        // misses every edge the outside cell owns and undercounts by about half (38 read as 19).
+        for wd in 0..6 {
+          (nq, nr) = hex_neighbor(wq, wr, wd);
+          if !hexset_get(cells, nq, nr) {
+            if edge_mat(edges, wq, wr, nq, nr) != 0 { n = n + 1; }
+          }
+        }
+      }
+    }
+  }
+  n
+}

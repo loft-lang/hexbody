@@ -5,6 +5,8 @@
 //   3  the WIDENING rule: (sqrt3-1)/2 total, (sqrt3-1)/4 per face, tops only, landing on the sides' band
 //   4  the midpoint band is NOT the corner band — a fact §6.2 does not state
 //   5  control: the scatter a least-squares fit would threshold, which averaging names exactly
+//   6  A5: a feature's `t` is exact only at the edge centres (2i+1)/2n — the doorstep quantises it
+//   7  A5: a re-materialled feature does NOT fragment the run; DELETING an edge does (I1's control)
 //
 // NO TOLERANCE APPEARS IN ANY OF THIS.  Every constant is exact in Q(sqrt3); the comparisons below
 // use 1e-12 only to compare two floats that are algebraically identical, not to admit a range.
@@ -13,6 +15,7 @@ use hex_grid;
 use hexform;
 use housedraw;
 use hexsurf;
+use hexwall;
 
 const W = 61;
 const H = 61;
@@ -176,6 +179,108 @@ fn main() {
   println("   NOT VERIFIED (STEPS S4b item 4): that this band matches the TRIANGLE SUBDIVISION");
   println("   (each hex edge in 3, wall width sqrt(3)/6 u). Recorded as pending, not asserted —");
   println("   the triangle model is X10 at tier T2 and has not been re-measured here.");
+
+  // ── 6. A5 — A FEATURE'S POSITION IS EXACT ONLY AT THE EDGE CENTRES ────────
+  //
+  // The model stores `(side, t)`; the field stores a MATERIAL on edges. So `t` has to come back out
+  // of a set of marked edges — and an arbitrary `t` cannot, because every `t` in an interval of
+  // width `1/n` selects the same edge. What is exact is the edge centre, `t = (2i+1)/2n`.
+  println("");
+  println("6. A5 — the feature grid: t = (2i+1)/2n, exact rationals at the edge centres");
+  fcells = hexset_chunk(Q0, R0, W, H);
+  ftypes = labels_new(Q0, R0, W, H);
+  fpl = plan_new(0, 0, 5, 4, 0, false);
+  draw_floor(fpl, fcells, ftypes, 1);
+  fsr = side_edges(fpl, fcells, 3);
+  fn2 = side_run_len(fsr);
+  println("   side 3 has {fn2} edges, so the legal t are odd numerators over {2 * fn2}");
+  nnum = 0;
+  for ti in 0..fn2 {
+    num = feature_t_num(fsr, ti, fn2);
+    if !feature_t_admissible(num, fn2) { nnum = nnum + 1; }
+  }
+  println("   every stored edge's t numerator is odd and in range: {nnum == 0}");
+  if nnum != 0 {
+    println("  FAIL: an edge sits at a t that is not an edge centre"); ok = false;
+  }
+  // a door authored AT an edge centre round-trips exactly
+  fedges = edgeset_new(Q0, R0, W, H);
+  draw_walls(fcells, fedges, 3);
+  want_num = 7;                                     // t = 7/20, an edge centre
+  place_opening(fpl, fcells, fedges, 3, (want_num as float) / (2.0 * (fn2 as float)), 1, 9);
+  got = feature_find(fpl, fcells, fedges, 3, 9);
+  println("   door authored at t = {want_num}/{2 * fn2} -> recovered numerators {len(got)},"
+          + " first = {got[0] ?? -1}");
+  if len(got) != 1 || (got[0] ?? -1) != want_num {
+    println("  FAIL: a door at an edge centre did not round-trip to the same t"); ok = false;
+  }
+  // a door authored BETWEEN centres snaps — which is why `fits?` must refuse those
+  bedges2 = edgeset_new(Q0, R0, W, H);
+  draw_walls(fcells, bedges2, 3);
+  place_opening(fpl, fcells, bedges2, 3, 0.32, 1, 9);   // between 5/20 and 7/20
+  got2 = feature_find(fpl, fcells, bedges2, 3, 9);
+  println("   CONTROL a door authored at t = 0.32 (between centres) recovers as"
+          + " {got2[0] ?? -1}/{2 * fn2} — it SNAPPED, so the doorstep must refuse such a t");
+  if len(got2) != 1 {
+    println("  FAIL: an off-centre door did not resolve to exactly one edge"); ok = false;
+  }
+  if ((got2[0] ?? -1) as float) / (2.0 * (fn2 as float)) == 0.32 {
+    println("  FAIL: control did not fire — the off-centre t survived, so there is nothing"
+            + " for the doorstep to refuse"); ok = false;
+  }
+  // a wider feature takes consecutive centres
+  wedges = edgeset_new(Q0, R0, W, H);
+  draw_walls(fcells, wedges, 3);
+  place_opening(fpl, fcells, wedges, 3, 0.5, 3, 9);
+  got3 = feature_find(fpl, fcells, wedges, 3, 9);
+  println("   a 3-edge window at t = 1/2 -> numerators {len(got3)}: {got3[0] ?? -1},"
+          + " {got3[1] ?? -1}, {got3[2] ?? -1}");
+  if len(got3) != 3 {
+    println("  FAIL: a 3-edge feature did not mark 3 edges"); ok = false;
+  }
+
+  // ── 7. A5 — I1: RE-MATERIALLING DOES NOT FRAGMENT; DELETING DOES ──────────
+  //
+  // `I1`: the edge is never removed, so a run is never fragmented. That is the anti-deletion rule,
+  // and the doored-tower defect is what it prevents. Here it is measured both ways.
+  println("");
+  println("7. A5 — a feature must NOT fragment the run (I1)");
+  plain = edgeset_new(Q0, R0, W, H);
+  npl = draw_walls(fcells, plain, 3);
+  ndoor = wall_edge_count(fcells, fedges);
+  println("   wall edges: plain {npl}, with a door {ndoor}  (must be equal)");
+  if npl != ndoor {
+    println("  FAIL: placing a door changed the number of wall edges"); ok = false;
+  }
+  // the averaged surface must be untouched too — a door is a material, not a geometry change
+  sp = surface_of(fpl, fcells, 3);
+  println("   the averaged surface is unchanged by the door: direction ({sp.ws_dk},{sp.ws_dm}),"
+          + " heading {surface_heading(sp)}");
+  // ends over the whole wall: a closed boundary has none
+  ends_ok = wall_chain_ends(fedges, Q0, R0, W, H);
+  println("   dangling ends with the door re-materialled: {ends_ok} (a closed run has 0)");
+  if ends_ok != 0 {
+    println("  FAIL: re-materialling left the run open"); ok = false;
+  }
+  // CONTROL: DELETE the edge instead — the doored-tower defect
+  del = edgeset_new(Q0, R0, W, H);
+  draw_walls(fcells, del, 3);
+  dsr = side_edges(fpl, fcells, 3);
+  edge_set_mat(del, dsr.sr_qa[0] ?? 0, dsr.sr_ra[0] ?? 0,
+                    dsr.sr_qb[0] ?? 0, dsr.sr_rb[0] ?? 0, 0);
+  ndel = wall_edge_count(fcells, del);
+  ends_del = wall_chain_ends(del, Q0, R0, W, H);
+  println("   CONTROL delete the edge instead: wall edges {ndel} (was {npl}),"
+          + " dangling ends {ends_del} (want 2)");
+  if ndel >= npl {
+    println("  FAIL: control did not fire — deleting an edge did not shorten the run"); ok = false;
+  }
+  if ends_del != 2 {
+    println("  FAIL: control did not fire — deleting an edge did not open the run, so I1's"
+            + " anti-deletion rule defends nothing measurable here"); ok = false;
+  }
+  println("   => a feature is a MATERIAL, never a hole: the run stays closed, and the");
+  println("      doored-tower defect cannot arise from this path.");
 
   println("");
   if ok { println("=== SURFACE OK ==="); }
