@@ -622,6 +622,54 @@ geometry was, again, never in doubt. Recorded because the pattern is now consist
 worth naming: **a count that disagrees with a gated number by a clean factor is a bug in the
 counter, not a discovery.**
 
+## A6 ✅ · arcs — the round tower shell — **DONE** *(`OD-10` resolved)*
+
+`OD-10` asked whether a run of rounded slots gives back its **centre and radius** exactly (R1) or
+only by a fit (R2). The answer is **split**:
+
+| parameter | recoverable? |
+|---|---|
+| **centre** | **exactly** — 25 towers at 25 different centres, all recovered; a blob is refused |
+| **radius** | **no** — 161 radii over `0.5..4.5 u` collapse to **4** distinct fields |
+
+**The shells are exact integers, so `hexarc` is float-free.** Four times a cell's squared distance
+is `3k² + m²` — `vec_n2_4`, already in the tree — so a shell is an integer `N`, its radius is
+`√N/2 u`, and membership is the integer test `N' ≤ N`. Out to 64 the shells are **`0, 12, 36, 48`**,
+matching the float sweep's breakpoints (`√12/2 = 1.732`, `√36/2 = 3.0`) — the cross-check that the
+integer and continuous formulations describe one geometry.
+
+### The `Sep` / `X7` fork was narrower than I flagged
+
+I said A6 needed `Sep` reconciled against crawler's collision-match objective **before** starting.
+Having measured, they do not compete:
+
+- **`Sep` is recoverability** — *which radii are distinguishable?* Answered exactly: the shell grid.
+- **`X7` is a choice policy** — *which shell should the editor snap a nominal radius to?* Nearest
+  by radius, or the one whose collision proxy best matches.
+
+The policy cannot affect the round trip, because whichever shell is chosen is what the field
+stores. **A6 was never blocked**; the fork is real, lives in the editor, and stays open harmlessly.
+
+### The third parameter to land the same way — now an invariant
+
+| parameter | quantised to |
+|---|---|
+| line endpoints | hex vertices, a whole number of periods (§10.10) |
+| feature `t` | edge centres `(2i+1)/2n` (`X48`) |
+| **arc radius** | **shells**, realisable `3k²+m²` (`X49`) |
+
+Three independent measurements, one rule — recorded as **`X50`** / `SPEC` **I-QUANT**: *a
+continuous model parameter must be quantised to what the field distinguishes; off the grid it is
+silently snapped, not rejected.*
+
+### The gate caught my fourth wrong helper
+
+`arc_shells_upto` first filtered offsets by `k ≡ m (mod 2)` alone and invented shells — `N = 4`,
+from `(0,2)` — that **no pair of cells realises**, because a cell-to-cell offset has `m = 3·Δr` and
+so `m` must be divisible by **three**. Two sections failed on it. Worth noting the other side of
+that ledger, though: **every one of these was caught by a control before it became a recorded
+fact.** That is the discipline working, not failing.
+
 ## Order, and where it can go wrong
 
 ```

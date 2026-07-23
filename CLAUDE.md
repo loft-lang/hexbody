@@ -38,7 +38,7 @@ crawler's prototypes and design docs are **design tries** — input, not authori
 | **T3 · designed** | a doc argues a construction | **input to design, never truth** |
 | **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
 
-**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X48`** — eight of them re-measured *here*, and
+**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X50`** — eight of them re-measured *here*, and
 `X26`–`X31` **discovered here**. Everything else the design leans on is still a try or a schema
 (notably the whole foxel schema, `X11`–`X15`), and the census is where it gets re-measured. Citing a T2 number as settled is
 the specific mistake to avoid — in either direction: re-deriving what is genuinely gated wastes
@@ -73,7 +73,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X48` **with trust tiers** | **authoritative** on any object or map |
+| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X50` **with trust tiers** | **authoritative** on any object or map |
 | **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
@@ -129,7 +129,7 @@ a file in `tests/` cannot `use` a module in `src/` (*"Library 'hexform' not foun
 ## Run
 
 ```sh
-make test    # form, wall, box, census, text, house, surface, trip
+make test    # form, wall, box, census, text, house, surface, arc, trip
 make shot    # contact sheet -> /tmp/house12.png
 ```
 
@@ -138,8 +138,8 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 
 ## State (2026-07-23)
 
-- **Eight gates, all green** — `make test` runs `tools/run_tests.sh`.
-  Form, wall (~3 min), box, census, text, house, surface, trip.
+- **Nine gates, all green** — `make test` runs `tools/run_tests.sh`.
+  Form, wall (~3 min), box, census, text, house, surface, arc, trip.
 - **Green:** `G0` / law **I** — `tests/house.loft`, 12/12 equivariant in cells *and* edges, `eave_spread
   0.0000`, every control fires. `make shot` reproduces the committed baseline byte-identically.
 - **Green:** `tests/form.loft` (**S0**/**S1**) — the 12 headings; **`X1`**/**`X2`** re-measured to **T1**
@@ -284,8 +284,18 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   twice, A5 once) — zero real defects among them. Rule: **a count that disagrees with an
   already-gated number by a clean factor is a bug in the counter.** Check a new measurement against
   an established one before believing it.
-- Next: **A6** (arcs — the round tower shell, where `Sep` and crawler's collision-match objective
-  must be reconciled first) — see `STEPS.md` and the rung table.
+- **A6 is done, `OD-10` resolved (X49).** An arc's **centre is exact**; its **radius is not** —
+  it quantises to *shells*, the realisable `3k²+m²`. Out to 64: `0, 12, 36, 48`. `hexarc` is
+  **float-free** (membership is the integer test `N' ≤ N`).
+- **The `Sep`/`X7` fork I flagged was narrower than it looked**: `Sep` is *recoverability* (answered
+  — the shell grid); `X7` is a *choice policy* (which shell to snap a nominal radius to). The
+  policy cannot affect the round trip, so A6 was never blocked.
+- **X50 / SPEC I-QUANT — the unifying rule, measured three times independently:** *a continuous
+  model parameter must be quantised to what the field distinguishes.* Endpoints → hex vertices;
+  feature `t` → edge centres `(2i+1)/2n`; arc radius → shells. **Off the grid a value is silently
+  snapped, not rejected**, so `fits?` must refuse it at the doorstep.
+- Next: **A7** (arc + feature — the doored tower, the named defect with prior art) or **A8**
+  (combination — where things that work alone stop working together) — see the rung table.
 - **The foxel schema is the limit** (`ROUNDTRIP.md` §2.4): `layer* × point → (height, material,
   wall1, wall2, wall3, item)`. A model is admissible **iff it draws into that exactly**, which
   makes `fits?` syntactic and finite. It closed OD-2/3/4/6/7/8 — roofs and terrain are `height`,
@@ -295,7 +305,7 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
   relocated into the schema, and rung A5's real question.
 - **Constraints are in `ROUNDTRIP.md` §7 (X1–X31) with trust tiers.** T1 now holds `X1`, `X2`,
-  `X19`–`X22`, `X24`–`X48`; do not re-derive those. Everything else is still a try or a schema.
+  `X19`–`X22`, `X24`–`X50`; do not re-derive those. Everything else is still a try or a schema.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their

@@ -10,11 +10,11 @@ mechanics spine rather than running beside it (decided 2026-07-23).
 
 The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** holds only the
 **settled** core — definitions, the propositions that follow from them, and the constraints
-`X1`–`X48` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X48`) — while
+`X1`–`X50` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X50`) — while
 **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar, `fits?`,
 the seam, the corpus, the method, the gates, and the open decisions.
 
-**Progress: S0–S8 done, rungs A1–A3 closed — the round trip holds over 119 committed entries** ([`STEPS.md`](STEPS.md)). Eight gates green through `tools/run_tests.sh`:
+**Progress: S0–S8 done, rungs A1–A3 closed — the round trip holds over 119 committed entries** ([`STEPS.md`](STEPS.md)). Nine gates green through `tools/run_tests.sh`:
 
 | gate | covers |
 |---|---|
@@ -24,6 +24,7 @@ the seam, the corpus, the method, the gates, and the open decisions.
 | `tests/census.loft` | the census grown by level — **law F decided at levels 1–3** (`X38`, `X42`) |
 | `tests/text.loft` | the canonical text — `write(read(T)) = T` byte-for-byte (`X39`) |
 | `tests/surface.loft` | the wall surface by averaging — exact direction and bands, no tolerance (`X47`) |
+| `tests/arc.loft` | the round tower — centre exact, radius quantised to a shell (`X49`) |
 | `tests/trip.loft` | `rt_trip` — byte-for-byte over **119 committed entries** in `corpus/a1` + `a2` + `a3` (`X41`) |
 | `tests/house.loft` | law **I**, 12/12 equivariant in cells *and* edges |
 
@@ -87,9 +88,13 @@ survives `read → draw → rebuild → write` byte-identically* — holds over 
 - **§10.25 — A5.** Features: a door's `t` is exact only at an edge centre `(2i+1)/2n`, every other
   value snaps silently, and `I1` holds both ways (38/0 re-materialled, 37/2 deleted).
 
-**Rungs A1–A5 and S0–S8 + S4b are closed.** Next is **A6** (arcs — the round tower shell), which
-`DESIGN.md` flags as needing `Sep` reconciled against crawler's *collision-match* objective (`X7`)
-before it starts.
+- **§10.26 — A6.** Arcs: centre exact, radius quantised to a shell (`0, 12, 36, 48`), all integer.
+  `OD-10` resolved. And the third parameter to land that way, giving **`X50` / I-QUANT**: a
+  continuous parameter must be quantised to what the field distinguishes.
+
+**Rungs A1–A6 and S0–S8 + S4b are closed.** Next is **A7** (arc + feature — the *doored tower*,
+the named defect with prior art), then **A8** (combination — where things that work alone stop
+working together).
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"
@@ -156,7 +161,7 @@ already moved arcs from the last rung to the middle, because the scene has a tow
 | **A3** ✅ | grow side count — 4 (today's house), 5, 6 | **houses** | injective at every side count; **the frontier becomes COST** (`X43`) |
 | **A4** ✅ | unequal sides, and non-convex — the L-shaped house | **houses** | **at every size** — non-convex forms violate law F, so the DOORSTEP refuses them (`X46`) |
 | **A5** ✅ | features (doors, windows) on straight sides | **houses** | **no — already fixed**; but `t` is exact only at edge centres (`X48`) |
-| **A6** | **arcs** — the round tower shell | **the tower** | `Sep`; and crawler's objective is **collision match**, not shape match — reconcile first |
+| **A6** ✅ | **arcs** — the round tower shell | **the tower** | centre **exact**, radius **quantised to a shell** (`X49`); the `Sep`/`X7` fork is a *policy*, not a blocker |
 | **A7** | **arc + feature — the doored tower** | **the tower** | the **named defect**: a wall with a door fitting **3 arcs instead of 1** (`design/FEATURES.md` §3) — a law **D** failure with prior art |
 | **A8** | **combination** — two stencils adjacent (who owns the shared edge?), stencil against linework, stencil on terrain | **the landscape** | **where things that work alone stop working together** |
 
@@ -170,7 +175,7 @@ crawler `plans/8-landform-morphogenesis/`).
 
 | Phase | Effort | Verify | Status |
 |---|---|---|---|
-| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A5 ✅ closed — next A6 (arcs)** |
+| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A6 ✅ closed — next A7 (the doored tower)** |
 | **B** — linework census: `period`, `D`, `Sep`; the straight/arc recovery | M | `rt_census_b`; `eave_spread == 0` on the recovered line | Blocked on A |
 | **C** — `write` / `read`, canonical text frozen | S | `rt_canon`, `rt_project`, `rt_fits`, `rt_close` | Blocked on A, B, **OD-2** |
 | **D** — `rt_trip` written **empty** (red), before `rebuild` exists | XS | needs no ground truth — only `write`/`read`/`draw`/`rebuild` + `diff` | Blocked on C |

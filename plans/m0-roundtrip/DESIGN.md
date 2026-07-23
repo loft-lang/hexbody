@@ -521,11 +521,11 @@ already see safe; only a real scene converts an axis nobody imagined into one yo
 > beside one. Composition therefore lives in the **material vocabulary** ("door in a stone wall" is
 > a material), and the table grows with wall-kinds × feature-kinds. See `ROUNDTRIP` §2.4.1.
 >
-> **OD-10 · arcs are storable — what is recoverable from them? (new, open)** *"We have rounded wall
-> slots too."* So a round tower needs no sub-cell geometry: a run of slots marked **rounded** is the
-> arc. What remains open is the parameter question — from a run of rounded slots, are the **centre
-> and radius** recoverable exactly (R1), or is that a fit (R2)? That is `Sep` restated against the
-> real storage, and it is rung **A6**'s question.
+> **OD-10 · arcs are storable — what is recoverable from them? — ✅ RESOLVED (§10.26).** A round
+> tower needs no sub-cell geometry: a run of slots marked **rounded** is the arc. The parameter
+> question is answered **split**: the **centre is exact** (it is the translation, and the field pins
+> it), the **radius is not** — it quantises to *shells*, the realisable values of `3k²+m²`. So an
+> arc is **R1 on a quantised parameter grid**, which is `Sep` made concrete.
 
 > **OD-12 · which edges IS a wall? — ✅ RESOLVED (§10.12).** The three-slot foxel can only store
 > hex edges, and a hex has edges on **three lines only — 30°, 90°, 150°** (`X28`). So "the wall" is
@@ -2122,6 +2122,57 @@ consistent enough to state as a rule:
 
 > **A count that disagrees with an already-gated number by a clean factor is a bug in the counter,
 > not a discovery.** Check the new measurement against the established one before believing it.
+
+## 10.26 A6 — arcs: the centre is exact, the radius is a shell
+
+`OD-10` asked whether the **centre and radius** of a run of rounded slots are recoverable exactly
+(R1) or only by a fit (R2). Measured, the answer is **split**.
+
+| parameter | recoverable? |
+|---|---|
+| **centre** | **exactly** — it is the translation, and the field pins it. 25 towers at different centres, all 25 recovered. |
+| **radius** | **no** — 161 radii sampled over `0.5 .. 4.5 u` collapse to **four** distinct fields. Only the *shell* comes back. |
+
+### The shells are exact integers, so no float is involved
+
+A cell centre sits at `(k·√3/2, m/2)`, so four times its squared distance is `3k² + m²` — which is
+`hexform::vec_n2_4`, already in the tree. A shell is therefore an **integer `N`**, the radius it
+stands for is `√N / 2` world units, and "inside the disk" is the integer test `N' ≤ N`. The whole
+of `hexarc` is float-free.
+
+Out to `N = 64` the shells are **`0, 12, 36, 48`** — and those match the float sweep's breakpoints
+exactly (`√12/2 = 1.732`, `√36/2 = 3.0`), which is the cross-check that the integer formulation and
+the continuous one describe the same geometry.
+
+### `Sep` and `X7` — the fork was narrower than it looked
+
+I flagged A6 as needing `Sep` reconciled against crawler's *collision-match* objective (`X7`)
+before starting. Having measured, the two do not actually compete:
+
+- **`Sep` is a recoverability question** — *which radii are distinguishable?* That is answered here,
+  exactly: the shell grid.
+- **`X7` is a choice policy** — *given a nominal radius, which shell should the editor snap to?*
+  Nearest-by-radius (shape match) or the one whose collision proxy best matches the intended tower
+  (collision match).
+
+The policy does not affect the round trip: whichever shell is chosen, it round-trips exactly,
+because the shell is what the field stores. So **A6 was never blocked** — the fork is real but it
+lives in the editor's snapping policy, and it stays open without holding anything up.
+
+### The third parameter to land the same way
+
+| parameter | quantised to | recorded |
+|---|---|---|
+| line endpoints | hex **vertices**, a whole number of periods | §10.10 |
+| feature `t` | **edge centres**, `(2i+1)/2n` | `X48` |
+| **arc radius** | **shells**, realisable `3k²+m²` | `X49` |
+
+Three independent parameters, measured separately, landing on one rule — which is now worth
+stating as an invariant rather than three coincidences:
+
+> **A continuous model parameter must be quantised to what the field distinguishes.** Off the grid
+> it is *silently snapped*, not rejected — so the doorstep must refuse it, or the round trip
+> reports success on a model the author did not write.
 
 ## 11. Known conflicts in the current tree
 

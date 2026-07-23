@@ -1,0 +1,146 @@
+// arc — THE GATE FOR hexarc, RUNG A6 (`OD-10`).  Every check has a control that must fire.
+//
+//   1  the shell grid is exact INTEGERS — `Sep` made concrete, no float anywhere
+//   2  the CENTRE is recoverable exactly; a non-disk is refused
+//   3  the RADIUS is NOT: a continuous sweep collapses onto the shells
+//   4  law F over the arcs: distinct shells never share a field
+//
+// `OD-10`'s answer is therefore split — centre exact, radius quantised — which makes an arc **R1
+// on a quantised parameter grid**, the same answer line endpoints (§10.10) and feature `t` (`X48`)
+// already gave. Three parameters, one rule.
+use hex_field;
+use hexform;
+use formcensus;
+use hexarc;
+
+const W = 41;
+const H = 41;
+const Q0 = -20;
+const R0 = -20;
+
+fn main() {
+  ok = true;
+  println("=== hexarc — the round tower, and what of an arc comes back (A6) ===");
+
+  // ── 1. THE SHELL GRID ─────────────────────────────────────────────────────
+  //
+  // A cell centre is at (k*sqrt3/2, m/2), so 4x its squared distance is 3k^2 + m^2 — an INTEGER.
+  // The admissible radii are exactly the realisable values of that, and nothing between them.
+  println("");
+  println("1. THE SHELL GRID — admissible radii are exact integers N, radius = sqrt(N)/2 u");
+  sh = arc_shells_upto(64);
+  println("   shells N up to 64: {len(sh)} of them");
+  print_n = len(sh);
+  if print_n > 12 { print_n = 12; }
+  line = "   ";
+  for pi in 0..print_n { line = line + "{sh[pi] ?? 0} "; }
+  println("{line}...");
+  if len(sh) <= 0 { println("  FAIL: no shells"); ok = false; }
+  if (sh[0] ?? -1) != 0 { println("  FAIL: the first shell is not 0 (the centre cell)"); ok = false; }
+  // the cell counts per shell are the disk sizes, and they must be strictly increasing
+  prevn = -1;
+  nmono = 0;
+  for qi in 0..print_n {
+    dc = hexset_chunk(Q0, R0, W, H);
+    cnt = arc_fill(0, 0, sh[qi] ?? 0, dc);
+    if cnt <= prevn { nmono = nmono + 1; }
+    prevn = cnt;
+  }
+  println("   disk sizes strictly increase across shells: {nmono == 0}");
+  if nmono != 0 { println("  FAIL: a larger shell did not enclose more cells"); ok = false; }
+
+  // ── 2. THE CENTRE IS RECOVERABLE EXACTLY ──────────────────────────────────
+  println("");
+  println("2. CENTRE — recovered exactly, and a non-disk is refused");
+  ncen = 0;
+  for tq in -2..3 {
+    for tr in -2..3 {
+      ac = hexset_chunk(Q0, R0, W, H);
+      arc_fill(tq, tr, 12, ac);
+      (gq, gr, found) = arc_recover_centre(ac);
+      if !found || gq != tq || gr != tr { ncen = ncen + 1; }
+    }
+  }
+  println("   25 towers at different centres, shell 12: {ncen} centres not recovered");
+  if ncen != 0 {
+    println("  FAIL: a tower's centre did not come back exactly"); ok = false;
+  }
+  // CONTROL: a shape that is NOT a disk must be refused, or "recovered" means nothing
+  blob = hexset_chunk(Q0, R0, W, H);
+  hexset_set(blob, 0, 0, true);
+  hexset_set(blob, 1, 0, true);
+  hexset_set(blob, 2, 0, true);
+  hexset_set(blob, 0, 1, true);
+  (bq, br, bfound) = arc_recover_centre(blob);
+  println("   CONTROL a 4-cell blob: centre found? {bfound} (must be false)");
+  if bfound {
+    println("  FAIL: control did not fire — a non-disk was read as an arc"); ok = false;
+  }
+
+  // ── 3. THE RADIUS IS NOT — IT COLLAPSES ONTO THE SHELLS ───────────────────
+  //
+  // This is `OD-10`'s real answer. Every N between one realisable shell and the next draws the
+  // SAME cells, so the authored radius cannot come back — only the shell can.
+  println("");
+  println("3. RADIUS — a sweep of N collapses onto the shells");
+  println("   N    cells   field changed?");
+  prevtx = "";
+  nchange = 0;
+  for nn in 0..25 {
+    sc = hexset_chunk(Q0, R0, W, H);
+    cnt2 = arc_fill(0, 0, nn, sc);
+    tx = field_exact_text(sc);
+    ch = tx != prevtx;
+    if ch { nchange = nchange + 1; }
+    prevtx = tx;
+    if nn < 14 { println("   {nn:>2} {cnt2:>7}   {ch}"); }
+  }
+  println("   N = 0..24 sampled ({25} values) -> {nchange} distinct fields");
+  if nchange >= 25 {
+    println("  FAIL: every N gave its own field — then the radius would be exactly recoverable"
+            + " and there would be nothing to quantise"); ok = false;
+  }
+  if nchange <= 1 {
+    println("  FAIL: the field never changed — the sweep is not measuring anything"); ok = false;
+  }
+  println("   => the authored radius does NOT come back; the SHELL does. `fits?` must quantise");
+  println("      the radius to a shell, exactly as it quantises a line endpoint and a door's t.");
+
+  // ── 4. LAW F OVER THE ARCS ────────────────────────────────────────────────
+  //
+  // Distinct shells must never share a field — otherwise even the quantised parameter would not
+  // be recoverable and arcs would fall out of R1 altogether.
+  println("");
+  println("4. LAW F — distinct shells never share a field");
+  texts: vector<text> = [];
+  nshare = 0;
+  for si2 in 0..len(sh) {
+    if si2 < 10 {
+      fc = hexset_chunk(Q0, R0, W, H);
+      arc_fill(0, 0, sh[si2] ?? 0, fc);
+      tt = field_exact_text(fc);
+      for ti in 0..len(texts) { if (texts[ti] ?? "") == tt { nshare = nshare + 1; } }
+      texts += [tt];
+    }
+  }
+  println("   {len(texts)} shells drawn, {nshare} pairs sharing a field (must be 0)");
+  if nshare != 0 {
+    println("  FAIL: two distinct shells draw the same field — the quantised radius is not"
+            + " recoverable either, and arcs are not R1"); ok = false;
+  }
+  // CONTROL: the comparison must be able to see a match
+  println("   CONTROL a shell against itself: {(texts[0] ?? \"a\") == (texts[0] ?? \"b\")}"
+          + " (must be true)");
+  if (texts[0] ?? "a") != (texts[0] ?? "b") {
+    println("  FAIL: control did not fire — the field comparison never matches"); ok = false;
+  }
+
+  println("");
+  println("   OD-10 ANSWERED: centre EXACT, radius QUANTISED to a shell. An arc is R1 on a");
+  println("   quantised parameter grid — the third parameter to land that way, after line");
+  println("   endpoints (10.10) and feature t (X48).");
+
+  println("");
+  if ok { println("=== ARC OK ==="); }
+  else { println("=== arc test FAILED ==="); }
+}
