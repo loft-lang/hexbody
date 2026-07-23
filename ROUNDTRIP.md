@@ -368,8 +368,27 @@ content authored before a grammar existed. It is the harder problem — a traced
 > fits inside it."* So even in R2 there is nothing to calibrate: the tolerance is derived from
 > the lattice and carries a measured margin, `0.81 < 1.0`.
 
-> **The trap:** using R2's machinery where R1 applies — fitting a line to a stencil whose turtle
+> **The trap:** using R2's machinery where R1 applies — fitting a line to a stencil whose
 > description we hold throws away an exact answer and reintroduces a tolerance nothing needs.
+
+### 6.1 A wall surface is the exact AVERAGE of its edges — not a fit
+
+The straight/arc surface a wall run approximates is **derived by averaging the edges that are
+already there**, never fitted to them:
+
+| | |
+|---|---|
+| **direction** | `Σ` edge vectors — an **exact integer** vector in doubled coordinates |
+| **position** | the mean of the edge **midpoints**. A cell corner is an integer in `(k,m)`, so a midpoint is a half-integer and the mean is an **exact rational** |
+| **wobble** | each edge's deviation about that mean — bounded, and the only thing the two edge families differ in: *along the sides* (2 axes) is the straighter wobble, *along the tops* (3 axes) wobbles more |
+
+**Nothing is fitted, so nothing has a tolerance.** This is what makes domain-A straight-wall
+recovery **R1**: least-squares would introduce a residual to threshold, while an average of exact
+rationals *is* the answer. It also respects §2.4's invariant by construction — the mean line of a
+set of hex edges lies **between** cell centres, never through one.
+
+`hexmatch`'s derived tolerance (`X21`) remains right for **R2**, where there is no grammar and no
+edge run to average — only a traced boundary of unknown provenance.
 
 ## 7. Prior art from the siblings — and how far each is trustworthy
 

@@ -141,6 +141,18 @@ corpus/a1/<case>.f      draw(read(T)), or its digest
 - **the rule that makes it a gate at all**: entries are **committed and never regenerated**
   (`DESIGN.md` §8.0). Regenerating compares new output against new output and always passes.
 
+## S4b · the wall surface, by averaging — `src/hexform.loft` · S *(new, from the model decision)*
+
+The surface a run approximates is the **exact average** of its edges (`ROUNDTRIP` §6.1) — mean
+direction is the integer sum of edge vectors, mean position the rational mean of edge midpoints.
+Verified numerically: both exact, wobble ≤ 0.199 world units (0.172 m) on both families.
+
+- **gate**: the recovered direction of a `Plan` side equals the nominal one **exactly**; the
+  recovered offset is an exact rational; the wobble is reported per family.
+- **control**: fit by least squares instead → a residual appears where there should be none.
+- **why this replaces "the fit"**: `PLAN.md` M0 was originally "recover the straight/arc surface".
+  Averaging *is* that recovery, with no tolerance — so the word "fit" was wrong twice over.
+
 ## S8 · `rebuild`, level 1 — `src/formfit.loft` *(new)* · M
 
 Recover `(h0, lens, turns)` from a boundary cycle — **regime R1**: the grammar is the prior, so
