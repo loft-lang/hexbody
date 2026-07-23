@@ -113,7 +113,13 @@ hard cases (jackknife, reversing): **[`design/VEHICLES.md`](design/VEHICLES.md).
 ## Wall features and the layer stack
 
 A wall is stored as a strip of edges in **two not-equal directions** (three along a lattice
-line, a spread for an arc). Openings — doors, windows, loopholes — are placed *inside* that
+line, a spread for an arc). That strip is not painted along the wall line — it is the **boundary
+of a filled region**: draw the massing, take the edges between a cell of it and one outside,
+**closed by construction** at any size, orientation, or tie. The naive alternative — buffering a
+band of cells within a halfwidth of the line — *leaks*: on the structural tie (every cell-to-side
+distance is an exact multiple of the halfwidth) it splits into two components enclosing nothing —
+a wall with a hole — while still passing an equivariance check. Fill, then take the boundary
+(SPEC **I3**). Openings — doors, windows, loopholes — are placed *inside* that
 wall, and a wall carries a **stack of layers**: storage → surface → material → feature
 intervals → dressing. The load-bearing rule is that **a feature is an interval on the fitted
 surface, and the two-direction edge strip is storage the author never sees** — the mantra made
@@ -167,6 +173,23 @@ collision follows its damage for free.
 *fragments* its run (one wall → two), so destruction is where the **run-id / connectivity**
 system (deferred in the drawing spec) has to be built — a coherent wall must survive being cut
 into cleanly-fragmented runs, not silently merge or vanish.
+
+## Efficiency — the complex model is a derived overlay
+
+Some capabilities need more than the 2.5-D field: a wall that becomes a floor under tilt (the
+inside-the-robot / earthquake case) needs a **patch-atlas** where any surface can be walkable,
+gravity selecting which. The rule that keeps that from taxing the common case:
+
+> **The 2.5-D field is the stored truth; the complex (patch-atlas) model is a *derived,
+> on-demand overlay* — never persisted, never a branch in a hot-path op** (SPEC **L3**).
+
+So a normal building pays nothing. The efficient field is a **lossless restriction** of the
+complex one: the walkable-wall surface is *produced from the edge and storey height you already
+store*, materialised only when a situation (a tilt, a tumble) invokes it and dropped after. The
+field ops, the proxy, and collision never learn the capability exists — it is a separate
+derivation a *situation* spins up over a region, not an `if tiltable` in the code you run every
+frame. If the atlas is ever stored, or a field op branches on it, the constraint is broken and
+the common case has started paying for the exotic one — which is the thing to catch in review.
 
 ## Verification — the temporal / mutation instrument
 
