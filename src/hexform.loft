@@ -16,6 +16,7 @@
 // which this file exposes as an INTEGER: 4 * len^2 = 3k^2 + m^2, giving 12 for an edge step
 // and 36 for a vertex one.  Never compare these as floats — the ratio is exact.
 use hex_field;
+use hex_grid;
 
 pub const HEAD_N = 12;
 
@@ -205,3 +206,170 @@ pub fn plan_holds(wid: integer, dep: integer, k: integer, m: integer) -> boolean
 // Can a cell centre ever lie exactly ON the boundary?  No — and this returns the reason as a
 // checkable fact rather than a comment: the u test compares an even to an odd number.
 pub fn plan_u_can_tie(wid: integer, k: integer) -> boolean { 2 * iabs(k) == 2 * wid + 1 }
+
+// ── S3 — FILL A CLOSED TURTLE CYCLE, AND PROVE THE FILL BY ITS OWN AREA ─────
+//
+// `Form` closes (law J, S1); this turns it into a region.  The turtle walks CENTRE to CENTRE,
+// so every polygon vertex is a hex centre and the path traces the centre-line of the boundary
+// ring.  The region is therefore every hex whose centre lies inside OR ON that polygon.
+//
+// WHY THE TURTLE AT ALL, when OD-11 gave domain A's rectangle to `Plan`?  Because a lattice
+// polygon provably cannot be a rectangle (`X24`) — but it CAN be a triangle, a rhombus and a
+// hexagon, exactly.  The turtle is the **hexagonal-tower** family: the shapes the lattice does
+// hold exactly, which is precisely the set `Plan` cannot express.  Two primitives, two families,
+// neither a special case of the other.
+//
+// THE CROSS-CHECK IS THE SHAPE'S OWN AREA, NOT A SECOND IMPLEMENTATION.  crawler's `hexforms.py`
+// pins the invariant (T2, re-measured here):
+//
+//     sum of the integer shoelace over the boundary  ==  12 * (number of cells)
+//
+// A single hex shoelaces to exactly 12 in doubled (k,m) units, and holes come out negative, so
+// the traced outline and the cell count CANNOT disagree.  It is exact integer arithmetic — no
+// epsilon, no tolerance — and it needs no second fill routine to compare against, which is what
+// `STEPS.md` asks for as option (b).
+
+// The corner offsets in doubled (k,m) are `hex_field`'s `corner_k` / `corner_m` — already the
+// canonical table, indexed the same way `hex_edge_corners` indexes it. NOT restated here: L11,
+// and a private copy is exactly what caused X26.
+
+// The turtle polygon's vertices, in doubled (k,m) RELATIVE to the start.  One vertex per side:
+// the point the walk is standing on before it walks that side.
+pub fn form_poly_k(f: Form) -> vector<integer> {
+  lens = f.fm_len;
+  turns = f.fm_turn;
+  outk: vector<integer> = [];
+  pk = 0;
+  hk = f.fm_h0;
+  for pi in 0..len(lens) {
+    outk += [pk];
+    stk = head_step(hk);
+    pk = pk + (lens[pi] ?? 0) * stk.0;
+    hk = hk + (turns[pi] ?? 0);
+  }
+  outk
+}
+
+pub fn form_poly_m(f: Form) -> vector<integer> {
+  lens = f.fm_len;
+  turns = f.fm_turn;
+  outm: vector<integer> = [];
+  pm = 0;
+  hm = f.fm_h0;
+  for pj in 0..len(lens) {
+    outm += [pm];
+    stm = head_step(hm);
+    pm = pm + (lens[pj] ?? 0) * stm.1;
+    hm = hm + (turns[pj] ?? 0);
+  }
+  outm
+}
+
+fn imin(a: integer, b: integer) -> integer { if a < b { a } else { b } }
+fn imax(a: integer, b: integer) -> integer { if a > b { a } else { b } }
+
+// Is (pk, pm) inside or ON the closed polygon?  Exact integer arithmetic throughout: the
+// on-edge test is a zero cross product, and the crossing test compares a cross product's SIGN
+// rather than computing an intersection, so there is no division and no epsilon anywhere.
+//
+// ON THE BOUNDARY COUNTS AS INSIDE, and that is the whole reason the closed forms come out
+// integral: the turtle traces the centres of the boundary ring, so those cells ARE the shape.
+pub fn poly_holds(vk: vector<integer>, vm: vector<integer>,
+                  pk: integer, pm: integer) -> boolean {
+  n = len(vk);
+  if n < 3 { return false; }
+  for ei in 0..n {
+    ak = vk[ei] ?? 0;
+    am = vm[ei] ?? 0;
+    ej = (ei + 1) % n;
+    bk = vk[ej] ?? 0;
+    bm = vm[ej] ?? 0;
+    crs = (bk - ak) * (pm - am) - (bm - am) * (pk - ak);
+    if crs == 0 {
+      if pk >= imin(ak, bk) && pk <= imax(ak, bk)
+         && pm >= imin(am, bm) && pm <= imax(am, bm) { return true; }
+    }
+  }
+  inside = false;
+  for ci in 0..n {
+    ck = vk[ci] ?? 0;
+    cm = vm[ci] ?? 0;
+    cj = (ci + 1) % n;
+    dk = vk[cj] ?? 0;
+    dm = vm[cj] ?? 0;
+    if (cm > pm) != (dm > pm) {
+      cr2 = (dk - ck) * (pm - cm) - (dm - cm) * (pk - ck);
+      if dm > cm {
+        if cr2 > 0 { inside = !inside; }
+      } else {
+        if cr2 < 0 { inside = !inside; }
+      }
+    }
+  }
+  inside
+}
+
+// THE ROUTINE: fill a closed Form into `cells`, anchored so the walk starts at cell (cq, cr).
+//
+// A NON-CLOSING FORM IS REFUSED, NOT PATCHED (the control).  Law J is the admission test; a walk
+// that does not return to its start bounds no region, and silently filling "what it would have
+// enclosed" would invent a shape the author never wrote.
+pub fn form_fill(f: Form, cq: integer, cr: integer, cells: HexSet) -> integer {
+  if !form_closes(f) { return -1; }
+  vk = form_poly_k(f);
+  vm = form_poly_m(f);
+  bk = lattice_k(cq, cr);
+  bm = lattice_m(cq, cr);
+  n = 0;
+  for fr in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for fq in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if poly_holds(vk, vm, lattice_k(fq, fr) - bk, lattice_m(fq, fr) - bm) {
+        hexset_set(cells, fq, fr, true);
+        n = n + 1;
+      }
+    }
+  }
+  n
+}
+
+// TWICE THE SIGNED AREA of the set's boundary, in doubled (k,m) units — summed over every
+// boundary edge directly, so it needs no loop tracing: the shoelace of a closed loop is the sum
+// over its edges, and summing over all loops is summing over all edges.
+//
+// `hex_edge_corners(dir)` gives the edge's two corners in the winding order that makes the outer
+// boundary positive and an enclosed hole negative, which is what makes `= 12 * cells` a real
+// check on enclosure and not just on count.
+pub fn set_shoelace2(cells: HexSet) -> integer {
+  s = 0;
+  for sr in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for sq in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if hexset_get(cells, sq, sr) {
+        for sd in 0..6 {
+          (nq, nr) = hex_neighbor(sq, sr, sd);
+          if !hexset_get(cells, nq, nr) {
+            (c1, c2) = hex_edge_corners(sd);
+            ak = lattice_k(sq, sr) + corner_k(c1);
+            am = lattice_m(sq, sr) + corner_m(c1);
+            b2k = lattice_k(sq, sr) + corner_k(c2);
+            b2m = lattice_m(sq, sr) + corner_m(c2);
+            s = s + ak * b2m - b2k * am;
+          }
+        }
+      }
+    }
+  }
+  s
+}
+
+// ── THE CLOSED FORMS — predicted, not read off the fill ────────────────────
+//
+// Each is the count of lattice points inside-or-on the shape in the CENTRE basis (spanned by one
+// edge step and the next-but-one), so each is a plain combinatorial identity rather than a
+// measurement:
+//
+//   triangle side n   the lattice points of a right triangle (n+1)(n+2)/2
+//   rhombus a x b     a box in the centre basis, (a+1)(b+1)
+//   hexagon side n    the hex region of radius n, 3n^2 + 3n + 1
+pub fn tri_cells(n: integer) -> integer { ((n + 1) * (n + 2) / 2) ?? 0 }
+pub fn rhombus_cells(a: integer, b: integer) -> integer { (a + 1) * (b + 1) }
+pub fn hexagon_cells(n: integer) -> integer { 3 * n * n + 3 * n + 1 }

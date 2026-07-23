@@ -120,29 +120,47 @@ both kinds of wall are derived from it. (DESIGN 10.11.)
   hoisting, reproducer at `probes/inline_struct.loft`). Two gate sections disagreed and BOTH
   readings looked like plausible rasterisation results.
 
-## S3 · **`Plan`** → cells — `src/hexform.loft` · S *(OD-11 resolved)*
+## S3 ✅ · the turtle → cells — `src/hexform.loft` · S · **DONE** *(OD-11 resolved)*
 
-Walk the cycle and produce the filled region as a `HexSet` (**fill, then take the boundary** —
-`SPEC` **I3**, never a buffered band).
+**The `Plan`→cells half was already done by S2c** (`Box`/`Plan` rasterised, cross-checked
+cell-for-cell against `housedraw`, 0 differences). What was left is the half S1 set up and never
+filled: **a closed turtle `Form` → a filled region**, the hexagonal-tower primitive.
 
-- **gate** `tests/form.loft`: the triangle's and rhombus's cell counts match the closed-form
-  prediction.
-- **control**: a non-closing cycle → refused, not silently patched.
-- **the planned cross-check against `housedraw`'s 27 cells does not work as written** (found at
-  S1). `housedraw`'s `Plan` is a **continuous rectangle rasterised by centre-in-region**, not a
-  turtle polygon, and its two side directions are both in units of `s` — which no pair of the 12
-  headings gives, since headings 90° apart are in different length classes. So a turtle cycle
-  cannot express that house.
-- **OD-11 resolved: rasterise `Plan`, not the turtle.** A lattice polygon *provably* cannot be a
-  rectangle (`X24`), so `Plan`'s `(cq, cr, wid, dep, rot, mir)` is domain A's spine. The turtle
-  `Form` is retained as the **hexagonal-tower** primitive — a different family, also in the scene.
-- **and the cross-check is back**: since S3 now rasterises the same `Plan` `housedraw` does, the
-  27-cell / 38-edge comparison against `tests/house.loft` works after all. Take it.
-- **what to cross-check instead** *(if the turtle wins)*, in preference order: (a) a **rhombus** drawn both ways — turtle
-  fill vs a `Plan` with the matching parallelogram — if `housedraw` can express one; (b) Euler /
-  shoelace: the enclosed cell count from an independent closed-form area, which needs no second
-  implementation; (c) failing both, accept that S3 has **no external cross-check** and say so,
-  rather than inventing agreement between two things that do not model the same shape.
+- **gate** `tests/form.loft` §12 / §12b / §13, every control fires.
+- **the turtle walks CENTRE to CENTRE**, so its polygon vertices are hex centres and the path
+  traces the centre-line of the boundary ring. The region is every hex on or inside it —
+  `poly_holds` is exact integer point-in-polygon (zero cross product for on-edge, a cross-product
+  SIGN for the crossing count), so there is no division and no epsilon anywhere.
+- **the closed forms are PREDICTED, not read off the fill** — combinatorial counts of lattice
+  points in the centre basis, and all ten cases match exactly:
+
+  | shape | closed form | measured |
+  |---|---|---|
+  | triangle side `n` | `(n+1)(n+2)/2` | 3, 6, 10, 15 for n=1..4 |
+  | rhombus `a×b` | `(a+1)(b+1)` | 20, 25, 30 for 4×3..4×5 |
+  | hexagon side `n` | `3n²+3n+1` | 7, 19, 37 for n=1..3 |
+
+  This is why the turtle is kept at all: a lattice polygon provably cannot be a rectangle
+  (`X24`), but it holds a triangle, a rhombus and a hexagon **exactly** — the family `Plan`
+  cannot express. Two primitives, two families, neither a special case of the other.
+- **control**: a non-closing cycle (turn sum 11) is **refused** — `form_fill` returns `-1` and
+  fills nothing. Law J is the admission test; filling "what it would have enclosed" invents a
+  shape the author never wrote.
+- **anchor invariance** (§13): the same form on 16 anchors across both row parities fills the same
+  count, 0 disagreements — the cheapest check that the fill reads the SHAPE and not `r & 1`.
+- **the area identity is NOT the fill's cross-check, and saying so was the real finding.**
+  crawler's `hexforms.py` pins `shoelace(boundary) = 12 × cells` (T2). Re-measured here it holds —
+  but it is an **identity** (Green's theorem) true for *any* cell set, holes included: punching the
+  centre out of the hexagon gives 18 cells and shoelace 216, still balanced, which is **correct**.
+  So it cannot validate the fill, and claiming it did would be the `X15` mistake — green for the
+  wrong reason. What it *does* check is the boundary CONVENTION (corner table × edge table ×
+  neighbour table), the `X26` class. Its control is therefore a deliberately wrong corner pairing
+  (`i` with `i+2`), which collapses it: 294 vs 216. Recorded as **X33**.
+- **the fill's cross-check is the closed forms** — independent predictions, not a second
+  implementation, which is `STEPS`' option (b) as written.
+- **L11 again**: the corner table in doubled `(k,m)` is `hex_field`'s `corner_k`/`corner_m`,
+  already canonical. The first draft restated it privately and the compiler caught the
+  redefinition — exactly the `X26` shape, caught by the language this time.
 
 ## S4 · turtle → walls — `src/hexform.loft` · S
 

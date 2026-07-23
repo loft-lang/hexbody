@@ -38,7 +38,7 @@ crawler's prototypes and design docs are **design tries** — input, not authori
 | **T3 · designed** | a doc argues a construction | **input to design, never truth** |
 | **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
 
-**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X32`** — eight of them re-measured *here*, and
+**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X34`** — eight of them re-measured *here*, and
 `X26`–`X31` **discovered here**. Everything else the design leans on is still a try or a schema
 (notably the whole foxel schema, `X11`–`X15`), and the census is where it gets re-measured. Citing a T2 number as settled is
 the specific mistake to avoid — in either direction: re-deriving what is genuinely gated wastes
@@ -73,7 +73,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X32` **with trust tiers** | **authoritative** on any object or map |
+| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X34` **with trust tiers** | **authoritative** on any object or map |
 | **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
@@ -165,8 +165,16 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   **0.866 m with one in three refused** (30/90/150...), **3.969 m** for the in-between 12 — which
   is a second, independent reason houses avoid them. `nearest_vertex` + `snap_run_d24`/`snap_run_p`
   take an arbitrary mouse point to a legal line; both gated against brute force.
+- **Green:** `tests/form.loft` §12–13 (**S3**) — a closed turtle `Form` fills to its
+  **closed-form** cell count: triangle `(n+1)(n+2)/2`, rhombus `(a+1)(b+1)`, hexagon `3n²+3n+1`,
+  ten shapes exact (**X33**). The lattice holds these exactly where it provably cannot hold a
+  rectangle (`X24`) — that is why both primitives exist. A non-closing cycle is **refused**.
+- **`shoelace = 12×cells` is an identity, not a fill check** (**X34**) — true for any cell set,
+  holes included. It checks the boundary *convention* (the `X26` class), and its control is a
+  wrong corner pairing. Do not cite it as validating a fill; that would be the `X15` mistake.
 - **Everything else is open.** No `body.loft`, no `proxy.loft`, no `rebuild`, no census, no
-  corpus. Next step is **S3** (`Plan`→cells, OD-11 resolved) — see `plans/m0-roundtrip/STEPS.md`.
+  corpus. Next step is **S4** (turtle → walls; corners must be precise) — see
+  `plans/m0-roundtrip/STEPS.md`.
 - **The foxel schema is the limit** (`ROUNDTRIP.md` §2.4): `layer* × point → (height, material,
   wall1, wall2, wall3, item)`. A model is admissible **iff it draws into that exactly**, which
   makes `fits?` syntactic and finite. It closed OD-2/3/4/6/7/8 — roofs and terrain are `height`,
@@ -176,7 +184,7 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
   relocated into the schema, and rung A5's real question.
 - **Constraints are in `ROUNDTRIP.md` §7 (X1–X31) with trust tiers.** T1 now holds `X1`, `X2`,
-  `X19`–`X22`, `X24`–`X32`; do not re-derive those. Everything else is still a try or a schema.
+  `X19`–`X22`, `X24`–`X34`; do not re-derive those. Everything else is still a try or a schema.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their
@@ -197,11 +205,13 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   Closing a crack by moving geometry is the forbidden fix.
 - **Jank is not licence for nondeterminism.** `L7`/`I9` need byte-identical replay, so seam error
   and arbitration must be deterministic functions of their inputs.
-- **A function that forward-references another's return type reads it as `integer`.** loft's
-  single pass defaults an as-yet-undefined function's return to `integer`, so calling one defined
-  *lower* in the file poisons the inferred type (`vx = tri_x(...) - ...` became integer, then
-  every later assignment "cannot change type"). Define helpers **above** their callers, or the
-  error is a baffling "cannot change type from integer to float" at a line that looks correct.
+- **A binary op whose operands BOTH come from functions defined lower in the file resolves as
+  `integer`.** loft is two-pass: a forward call is `Unknown` in pass 1, and operator overload
+  resolution then picks the first candidate (`OpMinInt`/`OpMulInt`) when it can type NEITHER
+  operand — locking the result to integer. Pass 2 re-resolves to float, and the assignment errors
+  "cannot change type from integer to float" at a line that looks correct. A bare
+  `fax = tri_x(...)` is FINE, and so is one known-typed operand (`fax - 1.0`, `fax - kf`); unary is
+  already guarded (loft#592). Define helpers **above** their callers.
 - **Never construct a struct inside an argument list** — `f(Mk(...), set)` in a loop is
   corrupted from the SECOND iteration when the call also takes a store-allocated value
   (`HexSet`/`EdgeSet`). Hoist it: `x = Mk(...); f(x, set)`. Silent, deterministic, and the

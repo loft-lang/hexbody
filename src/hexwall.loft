@@ -223,8 +223,10 @@ pub fn hex_corner_tri_b(q: integer, r: integer, ci: integer) -> integer {
 }
 
 // `wall_from_run` — the principled vertex-anchored constructor — is defined further down, with
-// the endpoint machinery it depends on (`tri_x`, `wall_end_a`), so its call sites see the real
-// float return types rather than the single-pass integer default.
+// the endpoint machinery it depends on (`tri_x`, `wall_end_a`).  It has to be: a binary op whose
+// operands BOTH come from forward-declared functions resolves as `integer` (loft is two-pass, and
+// overload resolution picks OpMinInt when it can type neither operand), so `fbx - fax` here would
+// lock to integer and then fail pass 2 with "cannot change type from integer to float".
 
 // THE ROUTINE: draw the wall into the foxel's three wall slots per hex.
 //

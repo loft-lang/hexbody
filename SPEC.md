@@ -115,6 +115,8 @@ items marked ⚠ below depend on one.
    | `house.loft` | **G0**, **I1**, **I3**, **I8** |
    | `form.loft` §1–§8 | **I-CLOSE**, **I-DOMAIN** *(`H₁₂`)* |
    | `form.loft` §9–§10 | `X24`, `X25` — the basis of **I-WIDTH** and of OD-11's resolution |
+   | `form.loft` §12, §13 | **I3** *(fill then boundary)*, **I-CLOSE** *(a non-closing cycle is refused)* |
+   | `form.loft` §12b | `X34` — the boundary convention, via the area identity |
    | `wall.loft` §1, §2, §5 | **I-DOMAIN** *(`D`; the even/odd split, measured)* |
    | `wall.loft` §2b | **I-EDGE**, **L11** |
    | `wall.loft` §3, §4 | **I3** *(three slots, an edge stored once by its owner)* |

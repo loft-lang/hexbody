@@ -9,23 +9,32 @@ issue when one exists)* · **Value:** `F` · **Effort:** `H`
 mechanics spine rather than running beside it (decided 2026-07-23).
 
 The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** holds only the
-**settled** core — definitions, the propositions that follow from them, and the inherited
-constraints `X1`–`X31` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X31`) — while
+**settled** core — definitions, the propositions that follow from them, and the constraints
+`X1`–`X34` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X34`) — while
 **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar, `fits?`,
 the seam, the corpus, the method, the gates, and the open decisions.
 
-**Progress: S0, S1, S2b done** ([`STEPS.md`](STEPS.md)). Three gates green, all through
-`tools/run_tests.sh`: `tests/house.loft` (law **I**, 12/12 in cells *and* edges),
-`tests/form.loft` (re-measured **`X1`**/**`X2`**/**`X20`** to **T1**, added **`X24`**/**`X25`**),
-and `tests/wall.loft` (**`X26`**–**`X31`** — the first constraints hexbody *discovered* rather
-than inherited, including **two defects every other gate was green through**).
+**Progress: S0, S1, S2b, S2c, S3 done** ([`STEPS.md`](STEPS.md)). Four gates green through
+`tools/run_tests.sh`:
 
-The width question is settled in [`DESIGN.md`](DESIGN.md) §10.9: all 24 directions can be exactly
-straight and exactly equally wide **iff** a wall is a line primitive with a constant width and the
-cells are its rasterisation. **OD-12** — *which edges IS a wall* — is **resolved** (§10.12): a wall
-marks the edges that **separate** its two sides, one connected chain along the line, not a comb of
-pickets across it. Next is **S3** (`Plan`→cells). `rebuild`, the census and the corpus do not exist
-yet.
+| gate | covers |
+|---|---|
+| `tests/form.loft` | the 12 headings (`X1`/`X2`/`X20` re-measured to T1), `X24`/`X25`, and **S3**'s turtle fill (`X33`/`X34`) |
+| `tests/wall.loft` | the 24-direction wall — `X26`–`X32`, the first constraints hexbody *discovered* rather than inherited, including **two defects every other gate was green through** |
+| `tests/box.loft` | the box in 12 directions, thin wall and thick wall |
+| `tests/house.loft` | law **I**, 12/12 equivariant in cells *and* edges |
+
+Three things are settled in [`DESIGN.md`](DESIGN.md):
+
+- **§10.9 — width.** All 24 directions can be exactly straight and exactly equally wide **iff** a
+  wall is a line primitive with a constant width and the cells are its rasterisation.
+- **§10.12 — OD-12, resolved.** A wall marks the edges that **separate** its two sides: one
+  connected chain *along* the line, not a comb of pickets across it.
+- **§10.13 — S3.** The turtle fills the triangle / rhombus / hexagon the lattice holds **exactly**
+  (the family `Plan` provably cannot express), each matching a predicted closed form.
+
+Next is **S4** (turtle → walls, where **corners must be precise**). `rebuild`, the census and the
+corpus do not exist yet.
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"

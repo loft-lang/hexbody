@@ -1388,6 +1388,58 @@ well-posed R1 problem (the endpoints of §10.10 are the endpoints *of this chain
 comb was not even connected. `wallgeo`'s Laplacian smoothing remains the approximate baseline to
 diff against; `P4` still forbids adopting its ε.
 
+## 10.13 S3 — the turtle fills the shapes the lattice actually holds
+
+`OD-11` gave domain A's rectangle to `Plan`, and S2c built it. So why keep the turtle at all?
+
+**Because a lattice polygon provably cannot be a rectangle (`X24`) — but it holds a triangle, a
+rhombus and a hexagon exactly.** Those are precisely the shapes `Plan` cannot express, so the two
+primitives cover disjoint families and neither is a special case of the other. The turtle is the
+**hexagonal-tower** family.
+
+The turtle walks centre to centre, so its polygon vertices *are* hex centres and the path traces
+the centre-line of the boundary ring; the region is every hex on or inside it. `poly_holds` is
+exact integer point-in-polygon — a zero cross product for on-edge, a cross-product **sign** for the
+crossing count — so there is no division and no epsilon.
+
+### The counts are predicted, then measured
+
+| shape | closed form | measured |
+|---|---|---|
+| triangle side `n` | `(n+1)(n+2)/2` | 3, 6, 10, 15 (n=1..4) |
+| rhombus `a×b` | `(a+1)(b+1)` | 20, 25, 30 (4×3..4×5) |
+| hexagon side `n` | `3n²+3n+1` | 7, 19, 37 (n=1..3) |
+
+These are combinatorial counts of lattice points in the centre basis — **derived before measuring,
+not read off the fill** — which is the independent cross-check `STEPS` asks for as option (b), with
+no second implementation to maintain. A non-closing cycle is **refused** (`form_fill` returns −1,
+fills nothing): law J is the admission test, and filling "what it would have enclosed" would invent
+a shape the author never wrote.
+
+### The area identity, and what it is honestly worth
+
+crawler's `hexforms.py` pins `shoelace(boundary) = 12 × cells` as its round-trip invariant (T2). It
+re-measures green here — but **it is an identity, not a measurement**. By Green's theorem it holds
+for *any* cell set whose boundary is consistently oriented, holes included: punching the centre out
+of the hexagon leaves 18 cells and shoelace 216, still balanced, and that is **correct behaviour**,
+not a leak.
+
+So it **cannot** cross-check a fill, and the first draft of the gate asserted that it could — a
+control that "failed" by being right. Claiming it validated the fill would have been the `X15`
+mistake in our own gate: green for the wrong reason.
+
+What it *does* check is the boundary **convention** — that the corner table, the edge table and the
+neighbour table agree — which is the `X26` class, the one every other check was blind to. Its
+control is therefore a deliberately wrong corner pairing (`i` with `i+2`), which collapses it to
+294 against 216. Recorded as **X34**, stated with that limit rather than as inherited.
+
+### L11, caught by the compiler this time
+
+The first draft restated the doubled-`(k,m)` corner table privately. `hex_field` already exports
+`corner_k`/`corner_m` — the canonical one — and the compiler rejected the redefinition outright.
+That is the `X26` shape again (a private copy of a library table), caught for free because the
+library owned the name.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |

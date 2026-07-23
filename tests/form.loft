@@ -12,7 +12,13 @@
 //                          parities — the claim that lets the whole module work in doubled
 //                          coordinates and ignore `r & 1`
 //   6  head_norm           wrapping is correct where a raw index would silently lie
+//  12  S3: form_fill        a closed cycle fills to its CLOSED-FORM cell count
+//  12b S3: the area check   shoelace(boundary) = 12 * cells — an IDENTITY, so it checks the
+//                           boundary CONVENTION, not the fill (the fill's check is the
+//                           closed forms). Control: a wrong corner pairing (X33)
+//  13  S3: anchor invariance the same form fills the same count on both row parities
 use hex_field;
+use hex_grid;
 use hexform;
 
 // The doubled-coordinate delta from (q,r) to its neighbour in direction d.
@@ -381,6 +387,160 @@ fn main() {
   if old_ties == 0 {
     println("  FAIL: control did not fire — the old placement never tied,"
             + " so there was nothing to fix"); ok = false;
+  }
+
+  // ── 12. S3 — A CLOSED CYCLE FILLS TO ITS CLOSED-FORM CELL COUNT ───────────
+  //
+  // The turtle walks centre to centre, so its polygon vertices ARE hex centres and the path
+  // traces the centre-line of the boundary ring. The region is every hex on or inside it.
+  //
+  // The three shapes the lattice holds EXACTLY — the family `Plan` provably cannot express
+  // (`X24`) — each with a plain combinatorial count, predicted before it is measured:
+  //   triangle side n  (n+1)(n+2)/2      rhombus a x b  (a+1)(b+1)      hexagon side n  3n^2+3n+1
+  println("");
+  println("12. FORM FILL — a closed cycle fills to its closed-form cell count");
+  println("   shape            sides  predicted  filled  shoelace  12*cells");
+  nfillbad = 0;
+
+  for tn in 1..5 {
+    ftri = form_new(0, [tn, tn, tn], [4, 4, 4]);
+    ctri = hexset_chunk(-30, -30, 61, 61);
+    gtri = form_fill(ftri, 0, 0, ctri);
+    ptri = tri_cells(tn);
+    stri = set_shoelace2(ctri);
+    println("   triangle n={tn}          3 {ptri:>10} {gtri:>7} {stri:>9} {12 * gtri:>9}");
+    if gtri != ptri { nfillbad = nfillbad + 1; }
+    if stri != 12 * gtri { nfillbad = nfillbad + 1; }
+  }
+
+  for rb in 3..6 {
+    frh = form_new(0, [4, rb, 4, rb], [2, 4, 2, 4]);
+    crh = hexset_chunk(-30, -30, 61, 61);
+    grh = form_fill(frh, 0, 0, crh);
+    prh = rhombus_cells(4, rb);
+    srh = set_shoelace2(crh);
+    println("   rhombus 4x{rb}          4 {prh:>10} {grh:>7} {srh:>9} {12 * grh:>9}");
+    if grh != prh { nfillbad = nfillbad + 1; }
+    if srh != 12 * grh { nfillbad = nfillbad + 1; }
+  }
+
+  for hn in 1..4 {
+    fhx = form_new(0, [hn, hn, hn, hn, hn, hn], [2, 2, 2, 2, 2, 2]);
+    chx = hexset_chunk(-30, -30, 61, 61);
+    ghx = form_fill(fhx, 0, 0, chx);
+    phx = hexagon_cells(hn);
+    shx = set_shoelace2(chx);
+    println("   hexagon n={hn}           6 {phx:>10} {ghx:>7} {shx:>9} {12 * ghx:>9}");
+    if ghx != phx { nfillbad = nfillbad + 1; }
+    if shx != 12 * ghx { nfillbad = nfillbad + 1; }
+  }
+
+  if nfillbad != 0 {
+    println("  FAIL: {nfillbad} fills disagree with their closed form or their own area");
+    ok = false;
+  }
+
+  // CONTROL A: a NON-CLOSING cycle must be REFUSED, not silently patched into a region.
+  // Law J is the admission test; filling "what it would have enclosed" invents a shape.
+  fbad = form_new(0, [4, 5, 4, 5], [2, 4, 2, 3]);      // turn sum 11 — does not close
+  cbad = hexset_chunk(-30, -30, 61, 61);
+  gbad = form_fill(fbad, 0, 0, cbad);
+  println("   CONTROL a non-closing cycle (turn sum {form_turn_sum(fbad)}) -> fill returns"
+          + " {gbad}, cells {hexset_count(cbad)}");
+  if gbad >= 0 || hexset_count(cbad) != 0 {
+    println("  FAIL: control did not fire — a form that bounds nothing was filled anyway");
+    ok = false;
+  }
+
+  // ── 12b. WHAT THE AREA IDENTITY DOES AND DOES NOT PROVE ───────────────────
+  //
+  // `shoelace(boundary) = 12 * cells` is an IDENTITY, not a measurement: by Green's theorem it
+  // holds for ANY cell set whose boundary edges are correctly oriented, holes included (a hole
+  // is a negatively-wound loop, so it subtracts exactly its own area). Punching the centre out
+  // of the hexagon still balances — 18 cells, shoelace 216 — and that is CORRECT behaviour.
+  //
+  // So it cannot cross-check the FILL, and claiming it does would be the X15 mistake: a test
+  // that is green for the wrong reason. What it does check is the boundary CONVENTION — that
+  // the corner table, the edge table and the neighbour table agree — which is the X26 class of
+  // defect, the one every other check was blind to. Its control is therefore a deliberately
+  // wrong corner pairing, not a wrong cell set.
+  //
+  // The fill's real cross-check is section 12's CLOSED FORMS: (n+1)(n+2)/2, (a+1)(b+1) and
+  // 3n^2+3n+1 are combinatorial predictions made before measuring, not read off the code.
+  println("");
+  println("12b. AREA IDENTITY — the boundary convention, checked; holes are handled, not broken");
+  chole = hexset_chunk(-30, -30, 61, 61);
+  fhole = form_new(0, [2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2]);
+  ghole = form_fill(fhole, 0, 0, chole);
+  shole_solid = set_shoelace2(chole);
+  hexset_set(chole, 0, 0, false);                       // punch the centre cell out
+  shole = set_shoelace2(chole);
+  println("   solid hexagon: {ghole} cells, shoelace {shole_solid} = 12*{ghole}");
+  println("   with a hole:   {hexset_count(chole)} cells, shoelace {shole} = 12*"
+          + "{hexset_count(chole)} — the hole subtracts its own area, as it must");
+  if shole != 12 * hexset_count(chole) {
+    println("  FAIL: a hole broke the area identity — the negative loop is not being counted");
+    ok = false;
+  }
+  // CONTROL: pair each boundary edge's FIRST corner with corner i+2 instead of i+1 — a
+  // geometrically wrong edge — and the identity must collapse. Without this the section proves
+  // only that an identity is an identity.
+  swrong = 0;
+  for wr in -30..31 {
+    for wq in -30..31 {
+      if hexset_get(chole, wq, wr) {
+        for wd in 0..6 {
+          (wnq, wnr) = hex_neighbor(wq, wr, wd);
+          if !hexset_get(chole, wnq, wnr) {
+            (wc1, wc2) = hex_edge_corners(wd);
+            wak = lattice_k(wq, wr) + corner_k(wc1);
+            wam = lattice_m(wq, wr) + corner_m(wc1);
+            wbk = lattice_k(wq, wr) + corner_k((wc1 + 2) % 6);
+            wbm = lattice_m(wq, wr) + corner_m((wc1 + 2) % 6);
+            swrong = swrong + wak * wbm - wbk * wam;
+          }
+        }
+      }
+    }
+  }
+  println("   CONTROL with corner i paired to i+2 instead of i+1: shoelace {swrong}"
+          + " (must NOT equal {12 * hexset_count(chole)})");
+  if swrong == 12 * hexset_count(chole) {
+    println("  FAIL: control did not fire — a wrong corner pairing still balances, so the"
+            + " identity is not checking the convention"); ok = false;
+  }
+
+  // ── 13. S3 — THE FILL IS INDEPENDENT OF WHERE IT IS ANCHORED ──────────────
+  //
+  // The same form dropped on different cells must give the same count. It is the cheapest
+  // check that the fill reads the SHAPE and not the parity of the row it happens to land on
+  // — the `r & 1` trap S0 exists to keep out.
+  println("");
+  println("13. ANCHOR INVARIANCE — the same form fills the same count anywhere");
+  fanc = form_new(0, [3, 3, 3], [4, 4, 4]);
+  base_n = -1;
+  nanchor = 0;
+  for aq in 0..4 {
+    for ar in 0..4 {
+      canc = hexset_chunk(-30, -30, 61, 61);
+      ganc = form_fill(fanc, aq, ar, canc);
+      if base_n < 0 { base_n = ganc; }
+      if ganc != base_n { nanchor = nanchor + 1; }
+      if set_shoelace2(canc) != 12 * ganc { nanchor = nanchor + 1; }
+    }
+  }
+  println("   16 anchors (both row parities): every fill {base_n} cells, disagreements"
+          + " {nanchor}");
+  if nanchor != 0 {
+    println("  FAIL: the fill depends on where it is anchored — a parity leak"); ok = false;
+  }
+  // CONTROL: a DIFFERENT form must give a different count, or the invariance is vacuous
+  cdiff = hexset_chunk(-30, -30, 61, 61);
+  fdiff = form_new(0, [4, 4, 4], [4, 4, 4]);
+  gdiff = form_fill(fdiff, 0, 0, cdiff);
+  println("   CONTROL a side-4 triangle instead: {gdiff} cells (must differ from {base_n})");
+  if gdiff == base_n {
+    println("  FAIL: control did not fire — the count cannot tell two shapes apart"); ok = false;
   }
 
   println("");
