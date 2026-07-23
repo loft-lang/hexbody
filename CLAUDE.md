@@ -38,8 +38,9 @@ crawler's prototypes and design docs are **design tries** — input, not authori
 | **T3 · designed** | a doc argues a construction | **input to design, never truth** |
 | **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
 
-**Exactly one prior-art item is T1.** Everything else the design leans on is a try or a schema,
-and the census is where it gets re-measured under our own gates. Citing a T2 number as settled is
+**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X31`** — eight of them re-measured *here*, and
+`X26`–`X31` **discovered here**. Everything else the design leans on is still a try or a schema
+(notably the whole foxel schema, `X11`–`X15`), and the census is where it gets re-measured. Citing a T2 number as settled is
 the specific mistake to avoid — in either direction: re-deriving what is genuinely gated wastes
 effort, and trusting a try forfeits what this project is for.
 
@@ -72,7 +73,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the inherited constraints `X1`–`X19` **with trust tiers** | **authoritative** on any object or map |
+| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X31` **with trust tiers** | **authoritative** on any object or map |
 | **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
@@ -125,7 +126,7 @@ a file in `tests/` cannot `use` a module in `src/` (*"Library 'hexform' not foun
 ## Run
 
 ```sh
-make test    # the headless gates in tests/ — form, then house
+make test    # the headless gates in tests/ — form, wall, house (tools/run_tests.sh)
 make shot    # contact sheet -> /tmp/house12.png
 ```
 
@@ -134,13 +135,28 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 
 ## State (2026-07-23)
 
+- **Three gates, all green** — `make test` runs `tools/run_tests.sh` (the crawler table form,
+  adopted at 3 entries as planned). Form ~10 s, wall ~3 min, house ~1 min.
 - **Green:** `G0` / law **I** — `tests/house.loft`, 12/12 equivariant in cells *and* edges, `eave_spread
   0.0000`, every control fires. `make shot` reproduces the committed baseline byte-identically.
-- **Green:** `tests/form.loft` (**S0**) — the 12 headings; **`X1`**/**`X2`** re-measured to **T1**
+- **Green:** `tests/form.loft` (**S0**/**S1**) — the 12 headings; **`X1`**/**`X2`** re-measured to **T1**
   (625 cells, 0 non-integral rotation images, six rotations exactly the identity); **`X20`**, the
-  heading table is parity-free in doubled `(k,m)`, checked against `hex_field`'s `nb_q`/`nb_r`.
+  heading table is parity-free in doubled `(k,m)`, checked against `hex_field`'s `nb_q`/`nb_r`;
+  **`X24`** no square sublattice; **`X25`** isotropy is exactly `9/8`.
+- **Green:** `tests/wall.loft` — the 24-direction wall. It produced **`X26`–`X31`**, the first
+  constraints hexbody *discovered* rather than inherited, and **two defects every other gate was
+  green through**: `X26` five of six edges misfiled (a private corner table beside `hex_field`'s
+  neighbours — see **L11**), and `X28` the write rule marks the edges *across* the wall, so the
+  evaluated mesh is a comb of pickets (**OD-12**, open).
+- **The width question is settled** (`DESIGN.md` §10.9): all 24 can be exactly straight and exactly
+  the same width **iff** a wall is a *line primitive* with a constant width and the cells are its
+  rasterisation. Counting lattice rows provably cannot equalise them (**X30**), and **no lattice
+  vector points at 15°** (**X31**) — so the odd 12 are straight and equally wide but never at their
+  nominal angle. The `4.107°` error is *not* forced: it buys a period of 0.882 wu; `N = 13` gives
+  `1.102°` at 1.202 wu. **Changing it is a live proposal, not a decision.**
 - **Everything else is open.** No `body.loft`, no `proxy.loft`, no `rebuild`, no census, no
-  corpus. Next step is **S1** (law **J**, closure) — see `plans/m0-roundtrip/STEPS.md`.
+  corpus. Next steps are **OD-12** (which edges *is* a wall) then **S3** — see
+  `plans/m0-roundtrip/STEPS.md`.
 - **The foxel schema is the limit** (`ROUNDTRIP.md` §2.4): `layer* × point → (height, material,
   wall1, wall2, wall3, item)`. A model is admissible **iff it draws into that exactly**, which
   makes `fits?` syntactic and finite. It closed OD-2/3/4/6/7/8 — roofs and terrain are `height`,
@@ -149,8 +165,8 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   unnecessary" by free poses) · **OD-5** is the flip exact (`X2` says yes) · **OD-9** does a door
   survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
   relocated into the schema, and rung A5's real question.
-- **Established constraints from crawler are in `ROUNDTRIP.md` §7 (X1–X10)** — measured or
-  gated already; do not re-derive them.
+- **Constraints are in `ROUNDTRIP.md` §7 (X1–X31) with trust tiers.** T1 now holds `X1`, `X2`,
+  `X19`–`X22`, `X24`–`X31`; do not re-derive those. Everything else is still a try or a schema.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their

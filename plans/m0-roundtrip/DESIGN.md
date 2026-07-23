@@ -1,8 +1,8 @@
 # DESIGN — M0 round trip: what we are building, testing and deciding
 
 The **in-flight** half. [`ROUNDTRIP.md`](../../ROUNDTRIP.md) holds only what is settled —
-definitions, the propositions that provably follow, and the inherited constraints `X1`–`X19`
-**with their trust tier** (§7: only `X19` is T1). **Everything here is a proposal, a hypothesis or
+definitions, the propositions that provably follow, and the constraints `X1`–`X31`
+**with their trust tier** (§7: T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X31`). **Everything here is a proposal, a hypothesis or
 an open question**, and none of it should be cited as fact.
 
 Plan status, phases and ordering: [`README.md`](README.md).
@@ -527,6 +527,15 @@ already see safe; only a real scene converts an axis nobody imagined into one yo
 > and radius** recoverable exactly (R1), or is that a fit (R2)? That is `Sep` restated against the
 > real storage, and it is rung **A6**'s question.
 
+> **OD-12 · which edges IS a wall? (new, open — and the current answer is measurably wrong)**
+> The three-slot foxel can only store hex edges, and a hex has edges on **three lines only —
+> 30°, 90°, 150°** (`X28`). So "the wall" must be a **connected chain** of edges lying *along* the
+> line, which for any other heading is an alternating **wobble**. `wall_write` currently selects
+> every edge the band **crosses** — i.e. the roughly **perpendicular** ones — and the mesh
+> evaluation shows the consequence: a due-east wall becomes a comb of ten vertical pickets, straying
+> **6× the wall's own half-width**. See §10.8. The replacement rule is what rung **A2** has to
+> settle, and §6 of `tests/wall.loft` is already the check that will judge it.
+
 **OD-1 · the morph — dead, or moved into `snap`?**
 `design/EDITOR.md` §2 makes orientation a *minimal affine morph*, *"the bridge from 6 exact
 rotations to **many**."* A morph is a **non-lattice affine map**, so a morphed wall lands outside
@@ -957,6 +966,187 @@ bug** `WALLS.md` names explicitly), the 18-triangle fan (a terrain mesh), a band
 threshold, a strip tracing the hex boundary, and a doubled line. `tools/wallproto/walltri.py` had
 already done a version of this — **and I cited that directory as `X10`'s reference without reading
 the file.** `CLAUDE.md`'s first rule is exactly this case.
+
+## 10.8 The wall→mesh evaluator already exists — and using it caught a misfiled edge
+
+The question *"can the crawler library we already made evaluate these walls back to meshes?"* has a
+better answer than crawler: **`hex_grid` already owns the edge-wall model, and moros already
+evaluates it.** Nothing here is ours to invent.
+
+| step | who owns it | what it is |
+|---|---|---|
+| edge → the two corners bounding it | `hex_grid::hex_edge_corners(dir)` | the table; its own header says *"walls live on hex edges, stored on 3 canonical edges per hex (dirs 0,1,2); dirs 3,4,5 belong to the neighbour"* |
+| which hex stores a given edge | `hex_grid::hex_canon_edge` | dirs 0–2 here, 3–5 on the neighbour |
+| the three slots → geometry | `moros_render::emit_hex_walls` | `h_wall_n` = corners 5→0, `h_wall_ne` = 0→1, `h_wall_se` = 1→2, each a quad from `floor_y` to `ceil_y` |
+| a *segment* → a drawable mesh | crawler `worldmesh::build_wall_mesh` | capsule-SDF quads; 2D screen strokes, needs `Sim` |
+| a marked *field* → straightened segments | crawler `wallgeo::build_walls` | **the recovery step — and approximate**: Laplacian smoothing (`SMOOTH_ITERS 3`, `λ 0.5`) plus snapping to known room side-lines within `SNAP_TOL2` / `SNAP_TOL2_V` |
+
+**The scales agree exactly**, so this is reuse and not a port: `hex_grid`'s world is
+`x = √3·(q + ½(r&1))`, `y = 1.5r`, and `hex_field`'s exact lattice gives `k·√3/2 = √3·(q + ½(r&1))`
+and `m/2 = 1.5r` — the same numbers, integer and float spellings of one convention.
+
+### The defect it caught
+
+`hexwall` first carried its **own** corner table (corner 0 at 30°) and paired edge `c` with
+`hex_field`'s `nb_q/nb_r(q, r, c)`. But the two direction orders are different:
+
+```
+hex_field   d = 0..5   →  E,  W,  SE, SW, NE, NW
+hex_grid  dir = 0..5   →  E,  SE, SW, W,  NW, NE
+```
+
+so **five of the six edges were stored against the wrong neighbour** — a real edge, just not the one
+the band crossed. Measured: the edge midpoint sat `0.866` or `1.500` wu from the midpoint between
+the cells it was supposed to separate, on every direction but one (`c = 3`, aligned by accident).
+
+**Every gate stayed green.** A consistently wrong edge is still written exactly once, still
+idempotent, still non-empty, still non-empty in all 24 directions — sections 1–5 cannot see it. Only
+evaluating the marks *back against the geometry* did. That is `I-RT` doing its job at the smallest
+possible scale, and it is why `wall_edge_gap` is now a gate section (§2b) with a control that
+misfiles an edge by one direction and must fire.
+
+### The second defect it caught — `wall_write` marks the edges ACROSS the wall
+
+The evaluation was supposed to show a sawtooth *along* the line. It does not. Measured over all 24
+directions (`tests/wall.loft` §6, run of half-length 8.0):
+
+| class | segments | worst stray | ÷ the wall's own half-width (0.1443) |
+|---|---|---|---|
+| `d24 ≡ 0 (mod 4)` — edge headings | 10 | 0.5000 wu | **3.46×** |
+| `d24 ≡ 2 (mod 4)` — vertex headings | 30 | 0.8660 wu | **6.00×** |
+| odd `d24` — the in-between 12 | 10 | 0.7559 wu | **5.24×** |
+
+Perfectly 12-fold symmetric, which says the *geometry* is now right — and the magnitude says the
+*selection rule* is wrong. A wall 0.289 wu thick cannot evaluate to a mesh straying 1.73 wu.
+
+`probes/edge_family.loft` shows what is actually being marked:
+
+```
+  d24  wall-angle   marks per edge-direction (dir 0..5 = E SE SW W NW NE)
+    0       0.00    E= 10 SE=  0 SW=  0 W= 10 NW=  0 NE=  0
+    4      60.00    E=  0 SE=  0 SW= 10 W=  0 NW=  0 NE= 10
+```
+
+A pointy-top hex has edges on **three lines only: 30°, 90°, 150°.** The `E` edge (corners 4→5) is
+the **90° vertical** one. So a wall running **due east** is marking the ten *vertical* edges it
+passes through — `emit_hex_walls` then stands a quad on each, and the mesh is a **comb of pickets
+across the wall**, spaced `√3` apart, rather than a wall along it. Same at 60°, rotated.
+
+The cause is that `wall_crosses_edge` selects every edge the band **crosses**, and the edges a
+straight band crosses are the ones roughly **perpendicular** to it. What the three-slot model needs
+is the opposite: a **connected chain of edges lying ALONG the line** — which, because no hex edge
+runs at 0°, must be the alternating 30°/150° **wobble**. Only walls at 30°/90°/150° get a straight
+single-family run.
+
+This is the same wobble `wallgeo` exists to straighten, and the same one the triangle subdivision
+(§10.6–10.7) was chosen to beat. **`wall_write`'s selection rule is therefore still open**, and the
+mesh evaluation is the check that will confirm the replacement: a correct chain must bring the stray
+down to the order of the wall's own half-width, and must be *connected* — a property the current
+picket set does not even have.
+
+### What the evaluation says about the round trip
+
+The mesh from the three slots is a **sawtooth** — a chain of hex edges — not the straight line
+drawn. That is not a bug to drive to zero at this end: it is exactly the quantity `rebuild` must
+undo, and §6 of the gate measures it for the first time. crawler undoes it *approximately*;
+**`P4` admits no ε**, so ours cannot reuse `wallgeo`'s smoothing — but `wallgeo` stands as the
+honest baseline to diff against.
+
+## 10.9 All 24 exactly straight and exactly the same width — what is possible
+
+The question splits into three, and they have three different answers. Two are provable.
+
+### (a) Exactly straight — YES, for all 24, but only one way
+
+A straight line is straight at any angle, so straightness is never the obstacle. The obstacle is
+*what the wall is made of*: a union of lattice cells has a **staircase** boundary in every direction
+except the three the cell edges run along (30°, 90°, 150° — `X28`). Even an exact lattice direction
+like 0° does not help: the lattice lines at 0° pass through lattice points but **no triangle edge
+lies on them**, so the strip cuts cells open.
+
+So **exactly 6 of the 24 directions can have faces made of actual lattice edges.** For the other 18
+the cells cannot be the truth. The construction that works for all 24 is therefore the one `X8`
+already states — *a way is an exact centreline plus offsets, never a rasterised band*:
+
+> **A wall is a line primitive** — `(anchor, direction, length, width)`, anchor on a lattice point,
+> direction an exact primitive lattice vector. Its two **faces are the real lines** at `±w/2`
+> perpendicular to the centreline. Straight by construction, in all 24. **The cells are derived**
+> — the rasterisation of the band — and they are *not* the wall.
+
+### (b) Exactly the same width — YES, and provably only one way
+
+Width can come from **counting lattice rows** or from **a model constant**. Rows cannot do it.
+
+For a primitive lattice vector `v`, the parallel lattice lines in its direction are spaced
+`S·√3 / (2√N)` where `N = a² + ab + b²` is an integer. Two directions' widths, as integer row
+counts, can be equal only if `√(N₂/N₁)` is rational — i.e. only if `N₁·N₂` is a **perfect square**.
+Among the 24 directions exactly three values of `N` occur, and no pair qualifies:
+
+| class | `N` | directions | spacing |
+|---|---|---|---|
+| vertex / edge-line | **1** | 30°, 90°, 150°, 210°, 270°, 330° | `0.288675` wu |
+| edge-neighbour | **3** | 0°, 60°, 120°, 180°, 240°, 300° | `0.166667` wu |
+| in-between | **21** | the odd 12 | `0.063022` wu |
+
+`1·3 = 3`, `1·21 = 21`, `3·21 = 63` — none a perfect square (`X30`). **No choice of row counts makes any two
+of these equal.** (Gated: `tests/wall.loft` §7, with the control that a class *is* commensurable
+with itself.) It is the same root as `X24`: `√3` is irrational.
+
+Therefore **width must be a model constant applied perpendicular to the centreline** — one number,
+`w = √3/6 wu = 0.25 m`, for every direction. Then equal width is not achieved, it is *definitional*,
+and there is nothing left to vary. Note this is exactly the `N = 1` spacing, so the wall stays "one
+triangle thick" in the three edge directions and becomes a real-valued band in the rest.
+
+### (c) At exactly 15° spacing — NO, provably, for the odd 12
+
+`tan 15° = 2 − √3`. A lattice vector `(a,b)` has `tan θ = (a + 2b)/(a√3)`, so `tan θ = 2 − √3`
+forces `2a + b = a√3`, hence `√3 = (2a+b)/a` — rational. Contradiction unless `a = b = 0`.
+**No lattice vector points at 15°** (`X31`), and the same argument kills every odd multiple of 15°.
+The even 12 are all exact (`X29`).
+
+So the odd 12 are straight and equally wide, just **not at their nominal angle** — and that is a
+property of the hex lattice, not of our construction.
+
+### What is NOT forced: the 4.107° error
+
+The current in-between direction is the **shortest** one — the sum of the two adjacent headings,
+`N = 21`, off by `4.1066°`. That error is a *choice of period*, not a law. Longer primitive vectors
+approach 15° as closely as wanted:
+
+| vector | `N` | period | angle | error vs 15° | vs today |
+|---|---|---|---|---|---|
+| `(5,−1)` | **21** | 1.528 wu | 19.107° | **+4.1066°** | ***current*** |
+| `(3,−1)` | 7 | 0.882 wu | 10.893° | −4.1066° | same error, **43% shorter period** |
+| `(4,−1)` | **13** | **1.202 wu** | 16.102° | **+1.1021°** | **3.7× better, 21% shorter** |
+| `(11,−3)` | 97 | 3.283 wu | 14.705° | −0.2953° | 13.9× |
+| `(15,−4)` | 181 | 4.485 wu | 15.079° | +0.0791° | 51.9× |
+| `(56,−15)` | 2521 | 16.737 wu | 15.006° | +0.0057° | 722.8× |
+
+Note the second row: the current vector is **not even the shortest at its own accuracy**. Summing
+the two adjacent headings lands on `(5,−1)`, `N = 21`; the mirror `(3,−1)`, `N = 7`, has the *same*
+`4.1066°` error with a period 43% shorter. So today's choice is dominated outright.
+
+**The recommendation is `N = 13`, the vector `(4,−1)`.** It is 3.7× more accurate than today *and*
+21% shorter in period, so it is strictly better on both axes — there is no trade to make. Period is
+what matters for short runs: a house wall of 7.5 m is 8.66 wu, so `N = 13` gives ~7 repeats
+of the wobble while `N = 181` gives fewer than two — at which point the run no longer *reads* as that
+direction at all. The long vectors are only usable for roads and cliffs, where runs are long.
+
+This is a **live proposal, not a decision** — changing the in-between vector changes every stored
+in-between wall, so it belongs to the extension contract (`I-EXTEND`) and wants deciding before the
+corpus is built rather than after.
+
+### The consequence for storage
+
+If the truth is the line and the cells are derived, then storing **only** the three wall slots
+(`L3`, and the user's *"I only want the 3 walls per hex foxel"*) means the line must be **recovered
+exactly** from the marks — the anchor and direction, since the width is now a constant and needs no
+recovery. That is precisely `I-RT` under regime **R1**, and it forces one design rule:
+
+> **the centreline must be anchored on lattice points.** With a continuous anchor the map from line
+> to marks is many-to-one — infinitely many offsets rasterise identically — and no exact recovery
+> exists. Quantising the anchor makes the question finite, and the level-1 census (**S5**) is what
+> answers it.
 
 ## 11. Known conflicts in the current tree
 

@@ -10,14 +10,20 @@ mechanics spine rather than running beside it (decided 2026-07-23).
 
 The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** holds only the
 **settled** core — definitions, the propositions that follow from them, and the inherited
-constraints `X1`–`X19` **with trust tiers** (only `X19` is T1) — while
+constraints `X1`–`X31` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X31`) — while
 **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar, `fits?`,
 the seam, the corpus, the method, the gates, and the open decisions.
 
-**Progress: S0 done** ([`STEPS.md`](STEPS.md)). Green today: `rt_orient` (law **I**) —
-`tests/house.loft`, 12/12 in cells *and* edges — plus `tests/form.loft`, which re-measured
-**`X1`**/**`X2`** to **T1** and added **`X20`** (the heading table is parity-free in doubled
-`(k,m)`). `rebuild`, the census and the corpus do not exist yet.
+**Progress: S0, S1, S2b done** ([`STEPS.md`](STEPS.md)). Three gates green, all through
+`tools/run_tests.sh`: `tests/house.loft` (law **I**, 12/12 in cells *and* edges),
+`tests/form.loft` (re-measured **`X1`**/**`X2`**/**`X20`** to **T1**, added **`X24`**/**`X25`**),
+and `tests/wall.loft` (**`X26`**–**`X31`** — the first constraints hexbody *discovered* rather
+than inherited, including **two defects every other gate was green through**).
+
+The width question is settled in [`DESIGN.md`](DESIGN.md) §10.9: all 24 directions can be exactly
+straight and exactly equally wide **iff** a wall is a line primitive with a constant width and the
+cells are its rasterisation. **OD-12** — *which edges IS a wall* — is the open one, and the next
+thing to fix. `rebuild`, the census and the corpus do not exist yet.
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"

@@ -460,11 +460,24 @@ result without re-gating it forfeits exactly what this project is for.
 | **X21** | **R2 recovery exists in loft and is GATED** — `hexmatch`, traced boundary → straights + arcs, `MATCH OK` in crawler's test table. Its tolerance is **derived** (one circumradius = 1.0 world unit), not tuned, with margin 0.81 | **T1** | crawler `hexmatch` + `matchtest` |
 | **X22** | **roof recovery exists and is GATED** — `roofmatch`, *"recover the cone; planar roofs just interpolate"*, `ROOFMATCH OK` | **T1** | crawler `roofmatchtest` |
 | **X23** | **props are DERIVED from the architecture plus a seed, not authored** — *"a village FURNISHES ITSELF: every wall opening gets a door, and nothing about that is authored data"* | **T3** | crawler `hexderive`, `land.loft` |
+| **X26** | **the wall→mesh evaluator is not ours to write** — `hex_grid::hex_edge_corners` / `hex_canon_edge` own the edge table (*"walls live on hex edges, stored on 3 canonical edges per hex; dirs 3,4,5 belong to the neighbour"*), and `moros_render::emit_hex_walls` evaluates the three slots to quads (`n` = corners 5→0, `ne` = 0→1, `se` = 1→2). `hex_grid`'s world scale and `hex_field`'s exact lattice **agree term for term**, so it is reuse, not a port | **T1** ✅ | **`tests/wall.loft`** §2b — every edge midpoint halfway between the cells it separates, control fires |
+| **X27** | **the marks evaluate back to the SAWTOOTH, not the line** — the stored field reproduces a chain of hex edges; the straight line is `rebuild`'s job. crawler's `wallgeo` undoes it **approximately** (`SMOOTH_ITERS 3`, `λ 0.5`, `SNAP_TOL2`), which `P4` forbids us — it is the baseline to diff against, not the mechanism to adopt | **T1** ✅ | **`tests/wall.loft`** §6 — stray measured for all 24 directions |
+| **X28** | **a hex has edges on three lines only — 30°, 90°, 150°** — so a wall in any other heading *cannot* be a straight run of hex edges; it must be an alternating **wobble**, and a rule that selects the edges a band **crosses** selects the ones **perpendicular** to it instead (a comb of pickets). Measured: a due-east wall marks only the 90° family, and the mesh strays **6× the wall's own half-width** | **T1** ✅ | **`tests/wall.loft`** §6 + `plans/m0-roundtrip/probes/edge_family.loft` |
+| **X30** | **equal wall width cannot come from counting lattice rows** — a face on a lattice line makes the width an integer multiple of `S√3/(2√N)`, `N = a²+ab+b²`; two such widths are equal only if `N₁·N₂` is a **perfect square**. Among the 24 directions only `N ∈ {1, 3, 21}` occur, and `3`, `21`, `63` are none of them. **Therefore width is a model constant applied perpendicular to the centreline, and the cells are its rasterisation** — the same `√3`-irrationality root as `X24` | **T1** ✅ | **`tests/wall.loft`** §7 — all pairs tested, control: a class is commensurable with itself |
+| **X31** | **no lattice vector points at 15°** — `tan 15° = 2−√3`, and a lattice vector has `tan θ = (a+2b)/(a√3)`, so `2a + b = a√3` forces `√3` rational. The **odd 12 of `D` cannot be at their nominal angle at all**; they can be exactly straight and exactly as wide, just not at 15°·odd. The **even 12 are exact**. The `4.1066°` error of `X29` is however **not forced** — the current vector `(5,−1)` (`N = 21`, period 1.528 wu) is **dominated outright**: `(4,−1)` (`N = 13`) gives `1.1021°` at a period of 1.202 wu, *better on both axes*, and `(15,−4)` (`N = 181`) reaches `0.0791°` at 4.485 wu | **T1** ✅ (proof) / **T2** (the ladder) | proof above; ladder measured in `plans/m0-roundtrip/DESIGN.md` §10.9 |
+| **X29** | **the in-between 12 of `D` are inexact by exactly 4.1066°** — an odd `d24` is built by summing the two adjacent headings, but those differ in length by `√3` (edge class vs vertex class), so their sum does **not** bisect the angle. The offset is a **uniform bias, not scatter**: all twelve are `4.1066°`, spread `0.0000°`. The even 12 are exact to `0.0000°`. This is why **a house is never drawn with an in-between angle** — they are world linework (`D`), where nothing has to close or meet a corner | **T1** ✅ | **`tests/wall.loft`** §2 — printed per direction, control requires the offset be non-zero |
 
-> **Nothing in T2–T4 is settled.** T1 now holds `X1`, `X2`, `X19`, `X20` — the first three of
-> those re-measured *here*, by `tests/form.loft` (step **S0**). Still below the line and still leaned on:
-> the **24-direction cost** (`X3`), the **wall-band validation** (`X10`) and the whole **foxel
-> schema** (`X11`–`X15`).
+> **What is settled, and what is still leaned on.** T1 now holds `X1`, `X2`, `X19`–`X22`,
+> `X24`–`X29`. Of those, **eight were re-measured *here*** — `X1`, `X2`, `X20`, `X24`, `X25` by
+> `tests/form.loft` (steps **S0**/**S1**), and `X26`–`X29` by `tests/wall.loft`. Still below the
+> line and still leaned on: the **24-direction cost** (`X3` — `X29` has now re-measured its
+> *accuracy* here, but not its cost), the **wall-band validation** (`X10`), and the whole **foxel
+> schema** (`X11`–`X15`), which remains **T4** — shape real, behaviour unverified.
+>
+> **`X26`–`X29` are the first constraints hexbody discovered rather than inherited.** They came out
+> of running the sibling libraries' own evaluator against our own write, which is exactly what the
+> census is for — and two of them (`X26`, `X28`) are **defects that every other gate was green
+> through**. That is the argument for the round trip stated as evidence rather than as prose.
 
 ### 7.1 So we build our own corpus
 

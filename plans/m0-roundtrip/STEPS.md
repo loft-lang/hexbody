@@ -65,6 +65,30 @@ arithmetic only.
   polygon at all. The rhombus `[4,5,4,5]` with turns `[2,4,2,4]` (all edge-class) replaces it.
   **This is a real constraint on S3's cross-check** — see there.
 
+## S2b ✅ · the 24-direction wall, and its evaluation back to a mesh — `src/hexwall.loft` · S · **DONE**
+
+Not in the original ladder. It was added because the wall is the **primitive the house is four
+of**, and because *"can crawler's library evaluate these walls back to meshes?"* turned out to be
+the cheapest available round-trip: a **write** we authored, evaluated by an emitter **we did not**.
+
+- **gate** `tests/wall.loft`, seven sections, each with a control that fires.
+- **the evaluator is not ours** — `hex_grid::hex_edge_corners` owns the edge table and
+  `moros_render::emit_hex_walls` evaluates the three slots (`X26`). `hex_grid`'s world scale and
+  `hex_field`'s exact lattice agree term for term, so it is reuse, not a port.
+- **it caught two defects that every other gate was green through:**
+  - `X26` — a **private corner table** beside `hex_field`'s neighbours misfiled **five of six**
+    edges. A consistently wrong edge is still written once, still idempotent, still non-empty:
+    sections 1–5 cannot see it. Now `SPEC` **L11** and gate §2b.
+  - `X28` — `wall_crosses_edge` selects the edges the band **crosses**, i.e. the roughly
+    *perpendicular* ones, so a due-east wall evaluates to a **comb of pickets** straying `6×` the
+    wall's own half-width. **OD-12, still open** — this is the next thing to fix.
+- **what it settled** (`DESIGN.md` §10.9): all 24 can be exactly straight and exactly equally wide
+  **iff** a wall is a line primitive with a constant width and the cells are its rasterisation.
+  Counting lattice rows provably cannot equalise them (`X30`), and no lattice vector points at 15°
+  (`X31`). The `4.107°` in-between error is a **choice of period**, not a law.
+- **what it costs**: ~3 min in the interpreter — 24 directions × two full-field passes. The field
+  is sized to the wall and §3b **proves** the window clips nothing (`SPEC` **L10**).
+
 ## S3 · **`Plan`** → cells — `src/hexform.loft` · S *(OD-11 resolved)*
 
 Walk the cycle and produce the filled region as a `HexSet` (**fill, then take the boundary** —

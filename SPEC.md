@@ -46,6 +46,8 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 | **L7** | **determinism** — all simulation is deterministic (fixed timestep, reproducible math): same input → **byte-identical** result. Built from line one | any frame-rate-dependent or non-reproducible step |
 | **L8** | **scale** — 1 hex step `= 1.5 m`, 1 world unit `= 0.866 m`; every new length is stated in metres | an unconverted threshold (it cannot be checked) |
 | **L9** | **validation ≠ golden** — validation images are human-review (`plans/*/shots/`); golden/regression images live with their gate | conflating them, or pixel-diffing a `shots/` image |
+| **L10** | **no unchecked window** — a count or ratio measured over a sub-window of the field must be **shown** not to clip: a larger window finds the same count. A window that truncates does not error, it silently returns less, and every number built on it is then wrong by an unknown amount | size a field by eye and report a ratio over it — `tests/wall.loft` §3b is the check (25×25 vs 45×45, identical slot counts) |
+| **L11** | **the library owns the shared table** — where a sibling library already owns a lattice table (`hex_grid`'s corners, edges, neighbours; `hex_field`'s lattice), hexbody **consults it** and never keeps a private copy. Two tables that agree today diverge silently later | `hexwall` carried its own 30° corner table beside `hex_field`'s neighbours — the two direction orders differ and **five of six edges were misfiled while every gate stayed green** (`ROUNDTRIP.md` **X26**) |
 
 ## I — Invariants (always hold; each is a gate whose control must fire)
 
@@ -64,9 +66,11 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 | **I11** | the forward trailer-follow is **stable** — a drifted wagon returns to the drawbar, does not snake | overshoot gain → it oscillates (and isolates that reverse is the only unstable case) |
 
 **Round-trip items** — defined formally in [`ROUNDTRIP.md`](ROUNDTRIP.md); the law letter is the definition.
-**Prior art:** [`ROUNDTRIP.md`](ROUNDTRIP.md) **§7** lists the inherited constraints `X1`–`X19`
-**with their trust tier** — and **only `X19` is T1**. Everything else is a design try (T2/T3) or a
-shape read from untested code (T4): *indicative, to be re-measured here*, never cited as settled.
+**Prior art:** [`ROUNDTRIP.md`](ROUNDTRIP.md) **§7** lists the constraints `X1`–`X29` **with their
+trust tier**. **T1 now holds `X1`, `X2`, `X19`–`X22`, `X24`–`X29`**, eight of them re-measured *here*
+by `tests/form.loft` and `tests/wall.loft`. Everything still below the line is a design try (T2/T3)
+or a shape read from untested code (T4) — notably the **whole foxel schema** (`X11`–`X15`):
+*indicative, to be re-measured here*, never cited as settled.
 [`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md) **§10** carries the open decisions;
 items marked ⚠ below depend on one.
 
@@ -82,7 +86,10 @@ items marked ⚠ below depend on one.
 | **I-CLOSE** | a stencil boundary is a closed turtle cycle over `H₁₂`, exact in `ℤ²` | **J** | drop one turn → the vector sum is non-zero |
 | **I-EXTEND** | the model is **built out like a language**: new verbs, shape types and parameters are added without breaking the old ones. An existing canonical text keeps the **same bytes**, model and field across an extension; `𝕄*` grows, never shrinks. **A₂ alone is not sufficient** — every extension re-opens the census, because a newly admitted form may **collide** with an existing one under law **F** even while every text keeps its bytes; on collision the **new** form is refused, never the old ([`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md) §4.1) | **A₂**, **F** | sort `kind` alphabetically instead of by registry position → adding one verb re-spells every existing text · admit a shape type that rasterises identically to an existing one at small size → `rebuild` cannot tell them apart |
 | **I-CLOSED-OPS** | what is admitted survives **everything later done to it** — `Ops = {flip, place, combine, damage, seat}` | **C₂** | admit a form whose `flip` leaves `𝕄*` → it breaks after placement, not at the door |
-| **I-DOMAIN** | `O` (placing a stencil), `H₁₂` (a stencil's sides), `D` (world linework) are three distinct sets; no grammar production crosses them | §1.1 | a stencil placed at one of the 24 → unparseable |
+| **I-DOMAIN** | `O` (placing a stencil), `H₁₂` (a stencil's sides), `D` (world linework) are three distinct sets; no grammar production crosses them. **The split is not a convention but a measurement**: the even 12 of `D` are exact to `0.0000°`, the odd 12 are off by a uniform `4.1066°` (`ROUNDTRIP.md` **X29**), so a house — which must close and meet corners — uses only the even 12 | §1.1 | a stencil placed at one of the 24 → unparseable · the in-between offset measured as zero → the even-only rule would defend nothing (`tests/wall.loft` §2) |
+| **I-EDGE** | **a mark names a real edge** — the corner pair (`hex_grid::hex_edge_corners`) and the neighbour (`hex_grid::hex_neighbor`) identify the **same** edge, in all six directions. Nothing downstream can detect a violation: a consistently misfiled edge is still written once, still idempotent, still non-empty | §2.4 | misfile by one direction → the edge midpoint sits `0.866` wu from the midpoint between the cells it separates (`tests/wall.loft` §2b) |
+| **I-WIDTH** | **a wall is a line primitive, not a set of cells** — `(anchor on a lattice point, exact primitive lattice direction, length, width)`, its two faces the real lines at `±w/2`. **Width is one model constant** (`√3/6 wu = 0.25 m`) for all 24 directions, never a count of lattice rows — counting rows *provably cannot* equalise them (`ROUNDTRIP.md` **X30**). The cells are the band's **rasterisation** and are never the truth; only 6 of the 24 directions can have faces on lattice edges at all (**X28**) | **D**, §2.4 | make width an integer row count → two directions differ by `√3` and no integer choice fixes it (`tests/wall.loft` §7) |
+| **I-EVAL** | **the stored field is evaluated back to geometry by the library's own emitter**, never by a private one — `hex_edge_corners` + `moros_render::emit_hex_walls` (`ROUNDTRIP.md` **X26**) — and its **stray from the authored line is measured, never assumed**. The stray is the quantity `rebuild` must undo; it may not be silently absorbed by a tolerance (**P4**) | **D**, **P4** | the stray measured as zero → the recovery step would be vacuous, the same failure mode as `X15`'s green-for-the-wrong-reason test (`tests/wall.loft` §6) |
 
 ## K — Contracts (interfaces that must not change shape)
 
@@ -101,6 +108,18 @@ items marked ⚠ below depend on one.
    (`I*`), the limits it must not cross (`L*`), the goal it advances (`G*`).
 2. **Every `tests/*.loft` gate maps to a spec item** and asserts its control. A gate that
    defends no spec item, or a spec item no gate defends, is the thing to fix.
+
+   | gate · section | defends |
+   |---|---|
+   | `house.loft` | **G0**, **I1**, **I3**, **I8** |
+   | `form.loft` §1–§8 | **I-CLOSE**, **I-DOMAIN** *(`H₁₂`)* |
+   | `form.loft` §9–§10 | `X24`, `X25` — the basis of **I-WIDTH** and of OD-11's resolution |
+   | `wall.loft` §1, §2, §5 | **I-DOMAIN** *(`D`; the even/odd split, measured)* |
+   | `wall.loft` §2b | **I-EDGE**, **L11** |
+   | `wall.loft` §3, §4 | **I3** *(three slots, an edge stored once by its owner)* |
+   | `wall.loft` §3b | **L10** |
+   | `wall.loft` §6 | **I-EVAL** |
+   | `wall.loft` §7 | **I-WIDTH** |
 3. **The prose docs become reference-only** — read for *why*, never the build input. If building
    needs a fact, it belongs here as a checkable item, not in a paragraph.
 4. **Gaps are visible:** an unstarted `G*` with no gate, an `L*` with no enforcing check, is

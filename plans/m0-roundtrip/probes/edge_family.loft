@@ -1,0 +1,37 @@
+use hex_field;
+use hex_grid;
+use hexwall;
+
+fn main() {
+  println("For each d24, which EDGE FAMILY do the marks land on?");
+  println("hex edges lie on lines at 30 / 90 / 150 degrees only.");
+  println("");
+  println("  d24  wall-angle   marks per edge-direction (dir 0..5 = E SE SW W NW NE)");
+  for d in 0..6 {
+    eg = edgeset_new(-12, -12, 25, 25);
+    w = wall_new(d, 0.0, 0.0, 8.0, 7);
+    wall_write(w, eg, -12, -12, 25, 25);
+    c0 = 0; c1 = 0; c2 = 0; c3 = 0; c4 = 0; c5 = 0;
+    for r in -12..13 {
+      for q in -12..13 {
+        for dd in 0..6 {
+          (nq, nr) = hex_neighbor(q, r, dd);
+          if edge_mat(eg, q, r, nq, nr) != 0 {
+            if dd == 0 { c0 = c0 + 1; }
+            if dd == 1 { c1 = c1 + 1; }
+            if dd == 2 { c2 = c2 + 1; }
+            if dd == 3 { c3 = c3 + 1; }
+            if dd == 4 { c4 = c4 + 1; }
+            if dd == 5 { c5 = c5 + 1; }
+          }
+        }
+      }
+    }
+    ang = wall_angle_actual(d);
+    println("  {d:>3} {ang:>10.2}    E={c0:>3} SE={c1:>3} SW={c2:>3} W={c3:>3} NW={c4:>3} NE={c5:>3}");
+  }
+  println("");
+  println("The E edge runs corner 4->5, i.e. the line at 90 deg (a VERTICAL edge).");
+  println("A wall running EAST (d24=0) that marks E edges is marking edges ACROSS itself,");
+  println("not along itself — a comb of pickets, not a wall.");
+}

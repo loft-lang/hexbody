@@ -1,0 +1,287 @@
+// wall — THE GATE FOR hexwall.  Every check has a control that must fire.
+//
+//   1   the 24 directions exist, and exactly 12 are exact
+//   2   the in-between 12 are off their nominal angle by the SAME amount — recorded, not hidden
+//   2b  the edge table agrees with the neighbour table — the check that caught a misfiled edge
+//   3   a wall writes itself into the foxel's three wall slots per hex
+//   3b  the field contains the wall, so every count below is over a window that clips nothing
+//   4   writing is idempotent — an edge is stored once, by its owner
+//   5   walls in all 24 directions all write, and none is empty
+//   6   the marks evaluate back to a mesh through moros' own rule, and the stray is measured
+use hex_field;
+use hex_grid;
+use hexform;
+use hexwall;
+
+// The field is sized TO THE WALL, not guessed large.  A run of half-length `HALF` reaches
+// `HALF + 1` world units from the origin (one circumradius past the ends), and a cell step is
+// sqrt(3) in x and 1.5 in y — so 12 cells each way holds 20.8 x 18.0 wu, well past the longest
+// run used here (half-length 12.0).  Section 3b PROVES the containment rather than assuming it:
+// a larger window must find the same number of slots, or the window is clipping the wall.
+const GQ = 25;
+const GR = 25;
+const Q0 = -12;
+const R0 = -12;
+
+// The oversized control window for the containment check.
+const BQ = 45;
+const BR = 45;
+const BQ0 = -22;
+const BR0 = -22;
+
+fn fabsf(v: float) -> float { if v < 0.0 { -v } else { v } }
+
+fn main() {
+  ok = true;
+  println("=== hexwall — a straight wall, written into the foxel ===");
+
+  // ── 1. THE 24 DIRECTIONS ──────────────────────────────────────────────────
+  println("");
+  println("1. DIRECTIONS — 24 of them; the even 12 are exact headings, the odd 12 are not");
+  nexact = 0;
+  for d in 0..24 { if wall_is_exact(d) { nexact = nexact + 1; } }
+  println("   exact directions: {nexact} of 24");
+  if nexact != 12 { println("  FAIL: expected 12 exact directions"); ok = false; }
+
+  // ── 2. THE IN-BETWEEN OFFSET, MEASURED ────────────────────────────────────
+  //
+  // Two adjacent headings differ in length by sqrt(3), so one step of each does not bisect
+  // the angle.  The offset is real and uniform; houses therefore use only the even 12.
+  println("");
+  println("2. THE IN-BETWEEN OFFSET — nominal vs actual, printed rather than hidden");
+  println("   d24  nominal   actual    error   exact");
+  worst_exact = 0.0;
+  spread_lo = 999.0;
+  spread_hi = -999.0;
+  for da in 0..24 {
+    nom = wall_angle_nominal(da);
+    act = wall_angle_actual(da);
+    err = act - nom;
+    if err > 180.0 { err = err - 360.0; }
+    if err < -180.0 { err = err + 360.0; }
+    if wall_is_exact(da) {
+      if fabsf(err) > worst_exact { worst_exact = fabsf(err); }
+    } else {
+      if fabsf(err) < spread_lo { spread_lo = fabsf(err); }
+      if fabsf(err) > spread_hi { spread_hi = fabsf(err); }
+    }
+    println("   {da:>3} {nom:>8.2} {act:>8.2} {err:>+8.3}   {wall_is_exact(da)}");
+  }
+  println("   exact 12: worst error {worst_exact:6.4} deg");
+  println("   in-between 12: error spans {spread_lo:6.4} .. {spread_hi:6.4} deg");
+  if worst_exact > 0.000001 {
+    println("  FAIL: an EVEN d24 is not an exact heading"); ok = false;
+  }
+  // CONTROL: the in-between offset must be NON-zero, or there is nothing to warn about
+  if spread_lo < 0.001 {
+    println("  FAIL: control did not fire — the in-between directions are exact after all,"
+            + " so the houses-use-even-only rule defends nothing"); ok = false;
+  }
+  // and it must be the SAME offset on all 12 — a uniform bias, not scatter
+  if spread_hi - spread_lo > 0.000001 {
+    println("  FAIL: the in-between offset is not uniform across the 12"); ok = false;
+  }
+
+  // ── 2b. THE EDGE TABLE AGREES WITH THE NEIGHBOUR TABLE ────────────────────
+  //
+  // A wall mark says "this edge, between these two cells".  If the corner pair and the
+  // neighbour disagree, the mark lands on a real edge that is simply the WRONG one — and
+  // every other check here still passes, because a consistently wrong edge is written
+  // once, is idempotent and is non-empty.  This is the only check that sees it.
+  //
+  // It is a real defect caught, not a hypothetical: this file's first version paired its
+  // own 30-degree corner table with hex_field's `nb_q/nb_r`, whose direction order is
+  // [E, W, SE, SW, NE, NW] against hex_grid's [E, SE, SW, W, NW, NE].  Five of six edges
+  // were misfiled and the gate was green.
+  println("");
+  println("2b. EDGE TABLE — every edge midpoint sits halfway between the cells it separates");
+  worst_gap = 0.0;
+  for gr in -3..4 {
+    for gq in -3..4 {
+      for gd in 0..6 {
+        gp = wall_edge_gap(gq, gr, gd);
+        if gp > worst_gap { worst_gap = gp; }
+      }
+    }
+  }
+  println("   worst gap over 49 cells x 6 directions: {worst_gap:8.6} wu");
+  if worst_gap > 0.000001 {
+    println("  FAIL: the edge table and the neighbour table disagree — marks are misfiled");
+    ok = false;
+  }
+  // CONTROL: the measure must be able to SEE a disagreement, or a zero proves nothing.
+  // Pair each edge with the NEXT direction's neighbour and the gap must become large.
+  ctl_gap = 0.0;
+  for cr in -3..4 {
+    for cq in -3..4 {
+      for cd in 0..6 {
+        (ce1, ce2) = hex_edge_corners(cd);
+        cmx = (hex_corner_x(cq, cr, ce1) + hex_corner_x(cq, cr, ce2)) / 2.0;
+        cmy = (hex_corner_y(cq, cr, ce1) + hex_corner_y(cq, cr, ce2)) / 2.0;
+        (cnq, cnr) = hex_neighbor(cq, cr, (cd + 1) % 6);
+        chx = (cell_x_w(cq, cr) + cell_x_w(cnq, cnr)) / 2.0;
+        chy = (cell_y_w(cq, cr) + cell_y_w(cnq, cnr)) / 2.0;
+        cg = sqrt((cmx - chx) * (cmx - chx) + (cmy - chy) * (cmy - chy)) ?? 0.0;
+        if cg > ctl_gap { ctl_gap = cg; }
+      }
+    }
+  }
+  println("   CONTROL misfiled by one direction: gap {ctl_gap:8.6} wu");
+  if ctl_gap < 0.1 {
+    println("  FAIL: control did not fire — the gap measure cannot see a misfiled edge");
+    ok = false;
+  }
+
+  // ── 3. A WALL WRITES ITSELF INTO THE FOXEL ────────────────────────────────
+  println("");
+  println("3. WRITE — a wall marks every hex edge its band crosses, and nothing else");
+  eg = edgeset_new(Q0, R0, GQ, GR);
+  w0 = wall_new(0, 0.0, 0.0, 12.0, 7);
+  n0 = wall_write(w0, eg, Q0, R0, GQ, GR);
+  println("   d24=0, half-length 12.0 wu -> {n0} wall slots set");
+  if n0 <= 0 { println("  FAIL: the wall wrote nothing"); ok = false; }
+
+  // ── 3b. THE FIELD CONTAINS THE WALL ───────────────────────────────────────
+  //
+  // Every count below is a count over a WINDOW.  A window too small does not error — it
+  // silently returns fewer slots, and every ratio built on it is then wrong by an unknown
+  // amount.  So the window is checked, not assumed: a field nearly twice as wide must find
+  // exactly the same slots.
+  println("");
+  println("3b. CONTAINMENT — a larger field finds the same wall, so the window clips nothing");
+  ebig = edgeset_new(BQ0, BR0, BQ, BR);
+  nbig = wall_write(w0, ebig, BQ0, BR0, BQ, BR);
+  println("   {GQ}x{GR} window -> {n0} slots;  {BQ}x{BR} window -> {nbig} slots");
+  if nbig != n0 {
+    println("  FAIL: the window clips the wall — {nbig} slots exist but only {n0} were seen");
+    ok = false;
+  }
+
+  // ── 4. IDEMPOTENT ─────────────────────────────────────────────────────────
+  //
+  // An edge is stored ONCE, under the cell that owns it, so writing the same wall again
+  // must add nothing.  That is what makes three-slots-per-hex a consistent store.
+  n1 = wall_write(w0, eg, Q0, R0, GQ, GR);
+  println("   writing the same wall again -> {n1} new slots (must be 0)");
+  if n1 != 0 { println("  FAIL: writing is not idempotent — an edge got two owners"); ok = false; }
+
+  // CONTROL: a DIFFERENT wall must still write, or the check above is vacuous
+  eg2 = edgeset_new(Q0, R0, GQ, GR);
+  w90 = wall_new(6, 0.0, 0.0, 12.0, 7);
+  n2 = wall_write(w90, eg2, Q0, R0, GQ, GR);
+  println("   CONTROL a different direction into a fresh field -> {n2} slots");
+  if n2 <= 0 { println("  FAIL: control did not fire"); ok = false; }
+
+  // ── 5. ALL 24 DIRECTIONS WRITE ────────────────────────────────────────────
+  println("");
+  println("5. ALL 24 — every direction produces a wall");
+  println("   d24  slots  exact");
+  nempty = 0;
+  for db in 0..24 {
+    ge = edgeset_new(Q0, R0, GQ, GR);
+    wb = wall_new(db, 0.0, 0.0, 12.0, 7);
+    nb = wall_write(wb, ge, Q0, R0, GQ, GR);
+    println("   {db:>3} {nb:>6}   {wall_is_exact(db)}");
+    if nb <= 0 { nempty = nempty + 1; }
+  }
+  if nempty != 0 { println("  FAIL: {nempty} directions wrote nothing"); ok = false; }
+
+  // ── 6. EVALUATE THE MARKS BACK TO THE MESH (moros' own rule) ──────────────
+  //
+  // moros already turns the three wall slots into geometry — `emit_hex_walls` emits the
+  // quad standing on the segment between the edge's two corners, and `hex_edge_corners`
+  // IS that segment.  So the mesh a marked field produces is fully determined, and we can
+  // measure it without a renderer.
+  //
+  // WHAT WE EXPECT TO SEE, AND WHY IT IS NOT A FAILURE.  The mesh is the SAWTOOTH: the
+  // chain of hex edges the band crossed, not the straight line we drew.  The stray below
+  // is therefore NOT an error to drive to zero here — it is the quantity `rebuild` has to
+  // undo, measured for the first time.  crawler's `wallgeo` undoes it approximately
+  // (Laplacian smoothing + snapping to known room side-lines, with tolerances); ours has
+  // to undo it exactly, and this number is what it must account for.
+  println("");
+  println("6. MESH — evaluate the marks back through moros' emit_hex_walls rule");
+  println("   d24   segs    stray(wu)   stray/halfwidth   exact");
+  worst_ratio = 0.0;
+  for dm in 0..24 {
+    gm = edgeset_new(Q0, R0, GQ, GR);
+    wm = wall_new(dm, 0.0, 0.0, 8.0, 7);
+    wall_write(wm, gm, Q0, R0, GQ, GR);
+    nseg = wall_mesh_segments(gm, Q0, R0, GQ, GR);
+    stray = wall_mesh_stray(wm, gm, Q0, R0, GQ, GR);
+    ratio = (stray / (WALL_W * 0.5)) ?? 0.0;
+    if ratio > worst_ratio { worst_ratio = ratio; }
+    println("   {dm:>3} {nseg:>6} {stray:>11.4} {ratio:>17.3}   {wall_is_exact(dm)}");
+    if nseg <= 0 { println("  FAIL: d24={dm} evaluated to an empty mesh"); ok = false; }
+  }
+  println("   worst stray is {worst_ratio:5.2}x the wall half-width");
+  // CONTROL: the stray must be non-zero, or we would be claiming the foxel already stores
+  // the straight line and `rebuild` has nothing to do.
+  if worst_ratio < 0.001 {
+    println("  FAIL: control did not fire — the mesh is claimed to sit ON the line,"
+            + " which would make the recovery step vacuous"); ok = false;
+  }
+
+  // ── 7. EXACTLY STRAIGHT, EXACTLY THE SAME WIDTH — what is and is not possible ──
+  //
+  // The question this section answers: can all 24 walls be exactly straight AND exactly the
+  // same width?  Straightness is free — a straight line is straight at any angle.  Equal
+  // WIDTH is where it is decided, and the answer is an integer fact, not a measurement.
+  //
+  // A wall whose faces lie on LATTICE LINES has a width that is an integer multiple of that
+  // direction's line spacing, S*sqrt(3)/(2*sqrt(N)) with N = a^2+ab+b^2.  Two such widths
+  // can be equal only if sqrt(N2/N1) is rational — i.e. only if N1*N2 is a perfect square.
+  println("");
+  println("7. WIDTH — can equal width come from counting lattice rows?");
+  println("   d24   tri vector    N = |v|^2/S^2   exact");
+  for dn in 0..24 {
+    println("   {dn:>3}  ({tri_a(dn):>3},{tri_b(dn):>3})    {tri_n2(dn):>11}   {wall_is_exact(dn)}");
+  }
+  // Collect the distinct N values, then test every pair.
+  nclass: vector<integer> = [];
+  for dc in 0..24 {
+    nv = tri_n2(dc);
+    seen = false;
+    for si in 0..len(nclass) { if (nclass[si] ?? -1) == nv { seen = true; } }
+    if !seen { nclass += [nv]; }
+  }
+  println("   distinct N among the 24: {len(nclass)}");
+  ncomm = 0;
+  for ia in 0..len(nclass) {
+    for ib in 0..len(nclass) {
+      if ia < ib {
+        na = nclass[ia] ?? 0;
+        nb2 = nclass[ib] ?? 0;
+        cm = commensurable(na, nb2);
+        println("   N={na} vs N={nb2}: N1*N2 = {na * nb2}, a perfect square? {cm}");
+        if cm { ncomm = ncomm + 1; }
+      }
+    }
+  }
+  if ncomm != 0 {
+    println("  FAIL: two direction classes ARE commensurable — equal width by counting rows"
+            + " would be possible, and the width-is-a-model-constant rule loses its reason");
+    ok = false;
+  } else {
+    println("   => NO pair is commensurable: equal width CANNOT come from counting rows.");
+    println("      Width must be a model constant applied perpendicular to the centreline,");
+    println("      and the cells are its rasterisation — never the other way round.");
+  }
+  // CONTROL: the test must be able to say YES. A class against ITSELF is commensurable
+  // (ratio 1), so if that comes back false the predicate is broken and the zero above is
+  // meaningless.
+  ctl_ok = true;
+  for ic in 0..len(nclass) {
+    nc = nclass[ic] ?? 0;
+    if !commensurable(nc, nc) { ctl_ok = false; }
+  }
+  println("   CONTROL every class is commensurable with itself: {ctl_ok}");
+  if !ctl_ok {
+    println("  FAIL: control did not fire — the commensurability predicate cannot say YES");
+    ok = false;
+  }
+
+  println("");
+  if ok { println("=== WALL OK ==="); }
+  else { println("=== wall test FAILED ==="); }
+}

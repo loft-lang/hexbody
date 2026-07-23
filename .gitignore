@@ -6,3 +6,6 @@
 # which we keep for human review (see plans/README.md § Validation images).
 *.png
 !plans/**/*.png
+
+# Python scratch from the plan probes
+__pycache__/

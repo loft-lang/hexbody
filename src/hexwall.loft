@@ -1,0 +1,345 @@
+// hexwall — A WALL IS A STRAIGHT LINE, AND IT WRITES ITSELF INTO THE FOXEL.
+//
+// The wall is the primitive, not the house.  It does not care which side is inside, or
+// whether there is a house at all — the same line is a house wall, a party wall or a fence.
+// A house is four of them; a fence is one.
+//
+// THE 24 DIRECTIONS, AND WHY ONLY 12 ARE FOR HOUSES.  A direction is `d24`, in
+// fifteenths-of-a-revolution steps (24 of them, 15 degrees apart):
+//
+//   EVEN d24 — the 12 headings of H12, each an EXACT lattice step (hexform).  These are the
+//              only directions a STENCIL may use: a house is built from them.
+//   ODD  d24 — the 12 in-between directions, made by wobbling between the two adjacent
+//              headings.  THEY ARE NOT EXACT.  The two headings differ in length by sqrt(3)
+//              (edge class vs vertex class), so one step of each does not bisect the angle —
+//              it lands 4.11 degrees off the nominal.  We use them anyway, and that is
+//              precisely why HOUSES ARE NEVER DRAWN WITH AN IN-BETWEEN ANGLE: they belong to
+//              world linework (roads, fences, cliffs — SPEC domain B), where the offset does
+//              not have to close a shape or meet a corner.
+//
+// THE STORAGE IS THE FOXEL AND NOTHING ELSE: three wall slots per hex.  `EdgeSet` already is
+// that model — an edge is stored once, by the cell that owns it — so `wall_write` marks every
+// hex edge the wall's band crosses and stores nothing else.  No direction, no offset, no
+// triangles: recovering the line from the marks is `rebuild`'s job, not storage's.
+use hex_field;
+use hex_grid;
+use hexform;
+
+// The wall is one triangle thick.  Triangle side = 1/3 hex edge, so the height — and the
+// wall's width — is sqrt(3)/6 world units = 1/4 m exactly.  (DESIGN.md §10.7.)
+pub const WALL_W = 0.28867513459481287;
+
+pub const D24 = 24;
+
+pub struct Wall {
+  wa_ox:   float,      // centre of the run, world units
+  wa_oy:   float,
+  wa_dx:   float,      // unit direction
+  wa_dy:   float,
+  wa_half: float,      // half the run length
+  wa_mat:  integer,    // the material written into every slot it crosses
+}
+
+// The direction of `d24` as a doubled-coordinate vector, before normalising.
+//
+// Even: the heading itself.  Odd: the sum of the two adjacent headings — which is the
+// wobble's mean, and is the inexact one.
+pub fn wall_step_k(d24: integer) -> integer {
+  n = ((d24 % D24) + D24) % D24;
+  h = n / 2;
+  a = head_step(h);
+  if n % 2 == 0 { return a.0; }
+  b = head_step(h + 1);
+  a.0 + b.0
+}
+
+pub fn wall_step_m(d24: integer) -> integer {
+  n = ((d24 % D24) + D24) % D24;
+  h = n / 2;
+  a = head_step(h);
+  if n % 2 == 0 { return a.1; }
+  b = head_step(h + 1);
+  a.1 + b.1
+}
+
+// An even d24 is one of the 12 exact headings; an odd one is an in-between.
+pub fn wall_is_exact(d24: integer) -> boolean { (((d24 % D24) + D24) % D24) % 2 == 0 }
+
+// World direction of a doubled-coordinate vector: x = k*sqrt(3)/2, y = m/2.
+fn dir_x(k: integer, m: integer) -> float { (k as float) * 0.8660254037844386 }
+fn dir_y(k: integer, m: integer) -> float { (m as float) * 0.5 }
+
+pub fn wall_new(d24: integer, ox: float, oy: float, half: float, mat: integer) -> Wall {
+  sk = wall_step_k(d24);
+  sm = wall_step_m(d24);
+  vx = dir_x(sk, sm);
+  vy = dir_y(sk, sm);
+  len = sqrt(vx * vx + vy * vy);
+  Wall { wa_ox: ox, wa_oy: oy, wa_dx: (vx / len) ?? 0.0, wa_dy: (vy / len) ?? 0.0,
+         wa_half: half, wa_mat: mat }
+}
+
+// The nominal angle of `d24` in degrees, and the angle its step actually points at.  The two
+// differ by ~4.11 degrees on every odd d24 — the gate prints both rather than hiding it.
+pub fn wall_angle_nominal(d24: integer) -> float {
+  ((((d24 % D24) + D24) % D24) as float) * 15.0
+}
+
+pub fn wall_angle_actual(d24: integer) -> float {
+  sk = wall_step_k(d24);
+  sm = wall_step_m(d24);
+  a = atan2(dir_y(sk, sm), dir_x(sk, sm)) * 57.29577951308232;
+  if a < 0.0 { a + 360.0 } else { a }
+}
+
+// ── writing into the foxel ──────────────────────────────────────────────────
+//
+// The band is a rectangle in the wall's own frame: |offset| <= WALL_W/2 along the normal,
+// |along| <= wa_half down the run.  A hex edge is a segment; it crosses the band iff the
+// segment survives clipping against those four half-planes.  Slab clipping, so no sampling
+// and no tolerance.
+fn clip_slab(p: float, q: float, t0: float, t1: float) -> (float, float, boolean) {
+  // keeps the sub-interval of [t0,t1] where p + t*q stays within [-1, 1] after scaling
+  lo = t0;
+  hi = t1;
+  if q == 0.0 {
+    if p < -1.0 || p > 1.0 { return (lo, hi, false); }
+    return (lo, hi, true);
+  }
+  ta = ((-1.0 - p) / q) ?? 0.0;
+  tb = (( 1.0 - p) / q) ?? 0.0;
+  if ta > tb { tc = ta; ta = tb; tb = tc; }
+  if ta > lo { lo = ta; }
+  if tb < hi { hi = tb; }
+  (lo, hi, lo <= hi)
+}
+
+pub fn wall_crosses_edge(w: Wall, ax: float, ay: float, bx: float, by: float) -> boolean {
+  // both endpoints in the wall's frame
+  a_off = (ax - w.wa_ox) * (-w.wa_dy) + (ay - w.wa_oy) * w.wa_dx;
+  a_alo = (ax - w.wa_ox) * w.wa_dx    + (ay - w.wa_oy) * w.wa_dy;
+  b_off = (bx - w.wa_ox) * (-w.wa_dy) + (by - w.wa_oy) * w.wa_dx;
+  b_alo = (bx - w.wa_ox) * w.wa_dx    + (by - w.wa_oy) * w.wa_dy;
+  // scale each axis so the band is [-1,1] on both, then clip the segment
+  hw = WALL_W * 0.5;
+  p1 = (a_off / hw) ?? 0.0;
+  q1 = ((b_off - a_off) / hw) ?? 0.0;
+  p2 = (a_alo / w.wa_half) ?? 0.0;
+  q2 = ((b_alo - a_alo) / w.wa_half) ?? 0.0;
+  (lo1, hi1, ok1) = clip_slab(p1, q1, 0.0, 1.0);
+  if !ok1 { return false; }
+  (lo2, hi2, ok2) = clip_slab(p2, q2, lo1, hi1);
+  ok2
+}
+
+// ── THE EDGE TABLE IS hex_grid's, NOT OURS ─────────────────────────────────
+//
+// `hex_grid` already owns the moros edge-wall model — it says so in the file: "walls live
+// on hex edges, stored on 3 canonical edges per hex (dirs 0,1,2); dirs 3,4,5 belong to the
+// neighbour".  So `hex_edge_corners(dir)` IS the map from a neighbour direction to the two
+// corners bounding that edge, and `moros_render::emit_hex_walls` emits exactly those corner
+// pairs (N = 5->0, NE = 0->1, SE = 1->2) for the three stored slots.
+//
+// A PRIVATE CORNER CONVENTION IS A SILENT WRONG ANSWER.  This file first carried its own
+// table (corner 0 at 30 degrees) and paired edge `c` with `nb_q/nb_r(q, r, c)` — but
+// hex_field's direction order is [E, W, SE, SW, NE, NW] and hex_grid's is
+// [E, SE, SW, W, NW, NE], so five of the six edges were stored against the WRONG
+// neighbour.  Every gate stayed green: a consistently wrong edge is still written once,
+// still idempotent, still non-empty.  Only measuring the marks back against the geometry
+// caught it, which is why `wall_edge_gap` below is a gate and not a comment.
+//
+// Corner `c` of the hex at (q,r), in world units — hex_grid's table, hex_grid's indices.
+pub fn hex_corner_x(q: integer, r: integer, c: integer) -> float {
+  (cx, cy) = hex_to_px(q, r);
+  (ox, oy) = hex_corner_offset(((c % 6) + 6) % 6);
+  cx + ox
+}
+
+pub fn hex_corner_y(q: integer, r: integer, c: integer) -> float {
+  (cx, cy) = hex_to_px(q, r);
+  (ox, oy) = hex_corner_offset(((c % 6) + 6) % 6);
+  cy + oy
+}
+
+// Cell centre in world units.  hex_field's exact lattice and hex_grid's float world agree
+// term for term — k*sqrt(3)/2 = sqrt(3)*(q + (r&1)/2) and m/2 = 1.5r — so this is the
+// integer spelling of `hex_to_px`, not a second convention.
+pub fn cell_x_w(q: integer, r: integer) -> float {
+  (lattice_k(q, r) as float) * 0.8660254037844386
+}
+
+pub fn cell_y_w(q: integer, r: integer) -> float { (lattice_m(q, r) as float) * 0.5 }
+
+// THE CHECK THAT WOULD HAVE CAUGHT IT: how far the midpoint of edge `dir` sits from the
+// midpoint between the two cell centres it is supposed to separate.  Zero for every
+// direction, or the edge table and the neighbour table disagree.
+pub fn wall_edge_gap(q: integer, r: integer, dir: integer) -> float {
+  (e1, e2) = hex_edge_corners(dir);
+  mx = (hex_corner_x(q, r, e1) + hex_corner_x(q, r, e2)) / 2.0;
+  my = (hex_corner_y(q, r, e1) + hex_corner_y(q, r, e2)) / 2.0;
+  (nq, nr) = hex_neighbor(q, r, dir);
+  hx = (cell_x_w(q, r) + cell_x_w(nq, nr)) / 2.0;
+  hy = (cell_y_w(q, r) + cell_y_w(nq, nr)) / 2.0;
+  sqrt((mx - hx) * (mx - hx) + (my - hy) * (my - hy)) ?? 0.0
+}
+
+// THE ROUTINE: draw the wall into the foxel's three wall slots per hex.
+//
+// `edge_set_mat` stores an edge once, under whichever cell owns it, so writing from both
+// sides is idempotent — which is what makes the three-slots-per-hex model hold.
+pub fn wall_write(w: Wall, edges: EdgeSet, q0: integer, r0: integer,
+                  wq: integer, hq: integer) -> integer {
+  n = 0;
+  for wr in r0..r0 + hq {
+    for wqq in q0..q0 + wq {
+      for wd in 0..6 {
+        (e1, e2) = hex_edge_corners(wd);
+        ax = hex_corner_x(wqq, wr, e1);
+        ay = hex_corner_y(wqq, wr, e1);
+        bx = hex_corner_x(wqq, wr, e2);
+        by = hex_corner_y(wqq, wr, e2);
+        if wall_crosses_edge(w, ax, ay, bx, by) {
+          (nq, nr) = hex_neighbor(wqq, wr, wd);
+          if edge_mat(edges, wqq, wr, nq, nr) == 0 {
+            edge_set_mat(edges, wqq, wr, nq, nr, w.wa_mat);
+            n = n + 1;
+          }
+        }
+      }
+    }
+  }
+  n
+}
+
+// ── THE TRIANGLE LATTICE, AND WHY WIDTH CANNOT COME FROM IT ────────────────
+//
+// The wall band lives in the TRIANGLE lattice: equilateral, side = 1/3 of a hex edge, basis
+// U at 30 degrees and V at 90 degrees (DESIGN.md §10.6).  A doubled-coordinate step (k, m)
+// is the triangle-lattice vector (3k, 3(m-k)/2) — integral because every lattice point has
+// k = m (mod 2) — reduced here to its primitive form.
+//
+// THE POINT OF THIS BLOCK is one question: can a wall be made EXACTLY the same width in all
+// 24 directions by counting lattice rows?  It cannot, and the reason is an integer fact.
+// For a primitive lattice vector `v`, the parallel lattice lines in its direction are spaced
+//
+//     spacing = covolume / |v| = S^2*sqrt(3)/2 / (S*sqrt(N)) = S*sqrt(3) / (2*sqrt(N))
+//
+// where N = |v|^2 / S^2 = a^2 + ab + b^2, an INTEGER.  So two directions' spacings are in
+// ratio sqrt(N2/N1), and that is rational — the only way integer row-counts could ever make
+// the two widths equal — exactly when N1*N2 is a perfect square.  Among the 24 directions
+// only three values of N occur, and no pair of them multiplies to a square.
+fn igcd(x: integer, y: integer) -> integer {
+  a = if x < 0 { 0 - x } else { x };
+  b = if y < 0 { 0 - y } else { y };
+  // `b != 0` guards the modulo, but loft types `%` as nullable regardless (DN1), so the
+  // fallback is discharged here rather than left to leak into `b`.
+  while b != 0 { t = (a % b) ?? 0; a = b; b = t; }
+  a
+}
+
+// The primitive triangle-lattice vector of direction `d24`.
+pub fn tri_a(d24: integer) -> integer {
+  k = wall_step_k(d24);
+  m = wall_step_m(d24);
+  ta = 3 * k;
+  tb = 3 * (m - k) / 2;
+  g = igcd(ta, tb);
+  if g == 0 { return ta; }
+  (ta / g) ?? 0
+}
+
+pub fn tri_b(d24: integer) -> integer {
+  k = wall_step_k(d24);
+  m = wall_step_m(d24);
+  ta = 3 * k;
+  tb = 3 * (m - k) / 2;
+  g = igcd(ta, tb);
+  if g == 0 { return tb; }
+  (tb / g) ?? 0
+}
+
+// N = |v|^2 / S^2 for direction `d24` — an exact integer, never a float comparison.
+pub fn tri_n2(d24: integer) -> integer {
+  a = tri_a(d24);
+  b = tri_b(d24);
+  a * a + a * b + b * b
+}
+
+pub fn is_square(n: integer) -> boolean {
+  if n < 0 { return false; }
+  r = 0;
+  while r * r < n { r = r + 1; }
+  r * r == n
+}
+
+// Are the two directions' lattice-line spacings COMMENSURABLE — i.e. can integer counts of
+// rows in each ever be exactly equal?  Only if sqrt(N2/N1) is rational, i.e. N1*N2 square.
+pub fn commensurable(n1: integer, n2: integer) -> boolean { is_square(n1 * n2) }
+
+// ── EVALUATING THE MARKS BACK TO THE MESH (crawler / moros' own rule) ───────
+//
+// This is the second half of the round trip, and it is NOT ours to invent: moros already
+// evaluates the three wall slots to geometry in `moros_render::emit_hex_walls`, and the
+// rule is one line — a marked edge becomes the quad standing on the segment between its
+// two corners.  `hex_edge_corners` is that segment, so the mesh a marked field produces is
+// fully determined here with no renderer, no `Mesh`, no graphics import.
+//
+// WHAT THAT MESH IS.  It is the SAWTOOTH — the chain of hex edges the band crossed — not
+// the straight line we drew.  That is the honest state of the round trip: the foxel stores
+// where the wall went, and recovering the straight line from it is `rebuild`'s job.  So
+// the measurement below is not "does the mesh equal the wall" (it cannot) but "how far
+// does the mesh stray from it", which is the quantity the recovery has to undo.
+//
+// Perpendicular distance from (px,py) to the wall's infinite centre line.
+pub fn wall_offset_of(w: Wall, px: float, py: float) -> float {
+  d = (px - w.wa_ox) * (0.0 - w.wa_dy) + (py - w.wa_oy) * w.wa_dx;
+  if d < 0.0 { 0.0 - d } else { d }
+}
+
+// The worst perpendicular stray of any emitted segment endpoint, over the marked field.
+// Only edges whose midpoint lies within the run are measured — past the ends there is no
+// line to be near.
+pub fn wall_mesh_stray(w: Wall, edges: EdgeSet, q0: integer, r0: integer,
+                       wq: integer, hq: integer) -> float {
+  worst = 0.0;
+  for wr in r0..r0 + hq {
+    for wqq in q0..q0 + wq {
+      for wd in 0..6 {
+        (nq, nr) = hex_neighbor(wqq, wr, wd);
+        if edge_mat(edges, wqq, wr, nq, nr) != 0 {
+          (e1, e2) = hex_edge_corners(wd);
+          ax = hex_corner_x(wqq, wr, e1);
+          ay = hex_corner_y(wqq, wr, e1);
+          bx = hex_corner_x(wqq, wr, e2);
+          by = hex_corner_y(wqq, wr, e2);
+          alo = ((ax + bx) / 2.0 - w.wa_ox) * w.wa_dx
+              + ((ay + by) / 2.0 - w.wa_oy) * w.wa_dy;
+          if alo < 0.0 { alo = 0.0 - alo; }
+          if alo <= w.wa_half {
+            da = wall_offset_of(w, ax, ay);
+            db = wall_offset_of(w, bx, by);
+            if da > worst { worst = da; }
+            if db > worst { worst = db; }
+          }
+        }
+      }
+    }
+  }
+  worst
+}
+
+// How many distinct segments the mesh emitter would produce for the marked field — the
+// vertex count of moros' wall mesh divided by the per-edge quad, i.e. the segment count.
+pub fn wall_mesh_segments(edges: EdgeSet, q0: integer, r0: integer,
+                          wq: integer, hq: integer) -> integer {
+  n = 0;
+  for wr in r0..r0 + hq {
+    for wqq in q0..q0 + wq {
+      for wd in 0..3 {
+        (nq, nr) = hex_neighbor(wqq, wr, wd);
+        if edge_mat(edges, wqq, wr, nq, nr) != 0 { n = n + 1; }
+      }
+    }
+  }
+  n
+}
