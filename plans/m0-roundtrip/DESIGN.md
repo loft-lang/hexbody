@@ -1671,6 +1671,63 @@ free. That is the third time this session a check was confidently measuring the 
 (§10.15's `h0`-parity, §10.14's corner cell, and this) — each one produced a specific, plausible
 number, which is exactly what makes the class dangerous.
 
+## 10.18 S8 — `rebuild`, and the round trip closing at level 1
+
+```
+write(rebuild(draw(read(T))))  ==  T        byte-for-byte, 10/10, 0 diffs
+```
+
+`rt_trip` is **green**, and its runner row moved out of `run_red` into the normal table — the
+promotion S7's tripwire was built to demand.
+
+### It is a match, not a fit
+
+Regime **R1**: for a stencil we authored the grammar is the prior, and it constrains the answer to
+a **finite** set, so recovery is an exact integer match against that set. `ρ = 0`. No tolerance
+appears anywhere in `formfit.loft`.
+
+**What licenses that is the S5 census, not an assumption.** The census decided level 1 is finite
+and that law F holds over it, so an exact match is unique *when it exists*. `rebuild` does not take
+even that on trust — it **counts its matches** and refuses to answer if more than one candidate
+fits, because a second match would mean law F had failed at this level.
+
+### A third digest, for a third question
+
+`rebuild` matches on `field_norm`: translation quotiented, orientation **not**. A recovered stencil
+must be the same shape at the same heading (`h0` is authored, `X39`), but *where* it was drawn is
+placement's business.
+
+| digest | quotients | question |
+|---|---|---|
+| `field_digest` | orientation + translation | how many **shapes**? (census, law I) |
+| `field_exact` | nothing | is `draw` **injective**? (corpus, law F) |
+| `field_norm` | translation | which **stencil** is this? (rebuild, R1) |
+
+Three functions, three questions. §10.17 recorded what happens when two of them are conflated;
+this is the third, kept separate from the start.
+
+### The R2 door, and why it must stay shut
+
+A footprint no grammar form draws is **R2** — arbitrary cell-authored content with no `𝕋` behind
+it. The one thing `rebuild` must never do is hand back a confident R1 answer for it, because R1
+carries *exact* with it and every downstream guarantee would inherit the lie.
+
+Measured: a 5-cell hand-drawn blob → **R2, `ρ = 2`, 0 matches**, and `rebuild_text` returns
+**empty**, so an R2 guess cannot be spelled as an authored stencil. Checked both ways — a real
+corpus field still comes back R1.
+
+### H4 bit again, and the rule caught it
+
+The verification loop built `form_read(...)` **inline in an argument list** beside a
+store-allocated `HexSet`, and recovered **9 of 10** while the hoisted loop directly above it was
+byte-perfect. That is the corruption-from-the-second-iteration signature filed as crawler
+`LOFT-HANDOFF` **H4**; hoisting fixed it.
+
+Worth noting *how* it was caught: **two loops doing the same thing disagreed.** A single loop
+reporting 9 of 10 would have read as a real recovery defect and sent me looking at the geometry.
+The redundancy was accidental here, but it is the same property that caught `X26` and `X28` — one
+measurement is a number, two disagreeing measurements are a bug.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |

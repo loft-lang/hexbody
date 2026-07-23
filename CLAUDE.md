@@ -38,7 +38,7 @@ crawler's prototypes and design docs are **design tries** — input, not authori
 | **T3 · designed** | a doc argues a construction | **input to design, never truth** |
 | **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
 
-**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X40`** — eight of them re-measured *here*, and
+**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X41`** — eight of them re-measured *here*, and
 `X26`–`X31` **discovered here**. Everything else the design leans on is still a try or a schema
 (notably the whole foxel schema, `X11`–`X15`), and the census is where it gets re-measured. Citing a T2 number as settled is
 the specific mistake to avoid — in either direction: re-deriving what is genuinely gated wastes
@@ -73,7 +73,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X40` **with trust tiers** | **authoritative** on any object or map |
+| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X41` **with trust tiers** | **authoritative** on any object or map |
 | **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
@@ -129,7 +129,7 @@ a file in `tests/` cannot `use` a module in `src/` (*"Library 'hexform' not foun
 ## Run
 
 ```sh
-make test    # the gates in tests/ — form, wall, box, census, text, house, trip(RED)
+make test    # the gates in tests/ — form, wall, box, census, text, house, trip
 make shot    # contact sheet -> /tmp/house12.png
 ```
 
@@ -138,8 +138,8 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 
 ## State (2026-07-23)
 
-- **Seven gates: six green + `rt_trip` RED on purpose** — `make test` runs
-  `tools/run_tests.sh`. Form, wall (~3 min), box, census, text, house, trip.
+- **Seven gates, all green** — `make test` runs `tools/run_tests.sh`.
+  Form, wall (~3 min), box, census, text, house, trip.
 - **Green:** `G0` / law **I** — `tests/house.loft`, 12/12 equivariant in cells *and* edges, `eave_spread
   0.0000`, every control fires. `make shot` reproduces the committed baseline byte-identically.
 - **Green:** `tests/form.loft` (**S0**/**S1**) — the 12 headings; **`X1`**/**`X2`** re-measured to **T1**
@@ -207,8 +207,18 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 - **Two digests, two questions** (**X40**): the census's `field_digest` quotients by orientation
   (*how many shapes?*); law F needs `field_exact` (*is `draw` injective?*). Using the census one on
   the corpus reported 17 false law F failures.
-- **Everything else is open.** No `body.loft`, no `proxy.loft`, no `rebuild`. Next step is **S8**
-  (`rebuild`, level 1 — which turns `rt_trip` green) — see `plans/m0-roundtrip/STEPS.md`.
+- **THE ROUND TRIP CLOSES** (**S8**, **X41**): `write(rebuild(draw(read(T)))) = T` **byte-for-byte**
+  over all 10 committed corpus entries, 0 diffs, every one **R1 with ρ = 0 and exactly one match**.
+  Recovery is an exact match against the enumerated set — **no tolerance anywhere** — licensed by
+  the census having decided level 1 finite and injective. `rebuild` counts its matches rather than
+  assuming uniqueness.
+- **The R2 door stays shut**: a non-grammar footprint returns **R2 with ρ > 0** and `rebuild_text`
+  gives **empty**, so an R2 guess can never be spelled as an authored stencil.
+- **Three digests, three questions** — `field_digest` (orientation+translation → how many shapes?),
+  `field_exact` (nothing → is `draw` injective?), `field_norm` (translation → which stencil?).
+  Conflating two of them produced 17 false law F failures once already (**X40**).
+- **Phase A rung A1 is complete.** Next: grow the ladder (**A2**, longer sides) or take **S4b**
+  (the wall surface by averaging) — see `plans/m0-roundtrip/STEPS.md` and `README.md`'s rung table.
 - **The foxel schema is the limit** (`ROUNDTRIP.md` §2.4): `layer* × point → (height, material,
   wall1, wall2, wall3, item)`. A model is admissible **iff it draws into that exactly**, which
   makes `fits?` syntactic and finite. It closed OD-2/3/4/6/7/8 — roofs and terrain are `height`,
@@ -218,7 +228,7 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
   relocated into the schema, and rung A5's real question.
 - **Constraints are in `ROUNDTRIP.md` §7 (X1–X31) with trust tiers.** T1 now holds `X1`, `X2`,
-  `X19`–`X22`, `X24`–`X40`; do not re-derive those. Everything else is still a try or a schema.
+  `X19`–`X22`, `X24`–`X41`; do not re-derive those. Everything else is still a try or a schema.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their

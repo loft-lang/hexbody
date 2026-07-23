@@ -20,6 +20,7 @@ use hex_field;
 use hexform;
 use formcensus;
 use formtext;
+use formfit;
 
 const W = 61;
 const H = 61;
@@ -127,22 +128,99 @@ fn main() {
     println("  BROKEN: control did not fire — nothing was non-canonical to begin with"); ok = false;
   }
 
-  // ── 4. THE FULL TRIP — needs `rebuild` ────────────────────────────────────
+  // ── 4. THE FULL TRIP ──────────────────────────────────────────────────────
+  //
+  //     write(rebuild(draw(read(T))))  ==  T      byte-for-byte, for every committed entry
+  //
+  // Regime R1: the grammar is the prior, so this is an exact match against the enumerated set and
+  // no tolerance appears anywhere in it (`P4`).
   println("");
   println("4. write(rebuild(draw(read(T)))) == T");
   if !ok {
     println("=== TRIP BROKEN ===");
     return;
   }
-  if REBUILD_LANDED {
-    println("  FAIL: `rebuild` has landed, so this section must now perform the FULL trip —"
-            + " draw each corpus entry, rebuild it, write it, and diff against the committed T.");
-    println("=== TRIP BROKEN ===");
+  if !REBUILD_LANDED {
+    println("   PENDING — `rebuild` does not exist (S8).");
+    println("");
+    println("=== TRIP RED: rebuild absent ===");
     return;
   }
-  println("   PENDING — `rebuild` does not exist (S8). The legs that exist are green above:");
-  println("   read/write round-trips the committed texts, and draw() still reproduces the");
-  println("   committed fields. The missing leg is rebuild(field) -> model.");
+  ntrip = 0;
+  for ti in 0..n {
+    tt = ts[ti] ?? "";
+    m0 = form_read(tt);                                    // read(T)
+    fc = hexset_chunk(Q0, R0, W, H);
+    form_fill(m0, 0, 0, fc);                               // draw(...)
+    got = rebuild_text(fc, "a1");                          // write(rebuild(...))
+    if got != tt {
+      ntrip = ntrip + 1;
+      if ntrip <= 3 {
+        println("   {cases[ti] ?? \"\"} DIFF:");
+        println("     want: {tt.replace(\"\\n\", \" | \")}");
+        println("     got:  {got.replace(\"\\n\", \" | \")}");
+      }
+    }
+  }
+  println("   {n} entries round-tripped byte-for-byte, {ntrip} diffs");
+  if ntrip != 0 {
+    println("  FAIL: the round trip does not reproduce the committed text"); ok = false;
+  }
+  // Every recovery must be R1 with rho = 0 and exactly ONE match — a second match would mean law
+  // F failed at this level, which the census says it does not.
+  nr1 = 0;
+  for ri2 in 0..n {
+    rc = hexset_chunk(Q0, R0, W, H);
+    // HOISTED, never inline: a struct built in an argument list beside a store-allocated value
+    // is corrupted from the second loop iteration (crawler LOFT-HANDOFF H4). Inlining this read
+    // 9 of 10 instead of 10 of 10, while the hoisted loop above was byte-perfect.
+    rm = form_read(ts[ri2] ?? "");
+    form_fill(rm, 0, 0, rc);
+    rr = rebuild(rc);
+    if rr.rb_regime == REGIME_R1 && rr.rb_rho == 0 && rr.rb_matches == 1 { nr1 = nr1 + 1; }
+  }
+  println("   {nr1} of {n} recovered as R1, rho = 0, exactly one match");
+  if nr1 != n {
+    println("  FAIL: a corpus entry did not recover exactly — R1 must be exact"); ok = false;
+  }
+
+  // ── 5. THE CONTROL — A NON-GRAMMAR FOOTPRINT MUST LAND IN R2 ──────────────
+  //
+  // `STEPS.md` S8: hand `rebuild` a traced footprint no grammar form draws, and it must report
+  // R2 with rho > 0 — NEVER a confident R1 answer. This is the one failure mode that would make
+  // every downstream guarantee a lie, because an R1 answer carries "exact" with it.
   println("");
-  println("=== TRIP RED: rebuild absent ===");
+  println("5. CONTROL — a non-grammar footprint must land in R2, never silently in R1");
+  blob = hexset_chunk(Q0, R0, W, H);
+  hexset_set(blob, 0, 0, true);
+  hexset_set(blob, 1, 0, true);
+  hexset_set(blob, 2, 0, true);
+  hexset_set(blob, 3, 0, true);
+  hexset_set(blob, 0, 1, true);
+  br2 = rebuild(blob);
+  println("   a 5-cell hand-drawn blob -> regime R{br2.rb_regime}, rho {br2.rb_rho},"
+          + " matches {br2.rb_matches}");
+  if br2.rb_regime != REGIME_R2 {
+    println("  FAIL: a non-grammar footprint was returned as an EXACT R1 answer"); ok = false;
+  }
+  if br2.rb_rho <= 0 {
+    println("  FAIL: R2 reported no residual — rho must be > 0 and surfaced"); ok = false;
+  }
+  if rebuild_text(blob, "a1") != "" {
+    println("  FAIL: an R2 guess was spelled as if it were an authored stencil"); ok = false;
+  }
+  // and the control must not be vacuous: a REAL corpus field still comes back R1
+  chk = hexset_chunk(Q0, R0, W, H);
+  cm = form_read(ts[0] ?? "");
+  form_fill(cm, 0, 0, chk);
+  cr2 = rebuild(chk);
+  println("   CONTROL a real corpus field -> regime R{cr2.rb_regime}, rho {cr2.rb_rho}"
+          + " (must be R1, 0)");
+  if cr2.rb_regime != REGIME_R1 {
+    println("  FAIL: control did not fire — rebuild calls everything R2"); ok = false;
+  }
+
+  println("");
+  if ok { println("=== TRIP OK ==="); }
+  else { println("=== TRIP BROKEN ==="); }
 }

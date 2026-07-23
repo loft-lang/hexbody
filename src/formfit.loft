@@ -1,0 +1,117 @@
+// formfit — `rebuild` : 𝔽 → 𝕄*, LEVEL 1.  REGIME R1, SO IT IS A MATCH AND NOT A FIT.
+//
+// `ROUNDTRIP` §6: for a stencil WE AUTHORED the grammar is the prior, and it constrains the answer
+// to a FINITE set. Recovery is therefore an **exact integer match against that set** — `ρ = 0`, no
+// tolerance anywhere. Reaching for R2's machinery here (fitting a line to a shape whose complete
+// description we hold) would throw away an exact answer and reintroduce a knob nothing needs.
+//
+// WHAT MAKES THE MATCH LEGITIMATE is the S5 census, not an assumption: it DECIDED that level 1 is
+// finite and that law F holds over it, so an exact match is unique when it exists. `rebuild` does
+// not take that on trust either — it counts its matches and refuses to answer if more than one
+// candidate fits.
+//
+// WHEN NOTHING MATCHES, IT SAYS SO. A footprint that no grammar form draws is **R2** — arbitrary
+// cell-authored content, no `𝕋` behind it — and the one thing `rebuild` must never do is return a
+// confident R1 answer for it. It reports the regime and a residual instead.
+use hex_field;
+use hexform;
+use formcensus;
+use formtext;
+
+// A compact window: every level-1 shape is a handful of cells around the anchor.
+const FW = 25;
+const FH = 25;
+const FQ0 = -12;
+const FR0 = -12;
+
+pub const REGIME_R1 = 1;
+pub const REGIME_R2 = 2;
+
+pub struct Rebuilt {
+  rb_regime:  integer,   // REGIME_R1 (exact, unique) or REGIME_R2 (no grammar form draws this)
+  rb_form:    Form,      // the recovered model — meaningful only in R1
+  rb_rho:     integer,   // 0 in R1; the smallest unexplained-cell count in R2
+  rb_matches: integer,   // how many candidates matched exactly; >1 means the level is ambiguous
+}
+
+// ── the admitted set at level 1 ────────────────────────────────────────────
+//
+// The same enumeration the census and the corpus use: every 3-sided unit form, all headings, all
+// turn triples, filtered by law J, canonicalised, deduplicated. Ten of them.
+pub fn level1_forms() -> vector<Form> {
+  out: vector<Form> = [];
+  texts: vector<text> = [];
+  for eh in 0..12 {
+    for ea in 1..12 {
+      for eb in 1..12 {
+        ec = 12 - ea - eb;
+        if ec >= 1 && ec <= 11 {
+          ef = form_new(eh, [1, 1, 1], [ea, eb, ec]);
+          if form_closes(ef) {
+            cf = form_canon(ef);
+            ct = form_write(cf, "a1");
+            seen = false;
+            for si in 0..len(texts) { if (texts[si] ?? "") == ct { seen = true; } }
+            if !seen { texts += [ct]; out += [cf]; }
+          }
+        }
+      }
+    }
+  }
+  out
+}
+
+// How many keys are in exactly one of the two sorted lists — the symmetric difference. This is
+// the R2 residual: cells the best grammar form cannot account for. It is a COUNT, not a distance,
+// so no tolerance is implied by it.
+fn sym_diff(a: vector<integer>, b: vector<integer>) -> integer {
+  n = 0;
+  for ai in 0..len(a) {
+    found = false;
+    for aj in 0..len(b) { if (a[ai] ?? 0) == (b[aj] ?? 0) { found = true; } }
+    if !found { n = n + 1; }
+  }
+  for bi in 0..len(b) {
+    found2 = false;
+    for bj in 0..len(a) { if (b[bi] ?? 0) == (a[bj] ?? 0) { found2 = true; } }
+    if !found2 { n = n + 1; }
+  }
+  n
+}
+
+// THE ROUTINE. Match the field against every admitted form, translation-normalised — WHERE it was
+// drawn is placement's business (the `place` element), not the stencil's.
+pub fn rebuild(cells: HexSet) -> Rebuilt {
+  want = field_norm(cells);
+  cand = level1_forms();
+  nmatch = 0;
+  best = form_new(0, [], []);
+  rho = -1;
+  for ci in 0..len(cand) {
+    cf = cand[ci] ?? form_new(0, [], []);
+    cc = hexset_chunk(FQ0, FR0, FW, FH);
+    form_fill(cf, 0, 0, cc);
+    got = field_norm(cc);
+    d = sym_diff(want, got);
+    if d == 0 {
+      nmatch = nmatch + 1;
+      best = cf;
+    }
+    if rho < 0 || d < rho { rho = d; }
+  }
+  if nmatch == 1 {
+    return Rebuilt { rb_regime: REGIME_R1, rb_form: best, rb_rho: 0, rb_matches: 1 };
+  }
+  // No unique grammar form draws this field: it is R2 content, and the residual is reported
+  // rather than swallowed. `rb_matches > 1` would mean law F failed at this level — the census
+  // says it does not, so the gate treats that as a hard error rather than an answer.
+  Rebuilt { rb_regime: REGIME_R2, rb_form: best, rb_rho: rho, rb_matches: nmatch }
+}
+
+// The round trip in one call: field -> model -> canonical text. Empty when recovery is not R1,
+// so a caller cannot accidentally spell an R2 guess as if it were an authored stencil.
+pub fn rebuild_text(cells: HexSet, name: text) -> text {
+  r = rebuild(cells);
+  if r.rb_regime != REGIME_R1 { return ""; }
+  form_write(r.rb_form, name)
+}

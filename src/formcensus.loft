@@ -222,3 +222,16 @@ pub fn field_exact(cells: HexSet) -> vector<integer> {
 }
 
 pub fn field_exact_text(cells: HexSet) -> text { digest_text(field_exact(cells)) }
+
+// The TRANSLATION-normalised, orientation-SENSITIVE digest — orientation 0 only.
+//
+// This is the one `rebuild` matches on: a recovered stencil must be the same shape at the same
+// heading (h0 is authored, X39), but WHERE it was drawn is placement's business, so position is
+// quotiented and orientation is not. Three digests now, three questions:
+//
+//   field_digest   quotient orientation + translation   "how many SHAPES?"        (census, law I)
+//   field_exact    quotient nothing                     "is draw INJECTIVE?"      (corpus, law F)
+//   field_norm     quotient translation only            "which STENCIL is this?"  (rebuild, R1)
+pub fn field_norm(cells: HexSet) -> vector<integer> { oriented_keys(cells, 0) }
+
+pub fn field_norm_text(cells: HexSet) -> text { digest_text(field_norm(cells)) }

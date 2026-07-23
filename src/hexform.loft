@@ -505,4 +505,4 @@ pub const SURFACE_LANDED = false;
 // The same discipline for `rebuild` (S8), which `tests/trip.loft` is written against BEFORE it
 // exists (`DESIGN.md` §8.0).  While this is false the trip gate is legitimately RED, and the
 // runner asserts that redness; flipping it at S8 makes the runner demand a GREEN trip gate.
-pub const REBUILD_LANDED = false;
+pub const REBUILD_LANDED = true;

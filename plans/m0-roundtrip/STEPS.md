@@ -306,16 +306,36 @@ Verified numerically: both exact, wobble ≤ 0.199 world units (0.172 m) on both
 - **why this replaces "the fit"**: `PLAN.md` M0 was originally "recover the straight/arc surface".
   Averaging *is* that recovery, with no tolerance — so the word "fit" was wrong twice over.
 
-## S8 · `rebuild`, level 1 — `src/formfit.loft` *(new)* · M
+## S8 ✅ · `rebuild`, level 1 — `src/formfit.loft` · M · **DONE**
 
-Recover `(h0, lens, turns)` from a boundary cycle — **regime R1**: the grammar is the prior, so
-this is an **exact match against the enumerated set**, not a fit. No tolerance appears.
+Recover `(h0, lens, turns)` from a drawn field — **regime R1**: the grammar is the prior, so this
+is an **exact match against the enumerated set**, not a fit. No tolerance appears anywhere.
 
-- **gate**: `tests/trip.loft` goes **green**.
-- **control**: hand a traced non-grammar footprint → it must land in **R2** and report `ρ > 0`,
-  never silently return an R1 answer.
+- **gate**: `tests/trip.loft` is **GREEN**. `write(rebuild(draw(read(T)))) == T` byte-for-byte over
+  all 10 committed corpus entries, 0 diffs, and all 10 recover as **R1, ρ = 0, exactly one match**.
+  Its runner row moved out of `run_red` into the normal table — the promotion the tripwire demanded.
+- **what makes the match legitimate is the S5 census, not an assumption**: it decided level 1 is
+  finite and that law F holds over it, so an exact match is unique when it exists. `rebuild` does
+  not take that on trust — it **counts its matches** and refuses to answer if more than one
+  candidate fits, because a second match would mean law F failed at this level.
+- **a third digest, for a third question.** `rebuild` matches on `field_norm`: translation
+  quotiented, orientation NOT. A recovered stencil must be the same shape at the same heading
+  (`h0` is authored, `X39`), but WHERE it was drawn is placement's business. The three:
 
----
+  | digest | quotients | question |
+  |---|---|---|
+  | `field_digest` | orientation + translation | how many SHAPES? (census, law I) |
+  | `field_exact` | nothing | is `draw` INJECTIVE? (corpus, law F) |
+  | `field_norm` | translation | which STENCIL is this? (rebuild, R1) |
+
+- **control**: a 5-cell hand-drawn blob lands in **R2 with ρ = 2 and 0 matches**, and
+  `rebuild_text` returns **empty** for it — an R2 guess can never be spelled as if it were an
+  authored stencil. The control is checked both ways: a real corpus field still comes back R1.
+- **H4 bit again, and the rule caught it.** The verification loop built `form_read(...)` **inline
+  in an argument list** beside a store-allocated `HexSet` and recovered **9 of 10** while the
+  hoisted loop beside it was byte-perfect — exactly the corruption-from-the-second-iteration
+  signature filed as crawler `LOFT-HANDOFF` **H4**. Hoisting fixed it. The discrepancy between two
+  loops doing the same thing is what exposed it; a single loop would have read as a real defect.
 
 ## Order, and where it can go wrong
 
