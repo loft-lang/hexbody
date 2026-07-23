@@ -98,7 +98,7 @@ items marked ⚠ below depend on one.
 | **K-PROXY** | a `Body` provides a **proxy**; the proxy is the interface — field-derived in the prototype, mesh/authored in a shipped game; its error bound is stated; a consumer runs a conformance gate on their mesh |
 | **K-JOINT** | the **joint value** is the interface; downstream (proxy, collision, render) is blind to whether it came from a constraint (derived) or a track (authored) |
 | **K-SEAT** | `seat(stencil, terrain) → (z0, T', residual)`; `z0` minimises the chosen earthwork objective; `T'` drains; `residual` flags an unseatable plot |
-| **K-FIT** | `fits?(m) → bool` and `snap(m) → (m*, residual)` are **one chokepoint**, consulted by the round-trip gate *and* by the editor. **The limit sits at the doorstep: the editor refuses at authoring time** — never a warning, never a downstream check. `authorable ⊆ { m : fits?(m) }`, and `𝕄*` is **closed under `Ops = {flip, place, combine, damage, seat}`** (law **C₂**), so what is admitted survives everything later done to it. A refusal **names its restriction** and offers the nearest fitting alternative with its residual — never a silent snap, never a blank rejection ([`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md) §5.2) |
+| **K-FIT** | `fits?(m) → bool` and `snap(m) → (m*, residual)` are **one chokepoint**, consulted by the round-trip gate *and* by the editor. **The limit sits at the doorstep: the editor refuses at authoring time** — never a warning, never a downstream check. `authorable ⊆ { m : fits?(m) }`, and `𝕄*` is **closed under `Ops = {flip, place, combine, damage, seat}`** (law **C₂**), so what is admitted survives everything later done to it. A refusal **names its restriction** and offers the nearest fitting alternative with its residual — never a silent snap, never a blank rejection ([`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md) §5.2). **For a line this is closed-form** (§10.10): endpoints are hex **vertices** separated by a whole number of the direction's period, `nearest_vertex` snaps the anchor and `snap_run_d24`/`snap_run_p` the far end over all 24 directions, and `run_end_dist` is the residual the editor must show |
 
 ---
 
@@ -120,6 +120,8 @@ items marked ⚠ below depend on one.
    | `wall.loft` §3b | **L10** |
    | `wall.loft` §6 | **I-EVAL** |
    | `wall.loft` §7 | **I-WIDTH** |
+   | `wall.loft` §8 | **K-FIT** *(the doorstep: which endpoints exist at all)* |
+   | `wall.loft` §9 | **K-FIT** *(the snap, and that a refusal carries its residual)* |
 3. **The prose docs become reference-only** — read for *why*, never the build input. If building
    needs a fact, it belongs here as a checkable item, not in a paragraph.
 4. **Gaps are visible:** an unstarted `G*` with no gate, an `L*` with no enforcing check, is

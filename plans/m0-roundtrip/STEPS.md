@@ -86,6 +86,12 @@ the cheapest available round-trip: a **write** we authored, evaluated by an emit
   **iff** a wall is a line primitive with a constant width and the cells are its rasterisation.
   Counting lattice rows provably cannot equalise them (`X30`), and no lattice vector points at 15°
   (`X31`). The `4.107°` in-between error is a **choice of period**, not a law.
+- **the editor's doorstep is now closed-form** (DESIGN 10.10, gate sections 8-9): a line's
+  endpoints must be hex VERTICES separated by a whole number of the direction's period, and
+  the three quantisations are 1.5000 m (N=3), 0.8660 m with one in three refused (N=1) and
+  3.9686 m (N=21, the in-between — too coarse for a building, which is a second independent
+  reason for the even-only rule). An arbitrary mouse point snaps in two exact steps, both
+  gated against brute force.
 - **what it costs**: ~3 min in the interpreter — 24 directions × two full-field passes. The field
   is sized to the wall and §3b **proves** the window clips nothing (`SPEC` **L10**).
 

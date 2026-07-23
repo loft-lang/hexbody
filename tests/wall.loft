@@ -8,6 +8,9 @@
 //   4   writing is idempotent — an edge is stored once, by its owner
 //   5   walls in all 24 directions all write, and none is empty
 //   6   the marks evaluate back to a mesh through moros' own rule, and the stray is measured
+//   7   equal width provably cannot come from counting lattice rows
+//   8   where a line may START and END — the editor's doorstep, per direction and class
+//   9   an arbitrary plane point snapped to a legal line, checked against brute force
 use hex_field;
 use hex_grid;
 use hexform;
@@ -279,6 +282,179 @@ fn main() {
   if !ctl_ok {
     println("  FAIL: control did not fire — the commensurability predicate cannot say YES");
     ok = false;
+  }
+
+  // ── 8. WHERE A LINE MAY START AND END — the editor's doorstep ─────────────
+  //
+  // The mesh is built from whole hex edges, so its ends are hex VERTICES: an endpoint
+  // anywhere else cannot be represented and the rebuilt wall would stop somewhere the
+  // editor did not put it. This section derives the admissible endpoints per direction
+  // and per start-vertex class, which is exactly what the editor must enforce (K-FIT).
+  println("");
+  println("8. ENDPOINTS — which runs land on a hex vertex, per direction and start class");
+  println("   V1 = (3,0) is a class-1 vertex, V2 = (0,3) is class 2, C = (0,0) is a centre");
+  println("   d24    N   step(m)   p admissible from V1 (p=1..9)   from V2");
+  nbad = 0;
+  for de in 0..24 {
+    p1 = "";
+    p2 = "";
+    for pe in 1..10 {
+      p1 = p1 + (if wall_run_ok(de, 3, 0, pe) { "#" } else { "." });
+      p2 = p2 + (if wall_run_ok(de, 0, 3, pe) { "#" } else { "." });
+    }
+    // count how many of the nine are admissible from each class
+    c1 = 0;
+    c2 = 0;
+    for pf in 1..10 {
+      if wall_run_ok(de, 3, 0, pf) { c1 = c1 + 1; }
+      if wall_run_ok(de, 0, 3, pf) { c2 = c2 + 1; }
+    }
+    stepm = wall_run_len(de, wall_min_p(de, 3, 0)) * 0.8660254037844386;
+    println("   {de:>3} {tri_n2(de):>4} {stepm:>9.4} {p1:>16}  {p2:>10}   [{c1}/9, {c2}/9]");
+    // THE LAW: shift 0 => all nine work from both classes; otherwise exactly six of nine
+    shift = ((tri_a(de) - tri_b(de)) % 3 + 3) % 3;
+    if shift == 0 {
+      if c1 != 9 || c2 != 9 {
+        println("  FAIL: d24={de} has a class-preserving period but not every run lands");
+        nbad = nbad + 1;
+      }
+    } else {
+      if c1 != 6 || c2 != 6 {
+        println("  FAIL: d24={de} should admit exactly 6 of 9, got {c1}/{c2}");
+        nbad = nbad + 1;
+      }
+    }
+  }
+  if nbad != 0 { ok = false; }
+
+  // The three quantisation classes, in metres — what the editor actually snaps to.
+  println("");
+  println("   the three endpoint quantisations (SPEC L8: 1 wu = 0.866 m):");
+  println("     N=3  (0/60/120/...)   step {wall_run_len(0, 1) * 0.8660254037844386:6.4} m"
+          + "  — one hex step, every multiple, from any vertex");
+  println("     N=1  (30/90/150/...)  step {wall_run_len(2, 1) * 0.8660254037844386:6.4} m"
+          + "  — but 1 in 3 is a hex CENTRE and is refused");
+  println("     N=21 (the odd 12)     step {wall_run_len(1, 1) * 0.8660254037844386:6.4} m"
+          + "  — every multiple, and far too coarse for a building");
+
+  // CONTROL 1: a start that is a hex CENTRE must be refused outright, in every direction.
+  ncentre = 0;
+  for dg in 0..24 { if wall_run_ok(dg, 0, 0, 1) { ncentre = ncentre + 1; } }
+  println("   CONTROL runs starting at a hex CENTRE that were accepted: {ncentre} (must be 0)");
+  if ncentre != 0 {
+    println("  FAIL: a centre was accepted as an endpoint — the mesh cannot end there"); ok = false;
+  }
+  // CONTROL 2: the refusal must be able to fire at all — on an N=1 direction some p is
+  // rejected, and `wall_snap_p` must offer a DIFFERENT, admissible one.
+  bad_p = 0;
+  for ph in 1..10 { if !wall_run_ok(2, 3, 0, ph) { bad_p = ph; } }
+  snapped = wall_snap_p(2, 3, 0, bad_p);
+  println("   CONTROL d24=2 refuses p={bad_p}; snap offers p={snapped}");
+  if bad_p == 0 {
+    println("  FAIL: control did not fire — no run was refused, so the doorstep is vacuous");
+    ok = false;
+  }
+  if snapped == bad_p || snapped == 0 || !wall_run_ok(2, 3, 0, snapped) {
+    println("  FAIL: the snap did not offer a different admissible run"); ok = false;
+  }
+
+  // ── 9. FROM AN ARBITRARY MOUSE POINT TO A LEGAL LINE ──────────────────────
+  //
+  // Two snaps: an arbitrary point to the nearest hex VERTEX, then an arbitrary target to
+  // the nearest legal endpoint over all 24 directions. Both are checked against BRUTE
+  // FORCE over the neighbourhood — the closed form must agree with exhaustive search, or
+  // it is just a plausible-looking heuristic.
+  println("");
+  println("9. SNAP — arbitrary plane point -> nearest vertex -> nearest legal line");
+  println("      point (x,y)      -> vertex (a,b)   dist    brute-force agrees");
+  nsnap = 0;
+  nfar = 0;
+  for sx in 0..7 {
+    for sy in 0..7 {
+      // deliberately irrational-ish offsets so nothing lands on a lattice point by luck
+      px2 = (sx as float) * 0.9137 - 2.5;
+      py2 = (sy as float) * 0.7913 - 2.5;
+      (va, vb) = nearest_vertex(px2, py2);
+      if !tri_is_vertex(va, vb) {
+        println("  FAIL: snap returned a non-vertex at ({px2:5.3},{py2:5.3})"); ok = false;
+      }
+      dx2 = tri_x(va, vb) - px2;
+      dy2 = tri_y(va, vb) - py2;
+      dsn = sqrt(dx2 * dx2 + dy2 * dy2) ?? 0.0;
+      // BRUTE FORCE: every hex-scale point in a wide box; the closed form must find the best
+      bf = 1.0e30;
+      for bi in -8..9 {
+        for bj in -8..9 {
+          ba2 = 3 * bi;
+          bb2 = 3 * bj;
+          if tri_is_vertex(ba2, bb2) {
+            ex = tri_x(ba2, bb2) - px2;
+            ey = tri_y(ba2, bb2) - py2;
+            e2 = sqrt(ex * ex + ey * ey) ?? 0.0;
+            if e2 < bf { bf = e2; }
+          }
+        }
+      }
+      if dsn > bf + 0.000001 { nsnap = nsnap + 1; }
+      if sx == 3 && sy < 3 {
+        println("   ({px2:7.4},{py2:7.4}) -> ({va:>3},{vb:>3}) {dsn:7.4}   "
+                + "brute {bf:7.4}  {dsn <= bf + 0.000001}");
+      }
+    }
+  }
+  println("   49 arbitrary points snapped; disagreements with brute force: {nsnap}");
+  if nsnap != 0 {
+    println("  FAIL: the vertex snap is not the nearest vertex"); ok = false;
+  }
+  // CONTROL: the naive snap — round to hex scale and STOP — must land on centres, or the
+  // six-neighbour fix-up above is defending nothing.
+  ncent = 0;
+  for cx in 0..7 {
+    for cy in 0..7 {
+      qx = (cx as float) * 0.9137 - 2.5;
+      qy = (cy as float) * 0.7913 - 2.5;
+      (ra, rb) = hex_scale_round(qx, qy);
+      if !tri_is_vertex(ra, rb) { ncent = ncent + 1; }
+    }
+  }
+  println("   CONTROL naive round-and-stop landed on a hex CENTRE {ncent} of 49 times");
+  if ncent == 0 {
+    println("  FAIL: control did not fire — rounding never hits a centre, so the"
+            + " neighbour fix-up is untested"); ok = false;
+  }
+
+  // The far end: an arbitrary target -> the best legal line from a fixed anchor.
+  println("");
+  println("   anchor (3,0). target -> chosen direction, periods, endpoint, residual");
+  for tj in 0..6 {
+    tx2 = 4.0 + (tj as float) * 1.31;
+    ty2 = 1.7 + (tj as float) * 0.77;
+    bd = snap_run_d24(3, 0, tx2, ty2);
+    if bd < 0 {
+      println("  FAIL: no legal line found toward ({tx2:5.2},{ty2:5.2})"); ok = false;
+    } else {
+      bp = snap_run_p(bd, 3, 0, tx2, ty2);
+      rd = run_end_dist(bd, 3, 0, bp, tx2, ty2);
+      // BRUTE FORCE over every direction and every p in range
+      bfd = 1.0e30;
+      for gd in 0..24 {
+        for gpp in 1..14 {
+          if wall_run_ok(gd, 3, 0, gpp) {
+            gg = run_end_dist(gd, 3, 0, gpp, tx2, ty2);
+            if gg < bfd { bfd = gg; }
+          }
+        }
+      }
+      println("   ({tx2:5.2},{ty2:5.2}) -> d24={bd:>2} p={bp:>2} end=({wall_end_a(bd,3,bp):>3},"
+              + "{wall_end_b(bd,0,bp):>3}) residual {rd:6.4}  brute {bfd:6.4}");
+      if !wall_run_ok(bd, 3, 0, bp) {
+        println("  FAIL: the chosen run is not admissible"); ok = false;
+      }
+      if rd > bfd + 0.000001 { nfar = nfar + 1; }
+    }
+  }
+  if nfar != 0 {
+    println("  FAIL: {nfar} targets got a worse line than brute force found"); ok = false;
   }
 
   println("");

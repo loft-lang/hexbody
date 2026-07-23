@@ -154,6 +154,11 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   vector points at 15°** (**X31**) — so the odd 12 are straight and equally wide but never at their
   nominal angle. The `4.107°` error is *not* forced: it buys a period of 0.882 wu; `N = 13` gives
   `1.102°` at 1.202 wu. **Changing it is a live proposal, not a decision.**
+- **The editor's doorstep for a line is closed-form** (`DESIGN.md` §10.10): endpoints are hex
+  **vertices** a whole number of periods apart. Quantisation is **1.5 m** (0/60/120...),
+  **0.866 m with one in three refused** (30/90/150...), **3.969 m** for the in-between 12 — which
+  is a second, independent reason houses avoid them. `nearest_vertex` + `snap_run_d24`/`snap_run_p`
+  take an arbitrary mouse point to a legal line; both gated against brute force.
 - **Everything else is open.** No `body.loft`, no `proxy.loft`, no `rebuild`, no census, no
   corpus. Next steps are **OD-12** (which edges *is* a wall) then **S3** — see
   `plans/m0-roundtrip/STEPS.md`.

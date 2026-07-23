@@ -1148,6 +1148,134 @@ recovery. That is precisely `I-RT` under regime **R1**, and it forces one design
 > exists. Quantising the anchor makes the question finite, and the level-1 census (**S5**) is what
 > answers it.
 
+## 10.10 Where a line may start and end — the editor's doorstep, analytically
+
+The editor can draw only straight lines. `K-FIT` says the limit sits **at the doorstep** — the
+editor refuses at authoring time — so it needs `fits?` for a line as a closed-form test, not a
+trial rasterisation. This derives it.
+
+### Why the endpoints are hex vertices, and nothing else
+
+The stored form is hex-edge marks, and `emit_hex_walls` stands a quad on the segment between an
+edge's two corners. So **every mesh extremity is a hex vertex.** An endpoint anywhere else is not
+merely inaccurate — it is *unrepresentable*: the rebuilt wall stops at the nearest vertex, and the
+round trip fails at `I-RT` before anything else is even considered. So:
+
+> `fits?(line)` ⟺ **both endpoints are hex vertices**, and `B − A` is a whole number of the
+> direction's vertex-to-vertex period.
+
+### The arithmetic — one invariant decides it
+
+In triangle coordinates `(a,b)`, hex vertices **and** centres are exactly the points with
+`a ≡ b ≡ 0 (mod 3)` — the sublattice `3L`, three points per hex (one centre, six corners each
+shared by three). The class
+
+```
+c(a,b) = ((a − b)/3) mod 3          c = 0 → a hex CENTRE (never an endpoint)
+                                    c = 1, 2 → the two vertex sublattices of the honeycomb
+```
+
+separates them. A primitive direction vector `v` never has both coordinates divisible by 3, so a
+displacement `n·v` reaches `3L` only when `3 | n`. Write `n = 3p`; the class then shifts by
+`p·(aᵥ − bᵥ) mod 3`, and there are exactly two cases:
+
+| `(aᵥ − bᵥ) mod 3` | which `p` work | directions |
+|---|---|---|
+| **0** | **every** `p`, from **every** vertex | `N = 3` (0°, 60°, …) and `N = 21` (the odd 12) |
+| **1 or 2** | **exactly two of every three**, and *which* two depends on the start class | `N = 1` (30°, 90°, …) |
+
+The second case is not an edge case, it is geometry: along 30° a line runs one hex edge, then
+another, and then meets a hex **centre** — so `p ≡ 2 (mod 3)` has nothing to land on. Going straight
+up from a vertex the points at 1 wu spacing read *vertex, vertex, centre, vertex, vertex, centre…*
+
+### The three quantisations the editor snaps to
+
+| class | directions | endpoint step | availability |
+|---|---|---|---|
+| **N = 3** | 0°, 60°, 120°, 180°, 240°, 300° | **1.5000 m** *(exactly one hex step)* | every multiple, any vertex |
+| **N = 1** | 30°, 90°, 150°, 210°, 270°, 330° | **0.8660 m** *(one hex edge)* | **2 of every 3** — the third is a centre |
+| **N = 21** | the odd 12 (in-between) | **3.9686 m** | every multiple, any vertex |
+
+Three consequences worth stating plainly:
+
+1. **The in-between directions are unusable for buildings.** A 3.97 m endpoint quantum means a wall
+   is 0, 3.97, 7.94 m — there is no such thing as a 5 m in-between wall. They are fine for roads and
+   cliffs, which is exactly where `I-DOMAIN` already puts them. This is now a *second*, independent
+   reason for the even-only rule, beside `X29`'s 4.107°.
+2. **A rectangle's two sides quantise differently.** `0°` and `90°` are perpendicular, but one is
+   `N = 3` (1.5 m) and the other `N = 1` (0.866 m with a hole). That is `X24` — no square sublattice
+   — surfacing where the user meets it, and it is the same fact `S1` hit when the `4,5,4,5` house
+   outline turned out not to be a lattice cycle.
+3. **The refusal can always name its restriction.** `wall_snap_p` searches outward from the wanted
+   length, so a refusal comes with the nearest admissible run on both sides — never a silent snap
+   (`K-FIT`).
+
+### The routine
+
+```loft
+tri_class(a, b)                    // 0 = hex centre, 1/2 = the two vertex classes
+tri_is_vertex(a, b)                // on the 3-lattice AND not a centre
+wall_run_ok(d24, a0, b0, p)        // fits? — the doorstep test itself
+wall_min_p(d24, a0, b0)            // the snap unit from THIS vertex
+wall_snap_p(d24, a0, b0, want)     // nearest admissible, ties to the shorter run
+wall_end_a / wall_end_b            // the endpoint
+wall_run_len(d24, p)               // its length in world units
+```
+
+Gated by `tests/wall.loft` §8 over all 24 directions × both vertex classes × `p = 1..9`, with two
+controls: a run starting at a hex **centre** must be refused in every direction, and on an `N = 1`
+direction some `p` must actually be refused *and* the snap must offer a different admissible one —
+otherwise the doorstep is vacuous.
+
+### From an arbitrary mouse point to a legal line — two snaps, both exact
+
+The editor's real input is two arbitrary float points, neither on anything. Both snaps are exact
+once the doorstep above is known, and neither is a heuristic.
+
+**Snap 1 — the anchor.** Hex vertices *and* centres together form a triangular lattice of spacing
+1 wu (`(a,b) = (3i, 3j)`), so one cube-rounding — `hex_grid::hex_round`, the library's, not ours
+(`L11`) — gives the nearest hex-scale point. If it landed on a **centre**, take the nearest of its
+six neighbours, which are all vertices.
+
+That fix-up is **complete, not approximate**: the query lies in the rounded point's Voronoi cell, of
+circumradius `1/√3 = 0.577`, so a neighbour is at most `1.577` away while every vertex outside the
+six is at least `√3 − 0.577 = 1.155`… and more sharply, since the rounded point is by construction
+the *nearest* hex-scale point, no non-neighbour vertex can beat all six. The nearest vertex is
+always among them.
+
+**Snap 2 — the far end.** For each of the 24 directions, project the target onto it to get a
+real-valued period count, then test the integers around it. The rounding of the projection is *not*
+enough on its own: the `N = 1` directions refuse one `p` in three, so the nearest legal run is
+sometimes two away from the nearest integer. Searching `±3` covers it — the only refusals are that
+one-in-three, so a legal `p` is never further. Then keep the globally closest admissible endpoint
+**over all 24 directions**, which is precisely *"move towards any point that gives a correct line, in
+any of the 24"*.
+
+```loft
+nearest_vertex(x, y)                  // snap 1 — arbitrary point -> hex vertex (a,b)
+snap_run_d24(a0, b0, tx, ty)          // snap 2 — the best of the 24 directions
+snap_run_p(d24, a0, b0, tx, ty)       //          and the legal period count in it
+run_end_dist(d24, a0, b0, p, tx, ty)  // the residual the editor should show
+```
+
+Both are gated against **brute force** rather than against themselves (`tests/wall.loft` §9): 49
+arbitrary points snapped and compared to an exhaustive search over a 17×17 block of hex-scale
+points, and six arbitrary targets compared to an exhaustive search over all 24 directions × 13
+period counts. The control is the naive snapper — round to hex scale and stop — which must land on
+a **centre** often enough to prove the six-neighbour fix-up is doing work.
+
+The residual `run_end_dist` is what `K-FIT` requires a refusal to carry: the editor shows the user
+how far the legal endpoint sits from where they pointed, rather than silently moving it.
+
+### What this does not yet settle
+
+The endpoints are pinned; the **offset** is not. Two parallel lines a fraction of a wall-width apart
+still rasterise to the same marks, and nothing above prevents it — the anchor is quantised to
+vertices, but whether *direction plus anchor* is jointly recoverable from the marks is the level-1
+census (**S5**). And all of this assumes the corrected write rule; under today's picket rule
+(**OD-12**) the marks do not even form a chain, so §8 constrains the *model*, not yet the *stored
+result*.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |

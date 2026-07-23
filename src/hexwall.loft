@@ -276,6 +276,236 @@ pub fn is_square(n: integer) -> boolean {
 // rows in each ever be exactly equal?  Only if sqrt(N2/N1) is rational, i.e. N1*N2 square.
 pub fn commensurable(n1: integer, n2: integer) -> boolean { is_square(n1 * n2) }
 
+// ── WHERE A LINE MAY START AND END — the editor's doorstep (SPEC K-FIT) ────
+//
+// The editor can draw only straight lines, and the stored form is hex-edge marks.  moros'
+// emitter stands a quad on each marked edge, so THE MESH'S EXTREMITIES ARE HEX VERTICES —
+// an endpoint anywhere else simply cannot be represented, and the rebuilt wall would stop
+// at the nearest vertex instead.  So `fits?` for a line is exactly:
+//
+//     both endpoints are HEX VERTICES, and B - A is a whole number of the direction's
+//     vertex-to-vertex period.
+//
+// THE ARITHMETIC.  In triangle coordinates, hex vertices AND centres are precisely the
+// points with a = b = 0 (mod 3).  The class
+//
+//     c = ((a - b) / 3) mod 3
+//
+// separates them: c = 0 is a CENTRE (never an endpoint), c = 1 and c = 2 are the two vertex
+// sublattices of the honeycomb.  A primitive direction vector `v` never has both coordinates
+// divisible by 3, so a displacement `n*v` reaches a hex-scale point only when 3 | n — write
+// n = 3p, and the class then shifts by `p*(a_v - b_v) mod 3`.  Two cases follow, and they
+// are the whole answer:
+//
+//   (a_v - b_v) = 0 (mod 3)   the shift is always 0: EVERY p works, from EVERY vertex.
+//                             This is the N=3 class (0/60/120/...) and the N=21 in-between.
+//   otherwise                 the shift cycles: exactly TWO OF EVERY THREE p work, and
+//                             WHICH two depends on the start vertex's class.  This is the
+//                             N=1 class (30/90/150/...), where a line runs one hex edge,
+//                             another, and then meets a hex CENTRE — so p = 2 (mod 3) has
+//                             no endpoint to land on.
+fn imod3(v: integer) -> integer {
+  r = (v % 3) ?? 0;
+  if r < 0 { r + 3 } else { r }
+}
+
+// The class of a triangle-lattice point: 0 = hex centre, 1 and 2 = the two vertex classes.
+// Only meaningful once `tri_on_hex_scale` holds.
+pub fn tri_class(a: integer, b: integer) -> integer { imod3(((a - b) / 3) ?? 0) }
+
+pub fn tri_on_hex_scale(a: integer, b: integer) -> boolean {
+  imod3(a) == 0 && imod3(b) == 0
+}
+
+pub fn tri_is_vertex(a: integer, b: integer) -> boolean {
+  tri_on_hex_scale(a, b) && tri_class(a, b) != 0
+}
+
+// The endpoint of a run of `p` periods of direction `d24` from (a0, b0).  One period is
+// THREE primitive steps — the smallest displacement that can reach a hex-scale point at all.
+pub fn wall_end_a(d24: integer, a0: integer, p: integer) -> integer {
+  a0 + 3 * p * tri_a(d24)
+}
+
+pub fn wall_end_b(d24: integer, b0: integer, p: integer) -> integer {
+  b0 + 3 * p * tri_b(d24)
+}
+
+// THE DOORSTEP ITSELF.  `p` periods of `d24` from (a0,b0): admissible or not.
+pub fn wall_run_ok(d24: integer, a0: integer, b0: integer, p: integer) -> boolean {
+  if p <= 0 { return false; }
+  if !tri_is_vertex(a0, b0) { return false; }
+  tri_is_vertex(wall_end_a(d24, a0, p), wall_end_b(d24, b0, p))
+}
+
+// The smallest admissible run from this vertex in this direction — the editor's snap unit.
+// -1 if the start is not a vertex at all.
+pub fn wall_min_p(d24: integer, a0: integer, b0: integer) -> integer {
+  if !tri_is_vertex(a0, b0) { return -1; }
+  for mp in 1..4 { if wall_run_ok(d24, a0, b0, mp) { return mp; } }
+  -1
+}
+
+// A REFUSAL NAMES ITS RESTRICTION (K-FIT): given a wanted length in periods, the nearest
+// admissible one, searching outward so ties go to the shorter run.  0 if none exists.
+pub fn wall_snap_p(d24: integer, a0: integer, b0: integer, want: integer) -> integer {
+  if want < 1 { return 0; }
+  if wall_run_ok(d24, a0, b0, want) { return want; }
+  for sd in 1..4 {
+    if wall_run_ok(d24, a0, b0, want - sd) { return want - sd; }
+    if wall_run_ok(d24, a0, b0, want + sd) { return want + sd; }
+  }
+  0
+}
+
+// World position of a triangle-lattice point, in world units.
+pub fn tri_x(a: integer, b: integer) -> float { (a as float) * 0.28867513459481287 }
+pub fn tri_y(a: integer, b: integer) -> float {
+  (a as float) / 6.0 + (b as float) / 3.0
+}
+
+// The world length of `p` periods of `d24`, in world units.
+pub fn wall_run_len(d24: integer, p: integer) -> float {
+  ra = 3 * p * tri_a(d24);
+  rb = 3 * p * tri_b(d24);
+  wx = tri_x(ra, rb);
+  wy = tri_y(ra, rb);
+  sqrt(wx * wx + wy * wy) ?? 0.0
+}
+
+// ── FROM AN ARBITRARY POINT IN THE PLANE TO A LEGAL LINE ───────────────────
+//
+// The editor's real input is a mouse: two arbitrary float points, neither of them on
+// anything.  Two snaps turn that into a legal wall, and both are exact once the doorstep
+// above is known.
+//
+// SNAP 1 — the anchor.  Round to the nearest HEX-SCALE point (vertices and centres
+// together form a triangular lattice of spacing 1 wu, so this is one cube-rounding), then,
+// if that landed on a centre, take the nearest of its six neighbours — which are all
+// vertices.  That second step is complete, not a heuristic: the query point lies in the
+// rounded point's Voronoi cell (circumradius 1/sqrt(3) = 0.577), so every vertex outside
+// its six neighbours is at least sqrt(3) - 0.577 = 1.155 away while a neighbour is at most
+// 1 + 0.577 — the nearest vertex is always among the six.
+//
+// SNAP 2 — the far end.  For each of the 24 directions, project the target onto that
+// direction to get a real-valued period count, then test the few integers around it (the
+// N=1 directions refuse one in three, so the nearest legal `p` is not always the nearest
+// integer).  Keep the globally closest admissible endpoint over all 24.  That is exactly
+// "move towards any point that gives a correct line, in any of the 24 directions".
+//
+// `hex_round` is hex_grid's — the lattice rounding is the library's job, not ours (L11).
+const INV_SQ3 = 0.5773502691896258;
+
+// Nearest HEX-SCALE lattice point (vertex OR centre) to a world point, in triangle
+// coordinates.  The hex-scale lattice is spanned by e1 = (sqrt3/2, 1/2) and e2 = (0, 1),
+// which is (a,b) = (3i, 3j) — a triangular lattice of spacing 1 wu.
+pub fn hex_scale_round(x: float, y: float) -> (integer, integer) {
+  al = x * 2.0 * INV_SQ3;
+  be = y - x * INV_SQ3;
+  (ri, rj) = hex_round(al, be);
+  (3 * ri, 3 * rj)
+}
+
+// The six hex-scale neighbours, as triangle-coordinate deltas.
+fn hs_nb_a(n: integer) -> integer {
+  if n == 0 { return 3; }
+  if n == 1 { return 0; }
+  if n == 2 { return -3; }
+  if n == 3 { return -3; }
+  if n == 4 { return 0; }
+  3
+}
+
+fn hs_nb_b(n: integer) -> integer {
+  if n == 0 { return 0; }
+  if n == 1 { return 3; }
+  if n == 2 { return 3; }
+  if n == 3 { return 0; }
+  if n == 4 { return -3; }
+  -3
+}
+
+// SNAP 1: the nearest HEX VERTEX to an arbitrary world point, in triangle coordinates.
+pub fn nearest_vertex(x: float, y: float) -> (integer, integer) {
+  (ca, cb) = hex_scale_round(x, y);
+  if tri_is_vertex(ca, cb) { return (ca, cb); }
+  // it rounded onto a centre — the nearest vertex is one of the six neighbours
+  ba = ca;
+  bb = cb;
+  best = 1.0e30;
+  for nv in 0..6 {
+    na = ca + hs_nb_a(nv);
+    nb2 = cb + hs_nb_b(nv);
+    dx = tri_x(na, nb2) - x;
+    dy = tri_y(na, nb2) - y;
+    d2 = dx * dx + dy * dy;
+    if d2 < best { best = d2; ba = na; bb = nb2; }
+  }
+  (ba, bb)
+}
+
+// How far the endpoint of `p` periods of `d24` from (a0,b0) lands from a target point.
+pub fn run_end_dist(d24: integer, a0: integer, b0: integer, p: integer,
+                    tx: float, ty: float) -> float {
+  ea = wall_end_a(d24, a0, p);
+  eb = wall_end_b(d24, b0, p);
+  dx = tri_x(ea, eb) - tx;
+  dy = tri_y(ea, eb) - ty;
+  sqrt(dx * dx + dy * dy) ?? 0.0
+}
+
+// The period count that projects nearest to the target, for direction `d24` — real-valued,
+// rounded.  This is only a STARTING GUESS: the N=1 directions refuse one p in three, so
+// `snap_run_*` searches outward from here.
+fn project_p(d24: integer, a0: integer, b0: integer, tx: float, ty: float) -> integer {
+  pa = 3 * tri_a(d24);
+  pb = 3 * tri_b(d24);
+  px = tri_x(pa, pb);
+  py = tri_y(pa, pb);
+  vx = tx - tri_x(a0, b0);
+  vy = ty - tri_y(a0, b0);
+  den = px * px + py * py;
+  if den <= 0.0 { return 1; }
+  (round(((vx * px + vy * py) / den) ?? 0.0)) as integer
+}
+
+// How far either side of the projection to look for a legal p. Three is enough: the only
+// refusals are the N=1 classes' one-in-three, so a legal p is never more than 2 away.
+const SNAP_SPAN = 3;
+
+// SNAP 2, direction part: the direction whose best legal endpoint lands nearest the target.
+pub fn snap_run_d24(a0: integer, b0: integer, tx: float, ty: float) -> integer {
+  bestd = -1;
+  best = 1.0e30;
+  for sd in 0..D24 {
+    p0 = project_p(sd, a0, b0, tx, ty);
+    for sp in 0..2 * SNAP_SPAN + 1 {
+      pp = p0 - SNAP_SPAN + sp;
+      if wall_run_ok(sd, a0, b0, pp) {
+        dd = run_end_dist(sd, a0, b0, pp, tx, ty);
+        if dd < best { best = dd; bestd = sd; }
+      }
+    }
+  }
+  bestd
+}
+
+// SNAP 2, length part: the legal period count in that direction nearest the target.
+// 0 when nothing legal was found, which the caller must treat as a refusal.
+pub fn snap_run_p(d24: integer, a0: integer, b0: integer, tx: float, ty: float) -> integer {
+  bestp = 0;
+  best = 1.0e30;
+  p0 = project_p(d24, a0, b0, tx, ty);
+  for sq in 0..2 * SNAP_SPAN + 1 {
+    pq = p0 - SNAP_SPAN + sq;
+    if wall_run_ok(d24, a0, b0, pq) {
+      dq = run_end_dist(d24, a0, b0, pq, tx, ty);
+      if dq < best { best = dq; bestp = pq; }
+    }
+  }
+  bestp
+}
+
 // ── EVALUATING THE MARKS BACK TO THE MESH (crawler / moros' own rule) ───────
 //
 // This is the second half of the round trip, and it is NOT ours to invent: moros already
