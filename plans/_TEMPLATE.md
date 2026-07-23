@@ -80,6 +80,9 @@ issue (or `PLAN.md` milestone).
 - **Length budget 100–300 lines.** Longer means reference content is leaking in — move it to the
   doc that owns it (`design/*`).
 - **`README.md` is required**; add sub-files only for distinct concerns, one concern each.
+- **Validation images** (contact sheets, before/after, `make shot` frames) go in a `shots/`
+  subdirectory, committed for human review — *not* golden images ([`README.md`](README.md)
+  § Validation images).
 - **Never calendar time** — effort letters only.
 - **The library/consumer seam is re-checked** if the plan touches the boundary between hexbody
   and the shared lib or a consumer.

@@ -96,5 +96,20 @@ hexbody's. Read top-down; pick from the highest category with open work.
 **Length budget: 100–300 lines per plan README.** Longer means reference content is leaking in —
 extract it to the doc that owns it.
 
+## Validation images
+
+We keep the **PNG images generated while working a plan inside that plan's directory** — a
+`shots/` subdirectory — committed. These are **not golden images**: nothing pixel-diffs against
+them, they are not a gate. They are **validation for human review** — a render made to judge the
+work (a contact sheet, a before/after, a `make shot` frame), kept where you can look at it
+*exactly as I do*. Same ground truth, same eyes.
+
+- A `shots/` PNG is committed *because it was reviewed* — the commit message says what it shows
+  and what it validates or reveals.
+- **Golden / regression images** (automated pixel-diff) are a different thing and would live with
+  the gate that checks them, not here.
+- The repo `.gitignore` ignores stray PNGs everywhere **except** `plans/**`, so validation images
+  are kept and build scratch is not.
+
 The milestones in [`PLAN.md`](../PLAN.md) (P, M0–M7) are the current plan candidates; each earns
 a directory here from `_TEMPLATE.md` when it is *started*.

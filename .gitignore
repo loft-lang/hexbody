@@ -1,4 +1,8 @@
 /target/
-*.png
 .loft/
 /build/
+
+# PNGs are ephemeral render output — EXCEPT validation images committed under plans/,
+# which we keep for human review (see plans/README.md § Validation images).
+*.png
+!plans/**/*.png
