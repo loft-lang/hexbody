@@ -150,10 +150,15 @@ Verified numerically: both exact, wobble ≤ 0.199 world units (0.172 m) on both
 - **BLOCKED FIRST on corner ownership.** Per-side quantities are undefined until it is stated
   which side owns a corner edge — measuring today gives 2.598 m and 6.062 m for what must be one
   length (`DESIGN.md` §10.5). Read `housedraw::side_edges`'s rule, state it, gate it.
-- **gate**, in order: (1) the corner rule holds; (2) both bands measured **in loft**, per family
-  — the tops band is `0.5` world units = `0.4330 m`, exactly half a hex edge, on the real
-  rasterised house; (3) the band matches the **triangle subdivision** (each hex edge in 3), which
-  is recorded but **not yet verified**.
+- **the corner rule exists** — `housedraw::side_edges` classifies by *which local coordinate is
+  furthest outside the massing* (`ex_u = |lu| − hw` vs `ex_v = |lv| − hd`), no corner table. State
+  it and gate it; it was never missing, only unread.
+- **gate**, in order: (1) the corner rule holds; (2) both bands **in loft**, exact — tops `1/2 u`,
+  sides `√3/2 u`, ratio `√3` (`ROUNDTRIP` §6.2); (3) the widening `(√3−1)/2 u` total,
+  `(√3−1)/4 u` per face, applied to the tops only; (4) the band matches the **triangle
+  subdivision** (each hex edge in 3) — recorded, **not yet verified**.
+- **no tolerance appears in any of these.** Every constant is exact in `ℚ(√3)`; a gate that needs
+  an `ε` here has the wrong formulation.
 - **gate**: the recovered direction of a `Plan` side equals the nominal one **exactly**; the
   recovered offset is an exact rational; the wobble is reported per family.
 - **control**: fit by least squares instead → a residual appears where there should be none.

@@ -380,7 +380,7 @@ already there**, never fitted to them:
 |---|---|
 | **direction** | `Σ` edge vectors — an **exact integer** vector in doubled coordinates |
 | **position** | the mean of the edge **midpoints**. A cell corner is an integer in `(k,m)`, so a midpoint is a half-integer and the mean is an **exact rational** |
-| **wobble** | each edge's deviation about that mean — bounded, and the only thing the two edge families differ in: *along the sides* (2 axes) is the straighter wobble, *along the tops* (3 axes) wobbles more |
+| **band** | the exact perpendicular extent of the strip about that mean — **not an error term**: it is the geometry of the triangle strip, and it is an exact algebraic constant per family (§6.2) |
 
 **Nothing is fitted, so nothing has a tolerance.** This is what makes domain-A straight-wall
 recovery **R1**: least-squares would introduce a residual to threshold, while an average of exact
@@ -389,6 +389,33 @@ set of hex edges lies **between** cell centres, never through one.
 
 `hexmatch`'s derived tolerance (`X21`) remains right for **R2**, where there is no grammar and no
 edge run to average — only a traced boundary of unknown provenance.
+
+### 6.2 The band constants, and the widening rule — exact, in `ℚ(√3)`
+
+**There is no approximation anywhere in this model.** The band is not wobble to be tolerated; it
+is the exact extent of the triangle strip, and both constants are exact algebraic numbers. Work
+in **world units** (`1 u` = one hex edge = the circumradius; `1 hex step = √3 u = 1.5 m`):
+
+| family | mean direction | band `(u)` | band `(m)` |
+|---|---|---|---|
+| **tops** — 1 axis, run/wall `= 2/√3` | due east, `dm = 0`, so the deviation **is** `m/2` | **`1/2`** | `√3/4` ≈ 0.4330 |
+| **sides** — 2 axes | due north, `dk = 0`, so the deviation **is** `k·√3/2` | **`√3/2`** | **`3/4`** = 0.7500 |
+| ratio | | **`√3`** exactly | |
+
+Each band is *one doubled-coordinate unit* of span, measured on the axis the mean direction makes
+perpendicular — which is why one is rational in `u` and the other rational in metres.
+
+**The widening rule.** Both walls are presented straight and **equally thick**, at the larger
+band `W = √3/2 u`. Only the tops widen:
+
+```
+  total    W − 1/2  =  (√3 − 1)/2  u  =  (3 − √3)/4  m  ≈ 0.3170 m
+  per face            (√3 − 1)/4  u  =  (3 − √3)/8  m  ≈ 0.1585 m
+```
+
+**This is the only adjustment in the model, and it is an exact rule** — a closed-form constant in
+`ℚ(√3)`, applied symmetrically, with nothing measured, fitted or tuned. So `P4` holds through the
+presentation layer as well: there is no `ε` anywhere between `𝕋` and the rendered wall.
 
 ## 7. Prior art from the siblings — and how far each is trustworthy
 
