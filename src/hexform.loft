@@ -1,0 +1,86 @@
+// hexform — THE 12 HEADINGS OF H12, AS EXACT LATTICE STEPS.
+//
+// A stencil side runs in one of 12 headings, 30 degrees apart (ROUNDTRIP.md §2.1).  This
+// file is the table of those steps and nothing else: no geometry, no rasterisation, pure
+// integer arithmetic.  Everything downstream indexes it, so it is the cheapest possible
+// thing to be wrong about and the cheapest to check.
+//
+// STEPS ARE IN DOUBLED (k, m) COORDINATES, NOT IN (q, r).  hex_field stores pointy-top,
+// ODD-R OFFSET cells — `lattice_k(q,r) = 2q + (r & 1)`, `lattice_m(q,r) = 3r` — so a step
+// expressed in (q, r) DEPENDS ON THE PARITY OF r.  In (k, m) the offset is already absorbed
+// and the same six neighbour deltas hold on every row.  Working here keeps the whole file
+// parity-free; `formtest` proves that against hex_field's own `nb_q` / `nb_r`.
+//
+// THE TWO CLASSES (ROUNDTRIP.md §2.1).  Even headings are the six edge-neighbour directions,
+// odd headings the six vertex directions.  Their world lengths differ by exactly sqrt(3),
+// which this file exposes as an INTEGER: 4 * len^2 = 3k^2 + m^2, giving 12 for an edge step
+// and 36 for a vertex one.  Never compare these as floats — the ratio is exact.
+use hex_field;
+
+pub const HEAD_N = 12;
+
+// 4 * the squared world length of one edge step and one vertex step.  From
+// x = k*sqrt(3)/2 and y = m/2, len^2 = (3k^2 + m^2)/4, so scaling by 4 keeps it integral.
+pub const EDGE_N2_4   = 12;
+pub const VERTEX_N2_4 = 36;
+
+// Normalise a heading to 0..11.
+//
+// EVERY index of the table goes through here.  A running heading is `h0 + sum(turn)` and the
+// turns are -5..6, so it leaves 0..11 constantly — a 4-sided cycle turning 3 each time
+// reaches h = 12 on its last side.  Two things then go wrong SILENTLY if the raw value is
+// used: in loft a negative index reads from the END of a vector instead of returning null,
+// and an index at or past the length returns null rather than wrapping.  Both hand back a
+// plausible wrong answer, which is why this is the first function in the file.
+pub fn head_norm(h: integer) -> integer { ((h % HEAD_N) + HEAD_N) % HEAD_N }
+
+// The step for heading `h`, as (dk, dm) in doubled coordinates.
+//
+// Ordered counter-clockwise from +x: h = 0 is due east, and each step is +30 degrees.  Even
+// h are the edge neighbours, odd h the vertex directions.
+pub fn head_step(h: integer) -> (integer, integer) {
+  n = head_norm(h);
+  if n == 0  { return ( 2,  0); }
+  if n == 1  { return ( 3,  3); }
+  if n == 2  { return ( 1,  3); }
+  if n == 3  { return ( 0,  6); }
+  if n == 4  { return (-1,  3); }
+  if n == 5  { return (-3,  3); }
+  if n == 6  { return (-2,  0); }
+  if n == 7  { return (-3, -3); }
+  if n == 8  { return (-1, -3); }
+  if n == 9  { return ( 0, -6); }
+  if n == 10 { return ( 1, -3); }
+  ( 3, -3)
+}
+
+// 4 * the squared world length of the step — EDGE_N2_4 or VERTEX_N2_4, exactly.
+pub fn head_n2_4(h: integer) -> integer {
+  st = head_step(h);
+  3 * st.0 * st.0 + st.1 * st.1
+}
+
+// An even heading is an edge-neighbour direction; an odd one points at a vertex.
+pub fn head_is_edge(h: integer) -> boolean { head_norm(h) % 2 == 0 }
+
+// The exact 60-degree rotation on doubled coordinates (ROUNDTRIP.md §1, constraint X1).
+//
+// Both halves stay integral because every lattice point satisfies k = m (mod 2): k's parity
+// is `r & 1` and m = 3r has the same parity.  On the heading table this acts as h -> h + 2,
+// which is what makes the six rotations of O a subgroup of the twelve headings.
+pub fn rot60_k(k: integer, m: integer) -> integer { (k - m) / 2 }
+pub fn rot60_m(k: integer, m: integer) -> integer { (3 * k + m) / 2 }
+
+// The exact reflection (constraint X2).  On the heading table this acts as h -> 6 - h.
+pub fn refl_k(k: integer) -> integer { -k }
+pub fn refl_m(m: integer) -> integer { m }
+
+// The heading whose step is (dk, dm), or -1 if no heading has that step.  Used by the gate
+// to check the table against hex_field's neighbours, and later by recovery.
+pub fn head_of_step(dk: integer, dm: integer) -> integer {
+  for h in 0..HEAD_N {
+    st = head_step(h);
+    if st.0 == dk && st.1 == dm { return h; }
+  }
+  -1
+}

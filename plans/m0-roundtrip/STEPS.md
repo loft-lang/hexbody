@@ -18,7 +18,7 @@ plus a `Makefile` line that greps for it — exactly what `housetest` does today
 
 ---
 
-## S0 · the heading table `e(h)` — `src/hexform.loft` *(new)* · XS
+## S0 ✅ · the heading table `e(h)` — `src/hexform.loft` · XS · **DONE**
 
 The 12 headings of `H₁₂` as lattice step vectors in **odd-r offset** `(q,r)`. Even `h` are the six
 edge-neighbour directions (`nb_q`/`nb_r`); odd `h` are the six vertex directions.
@@ -28,6 +28,12 @@ edge-neighbour directions (`nb_q`/`nb_r`); odd `h` are the six vertex directions
 - **control**: perturb one entry → the involution fails.
 - **why first**: everything downstream indexes this table, and it is pure data — the cheapest
   possible thing to be wrong about, and the cheapest to check.
+- **result**: green, all six controls fire. Steps are held in **doubled `(k,m)`**, which is
+  parity-free — proved against `hex_field`'s `nb_q`/`nb_r` on both row parities (`X20`). `X1` and
+  `X2` were re-measured here and are now **T1**: 625 cells, 0 non-integral images, six rotations
+  exactly the identity. Two corrections fell out — the reflection `k → −k` acts as `h ↦ 6 − h`
+  (not `h ↦ −h`, which is `m → −m`), and loft's `%` is truncating (`−1 % 12 = −1`), so `head_norm`
+  is defending a real trap. **S2 is absorbed into S0** — its checks are gate section 3.
 - **watch, two traps, both silent**:
   1. `r & 1` makes the step vectors **row-dependent** — `e(h)` is a function of `(h, r&1)`, not of
      `h` alone (odd-r offset, `ROUNDTRIP` §1).

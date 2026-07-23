@@ -13,8 +13,11 @@ help:
 	@echo "make test   run the headless body/geometry gates"
 	@echo "make shot   render the 12-orientation contact sheet -> /tmp/house12.png"
 
-# The gate. One test today (housetest, 12 orientations); grows with the roadmap.
+# The gate. Grows with the roadmap; at 3+ entries adopt crawler's tools/run_tests.sh table.
 test:
+	@echo "  [form]  the 12 headings, the exact rotation and reflection (S0)"
+	@$(LOFT) --interpret $(FLAGS) src/formtest.loft | tee /tmp/hexbody_form.log
+	@grep -q "FORM OK" /tmp/hexbody_form.log || { echo "  FAIL"; exit 1; }
 	@echo "  [house] floor/walls/openings/roof at all 12 orientations"
 	@$(LOFT) --interpret $(FLAGS) src/housetest.loft | tee /tmp/hexbody_house.log
 	@grep -q "HOUSE OK" /tmp/hexbody_house.log || { echo "  FAIL"; exit 1; }
