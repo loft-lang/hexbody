@@ -1276,6 +1276,78 @@ census (**S5**). And all of this assumes the corrected write rule; under today's
 (**OD-12**) the marks do not even form a chain, so §8 constrains the *model*, not yet the *stored
 result*.
 
+## 10.11 The box, and the two kinds of wall
+
+The editor's gesture is *"select the inside hexes as a rectangle"* — the user picks the **room**,
+never the wall. `src/hexbox.loft` makes that one selection the input to everything a building needs.
+
+### Twelve directions, and why they are two families
+
+`housedraw`'s `Plan` rotates in `0..5`, sixty degrees a step, because those six are the lattice's
+own rotations. But a stencil side runs in one of the **twelve** headings of `H₁₂`, so `Box` rotates
+in `0..11` — thirty degrees a step — and the twelve split into two families that are *not*
+interchangeable:
+
+| family | `rot` | local `u` on | behaviour |
+|---|---|---|---|
+| **edge** | even | an edge heading | the six are exact lattice rotations of each other — `Plan`'s family |
+| **vertex** | odd | a vertex heading | also six, also mutually exact — but **not related to the even family by any exact map** |
+
+A 30° rotation is not a lattice symmetry (`X24`), so the odd six are a **second family of boxes,
+not a rotation of the first**. Measured at 5×4 (7.5 m × 6.0 m):
+
+```
+   EDGE family (even rot): every rotation 27 cells — equivariant true
+   VERTEX family (odd rot): every rotation 23 cells — equivariant true
+   wall-edge cost: edge family 38, vertex family 38     (perimeter — identical)
+   cell count:     edge family 27, vertex family 23     (area — not identical)
+```
+
+**Same perimeter, different area**, and the difference is not mysterious: 45 m² over a 1.949 m²
+hex is 23.1 cells, so the *vertex* figure is the metric one and the edge family takes **four extra
+cells from the boundary tie** — along an edge heading, cell centres land exactly on the side line
+and `draw_floor`'s inclusive comparison takes them. That is precisely what `hexform::plan_u_can_tie`
+exists to state, and why the exact inside test places the boundary *between* centres. **The gated
+`Plan` path over-counts its own footprint by 17%**, which is worth knowing before any area-based
+constant is measured off it.
+
+`tests/box.loft` §3 checks the even-`rot` `Box` against `housedraw`'s `Plan` **cell for cell** over
+all six rotations — 0 differences — so this generalises the gated path rather than replacing it.
+
+### Two kinds of wall, and they differ in kind, not in thickness
+
+| | the **thin** wall | the **thick** wall |
+|---|---|---|
+| what it is | an **edge** between an inside cell and an outside one | a **ring of whole cells** |
+| costs | no floor at all — 27 cells of house stay 27 | a ring of ground, outside the selection |
+| is | a boundary | **ground you stand on**, with an inside and an outside |
+| for | houses, cottages, towers | **castles, town walls** |
+| routine | `housedraw::draw_walls` (already gated) | `box_ring_out` / `box_ring_in` |
+
+`box_ring_out` puts the wall **outside** the selection — the user's courtyard is untouched, which
+is what the editor's gesture implies. `box_ring_in` takes the outermost layer of the selection
+instead, for a wall drawn to a surveyed outer boundary.
+
+**A thick wall is tested by trying to walk in, not by counting it.** `flood_outside` floods the
+exterior and `leak_count` asks whether it reached the courtyard — zero for all 12 rotations, and
+the control punches **one cell** out of the ring and gets 27 courtyard cells reachable. That is
+`SPEC` **I3**'s control ("2 components, 0 enclosed") in the form a thick wall actually needs.
+
+The same wall without an enclosure is `line_hexes` — a curtain wall or rampart, the cells a segment
+passes through, connected by construction and one cell wide. Gated over all 24 directions on
+admissible runs from §10.10, with a control that removes one cell mid-run and must read
+disconnected.
+
+### The cost of getting here
+
+One hour went to a **toolchain defect**, not to geometry: a struct constructed *inside an argument
+list*, beside a store-allocated `HexSet`, is corrupted from the second loop iteration on. Section 1
+of the gate hoisted the constructor and read 27/23; sections 3 and 5 inlined it and read 27, 10, 9,
+8. **Both looked like plausible rasterisation results.** Filed as **H4** in crawler's
+`LOFT-HANDOFF.md` with the six things ruled out, worked around by hoisting, reproducer kept at
+`probes/inline_struct.loft`, and the rule added to `CLAUDE.md`'s traps. loft is consumer-only here —
+file, work around, keep moving.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |

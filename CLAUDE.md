@@ -126,7 +126,7 @@ a file in `tests/` cannot `use` a module in `src/` (*"Library 'hexform' not foun
 ## Run
 
 ```sh
-make test    # the headless gates in tests/ — form, wall, house (tools/run_tests.sh)
+make test    # the headless gates in tests/ — form, wall, box, house (tools/run_tests.sh)
 make shot    # contact sheet -> /tmp/house12.png
 ```
 
@@ -135,8 +135,8 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 
 ## State (2026-07-23)
 
-- **Three gates, all green** — `make test` runs `tools/run_tests.sh` (the crawler table form,
-  adopted at 3 entries as planned). Form ~10 s, wall ~3 min, house ~1 min.
+- **Four gates, all green** — `make test` runs `tools/run_tests.sh` (the crawler table form).
+  Form ~10 s, wall ~3 min, box ~1 min, house ~1 min.
 - **Green:** `G0` / law **I** — `tests/house.loft`, 12/12 equivariant in cells *and* edges, `eave_spread
   0.0000`, every control fires. `make shot` reproduces the committed baseline byte-identically.
 - **Green:** `tests/form.loft` (**S0**/**S1**) — the 12 headings; **`X1`**/**`X2`** re-measured to **T1**
@@ -154,6 +154,10 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   vector points at 15°** (**X31**) — so the odd 12 are straight and equally wide but never at their
   nominal angle. The `4.107°` error is *not* forced: it buys a period of 0.882 wu; `N = 13` gives
   `1.102°` at 1.202 wu. **Changing it is a live proposal, not a decision.**
+- **Green:** `tests/box.loft` — the box in 12 directions (30 deg steps, two non-interchangeable
+  families), agreeing cell-for-cell with `housedraw`'s `Plan` on the even six; plus BOTH walls —
+  the thin edge wall (houses) and the **thick ring of cells** (castles, town walls), the latter
+  gated by flooding the outside and failing to get in.
 - **The editor's doorstep for a line is closed-form** (`DESIGN.md` §10.10): endpoints are hex
   **vertices** a whole number of periods apart. Quantisation is **1.5 m** (0/60/120...),
   **0.866 m with one in three refused** (30/90/150...), **3.969 m** for the in-between 12 — which
@@ -192,4 +196,9 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   Closing a crack by moving geometry is the forbidden fix.
 - **Jank is not licence for nondeterminism.** `L7`/`I9` need byte-identical replay, so seam error
   and arbitration must be deterministic functions of their inputs.
+- **Never construct a struct inside an argument list** — `f(Mk(...), set)` in a loop is
+  corrupted from the SECOND iteration when the call also takes a store-allocated value
+  (`HexSet`/`EdgeSet`). Hoist it: `x = Mk(...); f(x, set)`. Silent, deterministic, and the
+  symptom looks exactly like a geometry bug — wrong cell counts that vary per rotation. Filed as
+  **H4** in crawler's `LOFT-HANDOFF.md`; reproducer in `plans/m0-roundtrip/probes/inline_struct.loft`.
 - **Every gate carries a control that must fire.** A check that cannot go red is not a check.

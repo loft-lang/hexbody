@@ -1,0 +1,30 @@
+// inline_struct — THE REPRODUCER FOR THE loft DEFECT FILED AS crawler LOFT-HANDOFF H4.
+//
+// A struct built INSIDE an argument list, beside a store-allocated value, is corrupted from
+// the SECOND loop iteration on. Hoisting the constructor to a local fixes it completely.
+//
+// Kept because the symptom is indistinguishable from a geometry bug — wrong cell counts that
+// vary per rotation — and cost an hour to trace. If a future `make test` starts disagreeing
+// with itself between two sections, run this first.
+use hex_field;
+use hexform;
+use housedraw;
+use hexbox;
+
+fn main() {
+  println("A  box_new HOISTED to a local, then passed:");
+  for a in 0..4 {
+    cs = hexset_chunk(-20, -20, 41, 41);
+    bx = box_new(0, 0, 5, 4, a, false);
+    n = box_fill(bx, cs);
+    println("    rot={a}  fill={n}  count={hexset_count(cs)}   (must be equal)");
+  }
+
+  println("");
+  println("B  box_new constructed INLINE in the argument list — CORRUPT from rot=1:");
+  for b in 0..4 {
+    cs2 = hexset_chunk(-20, -20, 41, 41);
+    n2 = box_fill(box_new(0, 0, 5, 4, b, false), cs2);
+    println("    rot={b}  fill={n2}  count={hexset_count(cs2)}   (must be equal)");
+  }
+}

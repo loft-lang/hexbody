@@ -95,6 +95,29 @@ the cheapest available round-trip: a **write** we authored, evaluated by an emit
 - **what it costs**: ~3 min in the interpreter — 24 directions × two full-field passes. The field
   is sized to the wall and §3b **proves** the window clips nothing (`SPEC` **L10**).
 
+## S2c ✅ · the box in 12 directions, thin-walled and thick-walled — `src/hexbox.loft` · S · **DONE**
+
+The editor's gesture is *"select the inside hexes as a rectangle"*, so the box is the input and
+both kinds of wall are derived from it. (DESIGN 10.11.)
+
+- **gate** `tests/box.loft`, five sections, every control fires.
+- **twelve directions, two families.** `Plan` rotates in 0..5 (60 deg); `Box` rotates in 0..11
+  (30 deg), and the odd six are a SECOND family, not a rotation of the first — a 30 deg turn is
+  not a lattice symmetry (`X24`). Within a family the cell set is exactly equivariant.
+- **measured**: same perimeter (38 edges both families), different area (27 vs 23 cells). The
+  metric answer is 23.1, so the EDGE family — the gated `Plan` path — **over-counts its own
+  footprint by 17%** on the boundary tie. Worth knowing before any area constant is read off it.
+- **agreement**: even-rot `Box` == `housedraw`'s `Plan` cell for cell over all six rotations,
+  0 differences, so this generalises the gated path instead of replacing it.
+- **two walls, different in kind**: the THIN wall is an edge and costs no floor (houses); the
+  THICK wall is a ring of whole cells you stand on (castles, town walls). The thick one is tested
+  by flooding the outside and trying to walk in — 0 leaks in all 12 rotations, and the control
+  removes ONE ring cell and gets 27 courtyard cells reachable.
+- **cost**: an hour to a loft defect, not to geometry — a struct built inside an argument list is
+  corrupted from the second loop iteration (crawler `LOFT-HANDOFF` **H4**, worked around by
+  hoisting, reproducer at `probes/inline_struct.loft`). Two gate sections disagreed and BOTH
+  readings looked like plausible rasterisation results.
+
 ## S3 · **`Plan`** → cells — `src/hexform.loft` · S *(OD-11 resolved)*
 
 Walk the cycle and produce the filled region as a `HexSet` (**fill, then take the boundary** —

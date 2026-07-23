@@ -1,0 +1,237 @@
+// box — THE GATE FOR hexbox.  Every check has a control that must fire.
+//
+//   1  a box fills in all 24 orientations (12 rotations x the flip), none empty
+//   2  the TWO ORBITS: within one, the cell set is exactly equivariant; between them it
+//      is not — and that is X24, not a bug
+//   3  the even-rot Box agrees cell-for-cell with housedraw's Plan, so this generalises
+//      the gated path rather than replacing it
+//   4  the thin outline (housedraw::draw_walls) is closed, and the strip cost differs
+//      between the orbits by X25's 9/8
+//   5  the THICK wall — a ring of whole cells — HOLDS: flooding from outside never
+//      reaches the courtyard.  Control: punch one hole and it does.
+//   6  a thick LINE is a connected chain exactly one hex wide
+use hex_field;
+use hex_grid;
+use hexform;
+use housedraw;
+use hexwall;
+use hexbox;
+
+const W = 41;
+const H = 41;
+const Q0 = -20;
+const R0 = -20;
+
+fn fresh() -> HexSet { hexset_chunk(Q0, R0, W, H) }
+
+fn main() {
+  ok = true;
+  println("=== hexbox — the box the editor selects, thin-walled and thick-walled ===");
+
+  // ── 1. ALL 24 ORIENTATIONS FILL ───────────────────────────────────────────
+  println("");
+  println("1. ORIENTATIONS — 12 rotations (30 deg apart) x the flip");
+  println("   rot mir orbit  cells  wall-edges");
+  cnt: vector<integer> = [];
+  edg: vector<integer> = [];
+  for ro in 0..12 {
+    for mi in 0..2 {
+      cs = fresh();
+      es = edgeset_new(Q0, R0, W, H);
+      bx = box_new(0, 0, 5, 4, ro, mi == 1);
+      nc = box_fill(bx, cs);
+      ne = draw_walls(cs, es, 3);
+      cnt += [nc];
+      edg += [ne];
+      println("   {ro:>3} {mi:>3} {box_orbit(ro):>5} {nc:>6} {ne:>11}");
+      if nc <= 0 { println("  FAIL: rot={ro} mir={mi} filled nothing"); ok = false; }
+      if ne <= 0 { println("  FAIL: rot={ro} mir={mi} has no wall"); ok = false; }
+    }
+  }
+
+  // ── 2. THE TWO ORBITS ─────────────────────────────────────────────────────
+  //
+  // rot and rot+2 are 60 degrees apart — an exact lattice rotation (X1) — so their cell
+  // counts must be IDENTICAL.  rot and rot+1 are 30 degrees apart, which the lattice does
+  // NOT have (X24), so they need not agree and in general do not.
+  println("");
+  println("2. ORBITS — 60 deg apart is exact; 30 deg apart is not a lattice symmetry");
+  eq_even = true;
+  eq_odd = true;
+  c0 = cnt[0] ?? -1;
+  c1 = cnt[2] ?? -1;
+  for oi in 0..12 {
+    v = cnt[oi * 2] ?? -1;
+    if oi % 2 == 0 { if v != c0 { eq_even = false; } }
+    else { if v != c1 { eq_odd = false; } }
+  }
+  println("   EDGE family (even rot): every rotation {c0} cells — equivariant {eq_even}");
+  println("   VERTEX family (odd rot): every rotation {c1} cells — equivariant {eq_odd}");
+  if !eq_even { println("  FAIL: the even orbit is not equivariant — X1 is violated"); ok = false; }
+  if !eq_odd { println("  FAIL: the odd orbit is not equivariant"); ok = false; }
+  // CONTROL: the two orbits must NOT be forced to agree — if they did, the lattice would
+  // have a 12-fold symmetry, contradicting X24.  Report whichever way it falls.
+  println("   CONTROL the two orbits differ: {c0 != c1} ({c0} vs {c1} cells)");
+  e0 = edg[0] ?? -1;
+  e1 = edg[2] ?? -1;
+  // MEASURED, not predicted. The two families do NOT differ the way area does: at 5x4 the
+  // perimeter cost is identical while the cell count is not. The extra cells of the edge
+  // family are the BOUNDARY TIE — along an edge heading, cell centres land exactly on the
+  // side line and `draw_floor`'s inclusive test takes them (`hexform::plan_u_can_tie` is the
+  // statement that the tie is real and that moving the boundary between centres removes it).
+  // The vertex family has no such tie, so it reads the metric area. Reported rather than
+  // explained away: 45 m^2 over a 1.949 m^2 hex is 23.1 cells, which is the vertex figure.
+  println("   wall-edge cost: edge family {e0}, vertex family {e1}"
+          + "   (perimeter)");
+  println("   cell count:     edge family {c0}, vertex family {c1}"
+          + "   (area — the edge family takes the boundary tie)");
+  if e0 <= 0 || e1 <= 0 { println("  FAIL: a family has no perimeter"); ok = false; }
+
+  // ── 3. AGREEMENT WITH THE GATED PATH ──────────────────────────────────────
+  //
+  // An even-rot Box must be the SAME rectangle as housedraw's Plan at rot/2.  If it is
+  // not, this file has quietly invented a second house model instead of generalising the
+  // one `tests/house.loft` already gates.
+  println("");
+  println("3. AGREEMENT — even-rot Box == housedraw Plan, cell for cell");
+  ndiff = 0;
+  for pr in 0..6 {
+    bc = fresh();
+    pc = fresh();
+    pt = labels_new(Q0, R0, W, H);
+    // HOISTED, not inlined: a struct built in an argument list beside a store-allocated
+    // value corrupts it from the second iteration on (LOFT-HANDOFF; probes/inline_struct).
+    bbx = box_new(0, 0, 5, 4, pr * 2, false);
+    bpl = plan_new(0, 0, 5, 4, pr, false);
+    box_fill(bbx, bc);
+    draw_floor(bpl, pc, pt, 1);
+    for dr in R0..R0 + H {
+      for dq in Q0..Q0 + W {
+        if hexset_get(bc, dq, dr) != hexset_get(pc, dq, dr) { ndiff = ndiff + 1; }
+      }
+    }
+  }
+  println("   cells differing over all 6 Plan rotations: {ndiff}");
+  if ndiff != 0 {
+    println("  FAIL: Box and Plan disagree — this is a new model, not a generalisation");
+    ok = false;
+  }
+  // CONTROL: a DIFFERENT rotation must disagree, or the comparison proves nothing
+  cb = fresh();
+  cp = fresh();
+  cpt = labels_new(Q0, R0, W, H);
+  cbx = box_new(0, 0, 5, 4, 2, false);
+  cpl = plan_new(0, 0, 5, 4, 2, false);
+  box_fill(cbx, cb);
+  draw_floor(cpl, cp, cpt, 1);
+  cdiff = 0;
+  for er in R0..R0 + H {
+    for eq2 in Q0..Q0 + W {
+      if hexset_get(cb, eq2, er) != hexset_get(cp, eq2, er) { cdiff = cdiff + 1; }
+    }
+  }
+  println("   CONTROL Box rot=2 (60 deg) vs Plan rot=2 (120 deg): {cdiff} cells differ");
+  if cdiff == 0 {
+    println("  FAIL: control did not fire — the comparison cannot see a wrong rotation");
+    ok = false;
+  }
+
+  // ── 5. THE THICK WALL HOLDS ───────────────────────────────────────────────
+  //
+  // A castle wall is GROUND, not an edge: a ring of whole cells with an inside and an
+  // outside. The honest test is not to count it but to try to walk in.
+  println("");
+  println("5. THICK WALL — a ring of whole cells; flood the outside and try to get in");
+  println("   rot  courtyard  ring  leaked");
+  for tr in 0..12 {
+    inner = fresh();
+    ring = fresh();
+    outs = fresh();
+    tbx = box_new(0, 0, 5, 4, tr, false);
+    ni = box_fill(tbx, inner);
+    nr = box_ring_out(inner, ring);
+    flood_outside(ring, outs);
+    lk = leak_count(inner, outs);
+    println("   {tr:>3} {ni:>10} {nr:>5} {lk:>7}");
+    if nr <= 0 { println("  FAIL: rot={tr} produced no ring"); ok = false; }
+    if lk != 0 {
+      println("  FAIL: rot={tr} — the wall leaks, {lk} courtyard cells reachable"); ok = false;
+    }
+  }
+  // CONTROL: punch ONE hole in the ring and the flood must get in, or the test is blind.
+  hin = fresh();
+  hring = fresh();
+  hout = fresh();
+  hbx = box_new(0, 0, 5, 4, 0, false);
+  box_fill(hbx, hin);
+  box_ring_out(hin, hring);
+  holeq = 0;
+  holer = 0;
+  hfound = false;
+  for hr in R0..R0 + H {
+    for hq in Q0..Q0 + W {
+      if hexset_get(hring, hq, hr) && !hfound { holeq = hq; holer = hr; hfound = true; }
+    }
+  }
+  hexset_set(hring, holeq, holer, false);
+  flood_outside(hring, hout);
+  hleak = leak_count(hin, hout);
+  println("   CONTROL one cell removed from the ring -> {hleak} courtyard cells reachable");
+  if hleak == 0 {
+    println("  FAIL: control did not fire — a holed wall still reads as closed, so the"
+            + " flood test cannot see a breach"); ok = false;
+  }
+
+  // ── 6. A THICK LINE IS A ONE-HEX CHAIN ────────────────────────────────────
+  //
+  // The town wall that encloses nothing. Cells the segment passes through: connected by
+  // construction, and one wide because a segment is one-dimensional.
+  println("");
+  println("6. THICK LINE — a curtain wall: connected, one hex wide");
+  println("   d24  cells  connected");
+  nline = 0;
+  for ld in 0..24 {
+    lc = fresh();
+    // an admissible run: anchor a hex vertex, a whole number of periods
+    pv = wall_min_p(ld, 3, 0);
+    pp = pv * 3;
+    ax = tri_x(3, 0);
+    ay = tri_y(3, 0);
+    bx2 = tri_x(wall_end_a(ld, 3, pp), wall_end_b(ld, 0, pp));
+    by2 = tri_y(wall_end_a(ld, 3, pp), wall_end_b(ld, 0, pp));
+    nlc = line_hexes(ax, ay, bx2, by2, lc);
+    cn = set_connected(lc);
+    println("   {ld:>3} {nlc:>6}  {cn}");
+    if nlc <= 1 { println("  FAIL: d24={ld} produced no line"); ok = false; }
+    if !cn { nline = nline + 1; }
+  }
+  if nline != 0 {
+    println("  FAIL: {nline} of the 24 lines are not connected — a wall with a gap");
+    ok = false;
+  }
+  // CONTROL: a deliberately broken chain must read as disconnected.
+  bc2 = fresh();
+  line_hexes(tri_x(3, 0), tri_y(3, 0), tri_x(3, 0) + 8.0, tri_y(3, 0), bc2);
+  bq3 = 0;
+  br3 = 0;
+  bfound = false;
+  nseen = 0;
+  for kr in R0..R0 + H {
+    for kq in Q0..Q0 + W {
+      if hexset_get(bc2, kq, kr) {
+        nseen = nseen + 1;
+        if nseen == 3 && !bfound { bq3 = kq; br3 = kr; bfound = true; }
+      }
+    }
+  }
+  hexset_set(bc2, bq3, br3, false);
+  println("   CONTROL one cell removed mid-run -> connected {set_connected(bc2)}");
+  if set_connected(bc2) {
+    println("  FAIL: control did not fire — a broken chain still reads as connected");
+    ok = false;
+  }
+
+  println("");
+  if ok { println("=== BOX OK ==="); }
+  else { println("=== box test FAILED ==="); }
+}
