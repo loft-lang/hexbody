@@ -87,7 +87,12 @@ overshoot is the dial read in metres, not hidden.
 - **Consequences are derived, not simulated.** Detect the interaction and apply the gameplay
   result (damage, stagger, block, carry, decouple). This is *not* full Newtonian response
   (momentum, restitution, ragdoll) — that is a different, much larger thing, added only where a
-  specific feature earns it.
+  specific feature earns it. **Derailment is where a feature earns it** — a train going off the
+  rails, "where do the wagons end up" — and it turns out to be the *minimal inside-the-robot
+  case*: a tumbling wagon is a body whose orientation changes dynamically, its interior tilting
+  through the tumble (walls become floors), a passenger riding a nested tumbling frame. The
+  dynamics frontier, scoped to a plausible rest and built deterministic:
+  **[`design/DYNAMICS.md`](design/DYNAMICS.md).**
 
 ## Breakable couplings — grip, decouple, and the colossus
 
