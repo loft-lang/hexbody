@@ -38,10 +38,9 @@ fn main() {
   cases: vector<text> = [];
   for lv in 1..4 {
     dir = "{source_dir()}/../corpus/a{lv}";
-    // SNAPSHOT THE NAMES BEFORE READING ANY FILE.  Opening a file invalidates a live
-    // `list_dir` result from the second listing onward — `len(names)` drops to 0 mid-loop and
-    // most entries are silently skipped (crawler LOFT-HANDOFF H6). This loaded 3 of 22 before
-    // the snapshot was added, and the corpus simply looked smaller than it is.
+    // The names are collected before any file is read — listing and I/O kept apart, which
+    // reads more plainly and was once required by a loft defect (LOFT-HANDOFF H6, fixed and
+    // verified on 2026.7.2; loft now carries a guard test for it).
     names = list_dir(dir);
     picks: vector<text> = [];
     for ni in 0..len(names) {
@@ -187,9 +186,8 @@ fn main() {
   nr1 = 0;
   for ri2 in 0..n {
     rc = hexset_chunk(Q0, R0, W, H);
-    // HOISTED, never inline: a struct built in an argument list beside a store-allocated value
-    // is corrupted from the second loop iteration (crawler LOFT-HANDOFF H4). Inlining this read
-    // 9 of 10 instead of 10 of 10, while the hoisted loop above was byte-perfect.
+    // Hoisted rather than inlined (LOFT-HANDOFF H4, fixed and verified on 2026.7.2). Kept
+    // this way because it reads plainly, not because it is required.
     rm = form_read(ts[ri2] ?? "");
     form_fill(rm, 0, 0, rc);
     rr = rebuild_with(cands, rc);

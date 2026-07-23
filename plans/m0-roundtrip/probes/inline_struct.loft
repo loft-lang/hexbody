@@ -21,7 +21,7 @@ fn main() {
   }
 
   println("");
-  println("B  box_new constructed INLINE in the argument list — CORRUPT from rot=1:");
+  println("B  box_new constructed INLINE in the argument list (must match A):");
   for b in 0..4 {
     cs2 = hexset_chunk(-20, -20, 41, 41);
     n2 = box_fill(box_new(0, 0, 5, 4, b, false), cs2);

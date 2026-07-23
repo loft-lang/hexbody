@@ -265,20 +265,9 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   Closing a crack by moving geometry is the forbidden fix.
 - **Jank is not licence for nondeterminism.** `L7`/`I9` need byte-identical replay, so seam error
   and arbitration must be deterministic functions of their inputs.
-- **A binary op whose operands BOTH come from functions defined lower in the file resolves as
-  `integer`.** loft is two-pass: a forward call is `Unknown` in pass 1, and operator overload
-  resolution then picks the first candidate (`OpMinInt`/`OpMulInt`) when it can type NEITHER
-  operand — locking the result to integer. Pass 2 re-resolves to float, and the assignment errors
-  "cannot change type from integer to float" at a line that looks correct. A bare
-  `fax = tri_x(...)` is FINE, and so is one known-typed operand (`fax - 1.0`, `fax - kf`); unary is
-  already guarded (loft#592). Define helpers **above** their callers.
-- **Snapshot `list_dir` before reading any file.** Opening a file invalidates a live `list_dir`
-  result from the SECOND listing onward — `len()` drops to 0 mid-loop and most entries are skipped,
-  silently. Collect the names into a local vector first, then read. Filed as **H6** in crawler's
-  `LOFT-HANDOFF.md`; it made the round-trip gate test 3 of 22 corpus entries and report OK.
-- **Never construct a struct inside an argument list** — `f(Mk(...), set)` in a loop is
-  corrupted from the SECOND iteration when the call also takes a store-allocated value
-  (`HexSet`/`EdgeSet`). Hoist it: `x = Mk(...); f(x, set)`. Silent, deterministic, and the
-  symptom looks exactly like a geometry bug — wrong cell counts that vary per rotation. Filed as
-  **H4** in crawler's `LOFT-HANDOFF.md`; reproducer in `plans/m0-roundtrip/probes/inline_struct.loft`.
+- **Three loft defects this project filed are FIXED and verified on 2026.7.2** — H4 (inline struct
+  in an argument list), H5 (binary op with two forward-declared operands), H6 (a file read
+  invalidating a live `list_dir`). Reproducers re-run green; loft even carries a guard test for H6.
+  The workarounds in the tree (hoisted structs, helpers above callers, snapshotting a listing) are
+  kept as ordinary style, **not** as warnings — do not re-derive them as constraints.
 - **Every gate carries a control that must fire.** A check that cannot go red is not a check.
