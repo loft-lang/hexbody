@@ -1,10 +1,12 @@
 # PLAN — producing the derailment: what to build, in what order
 
 **hexbody production plan.** The design corpus ([`VISION`](VISION.md),
-[`ARCHITECTURE`](ARCHITECTURE.md), [`design/*`](design/)) says *what* and *why*; this says
+[`ARCHITECTURE`](ARCHITECTURE.md), [`design/*`](design/)) says *what* and *why*;
+[`ROUNDTRIP`](ROUNDTRIP.md) and [`SPEC`](SPEC.md) say *what is true, checkably*; this says
 **what to produce, in what order**. The target is the **derailment hero demo** — the first
-full-stack acceptance test; the first brick is **`bodytest` + a wheel**; the recurring
-dependency is **the fit**. Sequenced by the critical path.
+full-stack acceptance test. The **foundation is M0, the round trip** — it determines the block
+everything else is built on — and its first move is the **stencil census**. Sequenced by the
+critical path.
 
 Each milestone lists **produce** (the loft modules), **gate** (with a control that must fire),
 **depends on**, and **done when**. Names like `proxy.loft` are proposed, not fixed. Each
@@ -17,14 +19,25 @@ is the synthesis layer (crawler's `ROADMAP.md` role), not a plan index.
 ## The critical path
 
 ```
-  M0 fit ───────────────┐
-                         ├──▶ M4 render + editor ─┐
-  P body ─▶ M1 body ─────┴─▶ M2 interact ─▶ M3 train ─▶ M5 destruction+atlas ─▶ M6 DERAILMENT ─▶ M7 colossus
+  M0 ROUND TRIP ── infrastructure; everything below sits on it ──┐
+      │                                                          └──▶ M4 render + editor ─┐
+      └──▶ P body ─▶ M1 body ─▶ M2 interact ─▶ M3 train ─▶ M5 destruction ─▶ M6 DERAILMENT ─▶ M7 colossus
 ```
 
-Two tracks converge: the **mechanics spine** (body → interact → train → destruction → dynamics)
-and the **visual track** (fit → render → editor). The derailment needs both, so neither track
-can be left to the end.
+**M0 is infrastructure, not a track.** It fixes what a body *is* — an exact original plus a pose,
+never stamped into the world lattice — and where imprecision may live. Nothing else can be built
+first without guessing those answers and rebuilding later.
+
+Two tracks then converge on it: the **mechanics spine** (body → interact → train → destruction →
+dynamics) and the **visual track** (render → editor). The derailment needs both, so neither can
+be left to the end.
+
+**Which half of M0 gates what** — stated honestly, because they are not equally urgent:
+
+| M0 half | what it settles | gates |
+|---|---|---|
+| **representation** — `ROUNDTRIP` §1.2, §2.1, §2.1.2–3 | body = original + pose; the field is derived; frames, the seam, arbitration | **the mechanics spine** — `body.loft` cannot be written without it |
+| **exact recovery** — laws **D**/**E₂**, the censuses, `write`/`read` | the model is recoverable from the field, provably | **the editor / indie path**, and re-canonicalising after damage |
 
 ---
 
@@ -42,18 +55,35 @@ the-interface* rule.
 - **depends on** — `hex_field`, `housedraw`.
 - **done when** — a `Body` holds a part-tree and derives every part's pose from its joints.
 
-## M0 — the fit *(unblocks everything visual)*
+## M0 — the round trip *(infrastructure — the block everything else is built on)*
 
-Recover the straight/arc **surface** from the two-direction edge strip (crawler `BUILDING.md`
-§4 designs it). Until it lands, walls render as the zigzag and features have no straight surface
-to sit on — it is named as the dependency in every design doc.
+The exact model is drawn onto the field and **rebuilt from it exactly**. Formally:
+**[`ROUNDTRIP.md`](ROUNDTRIP.md)** — objects, maps, laws **A–K₂**. This is not "the fit": it is a
+**recovery**, and the word matters, because an exact-invariant domain punishes every approximation
+you reach for instead (`ROUNDTRIP` §11.2).
 
-- **produce** — `fit.loft`: strip → analytic surface (straight, then arc).
-- **gate** — `eave_spread == 0` on the fitted line; a 15° wall renders as **one** straight quad;
-  **control:** read the wall top at the zigzag → it wanders ±0.43 m.
-- **depends on** — `hex_field`, `housedraw`.
-- **done when** — any wall renders as its analytic surface, not its strip. *(May later extract to
-  the shared lib with the surface/collision layer — `EXTRACTION` seam.)*
+- **produce** — the stencil census → `Cyc`; the linework census → `period`, `D`, `Sep`;
+  `write`/`read` (canonical text); `fits?`/`snap` (the one chokepoint, shared with the editor);
+  `rebuild`.
+- **gate** — `rt_census_a` (collisions **must be 0**, exhaustive) · `rt_canon` · `rt_project` ·
+  `rt_fits` · `rt_close` · **`rt_trip`** — `write(rebuild(draw(read(T)))) ≟ T`, a **text diff**,
+  no `ε` · `rt_total` · `rt_ruin` · `rt_seam` · `rt_contend` · `rt_flip` · `rt_drift`.
+  Controls per `ROUNDTRIP` §9; the spine control is a non-fitting model bypassing `snap` → diff.
+- **depends on** — `hex_field`, `housedraw`. `rt_orient` (law **I**) is **already green**:
+  `housetest`, 12/12 in cells *and* edges.
+- **done when** — `rt_trip` is green over every primitive kind, and `Cyc` closes at 0 collisions.
+
+**Order inside M0.** The **stencil census** is first: finite, exhaustive, decidable — it either
+closes at zero collisions or hands back the exact colliding pair. `rt_trip` is written **before**
+`rebuild` exists (it needs no ground truth, only `write`/`read`/`draw`/`rebuild` and `diff`), and
+goes green when `rebuild` becomes correct.
+
+**Blocking the grammar freeze:** **OD-2** — are roofs inside the exact round trip?
+`hexroof.loft:493` `roof_match(..., tol: float)` is the `ε` law **P4** forbids. The census does
+**not** need this answer; freezing `⟨roof⟩` does.
+
+*(The straight/arc surface — crawler `BUILDING.md` §4, the old "M0 fit" — is the recovery for
+domain B linework and one part of this, not a milestone of its own.)*
 
 ## M1 — the moving body *(the first brick)*
 
@@ -141,27 +171,39 @@ limb. The bigger acceptance test, once the derailment has proved the stack integ
 
 ## Where the effort and the risk concentrate — read before sequencing
 
-- **M0 the fit is load-bearing and blocks all visual work.** Do it early, in parallel with the
-  mechanics spine.
+- **M0 the round trip is infrastructure, not a parallel track.** It fixes what a body *is* and
+  where imprecision may live; build the spine ahead of it and you guess those answers, then
+  rebuild. Its cheapest, most decisive piece — the stencil census — is also its first.
 - **M6 the dynamics is the frontier.** Scope to *plausible rest*, build *deterministic from line
   one* (it cannot be retrofitted, `DYNAMICS` §5), and guard the whole way against the
   infinite-physics-engine sink.
 - **M5 the atlas (walls-become-floors) is a candidate, not a proven design.** Pin the two-patch
   probe on paper/throwaway before the general system — it is the load-bearing invariant of the
   whole tiltable-interior frontier.
-- **Determinism (M6) and the fit (M0) are the two things that are cheap now and expensive later.**
-  Both belong early.
+- **Determinism (M6) and the round trip (M0) are the two things that are cheap now and expensive
+  later.** Both belong early — and determinism is partly *delivered* by M0: byte-equality on the
+  canonical text (law **P4**) is a determinism instrument available from the first gate, not only
+  at M6. A representation that cannot be spelled two ways cannot drift.
 
 ## Start here
 
-The first move is unambiguous and small, and it is two things in parallel:
+**M0, and M0 first.** The round trip is infrastructure — it determines the block everything else
+is built on, so building the spine ahead of it means guessing what a body *is* and rebuilding
+later. The first move is one thing, not two:
 
-1. **P + M1** — `body.loft` (Body / Part / Joint) then `bodytest.loft` with one wheel
-   (`angle = travel/radius`) and its proxy. A housetest-sized gate; the mechanics spine's first
-   brick.
-2. **M0** — `fit.loft`, porting crawler `BUILDING.md` §4, so walls render straight and the visual
-   track is unblocked.
+**The stencil census.** Enumerate every admitted stencil — bounded side count, bounded `len`,
+headings in `H₁₂`, closure by law **J** — rasterize each, count collisions. The result must be
+**exactly 0**.
 
-Both are small, both gated, both on the critical path. Everything else in this plan is reached by
-repeating the loop that built `housedraw`: one exact brick, one gate with a control seen to fire,
-then the next.
+It is the right first move for four reasons: the space is **finite**, so law **F** is *decided*
+rather than sampled; it needs **no new representation** (`housedraw` already rasterizes); it is
+**falsifiable today** against the one thing already green; and its output — `Cyc`, and the
+`period` table from its domain-B sibling — is the **shared artifact** both `rt_trip` and the
+editor's `fits?` consume, so it is not a throwaway probe.
+
+If it closes at 0, `write`/`read` and `rt_trip` follow. If it does not, it hands back the exact
+pair of stencils the field cannot tell apart — which is the answer either way, and cheap.
+
+Then `P + M1` (`body.loft`, `bodytest.loft` with one wheel at `angle = travel/radius`) on top of
+a settled representation. Everything after is the loop that built `housedraw`: one exact brick,
+one gate with a control seen to fire, then the next.

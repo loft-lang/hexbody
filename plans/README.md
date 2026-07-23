@@ -46,7 +46,7 @@ local integer — open the issue first, then name the directory after the number
 pick the number by scanning `plans/`.
 
 > **hexbody has no remote tracker yet.** Until one exists, a plan directory is named by its
-> **`PLAN.md` milestone slug** (e.g. `plans/m1-moving-body/`, `plans/m0-fit/`), and is
+> **`PLAN.md` milestone slug** (e.g. `plans/m1-moving-body/`, `plans/m0-roundtrip/`), and is
 > **renumbered to the issue** once the repo has a tracker. Everything else in this convention
 > applies as written.
 
