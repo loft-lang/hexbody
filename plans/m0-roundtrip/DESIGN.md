@@ -524,6 +524,42 @@ and the render are unaffected; but **`rebuild` will need it**, because recoverin
 cottage wall" from a bare `OPEN_DOOR` is impossible. The material vocabulary must carry the
 composition before phase **E**. Cost: the table grows with (wall kinds × feature kinds).
 
+## 10.2 The round trip already exists in moros — and it is lossy, with a false-green test
+
+`../moros/lib/moros_map/src/moros_map.loft` § *the shared document format* (moros#4) is the same
+seam one level down: **storage** round trip rather than **model** round trip. Its own comment:
+
+> *"Moros's dense 8-byte cell and hex_field's parallel arrays are ONE model — moros#1 probed it —
+> with the cell as a storage concern over the field. This is that seam: a Map layer converts to a
+> field, writes through hex_field's format, and comes back.*
+>
+> *What crosses today: occupancy, height, material. **Items, item rotation and the three wall
+> bytes do NOT** — this writer calls the cells/heights/labels form of `doc_write` and never builds
+> an `EdgeSet`. That is now OUR gap, not the format's. hex_field grew an edge section on
+> 2026-07-22 … so walls could cross today."*
+
+**Three of the six foxel slots do not survive the existing round trip.** And the test that should
+catch it is green for the wrong reason — the comment says so itself:
+
+> *"`test_items_and_walls_do_not_survive_yet` does NOT catch this: it was written to fail 'the day
+> a section appears', but it watches our round trip, and our round trip drops the walls before the
+> format ever sees them — **so the section appeared and the test stayed green**. Carrying the walls
+> is what makes it fail, and then it wants deleting rather than fixing."*
+
+A gate that cannot fire is not a gate — the house rule, and here is a live instance, already
+diagnosed by its author. Two consequences for M0:
+
+- **`draw`'s target is this seam.** Whatever hexbody emits has to cross it, so the census and
+  `rt_trip` should measure against the **moros `Hex` schema**, not against `hex_field`'s structures
+  in isolation.
+- **Carrying walls across is a prerequisite, not a detail.** Until the three wall bytes survive,
+  no stencil with walls can round-trip through the shared format at all — which is every stencil.
+
+**Open question this raises:** is hexbody's `draw` meant to write **moros `Map` layers directly**,
+or to write `hex_field` documents that moros then loads? The comment says the two are *"ONE
+model … with the cell as a storage concern over the field"*, so either can be the seam — but the
+census must be written against whichever one is authoritative.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |

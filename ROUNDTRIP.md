@@ -98,6 +98,35 @@ set. A body transitions seated → free at the break, and back when it settles.
 foxel  =  layer*  ×  point → ( height, material, wall1, wall2, wall3, item )
 ```
 
+**This is not a proposal — it exists**, in `../moros/lib/moros_map/src/types.loft`:
+
+```loft
+pub struct Hex {                      pub struct HexAddress {      pub struct Chunk {
+  h_height:        integer,             ha_q:  integer,              ck_cx: integer,
+  h_material:      integer,             ha_r:  integer,              ck_cy: integer,   // the LAYER
+  h_item:          integer,             ha_cy: integer,  // LAYER    ck_cz: integer,
+  h_item_rotation: integer,           }                              ck_hexes: vector<Hex>,  // 32×32
+  h_wall_n:        integer,                                        }
+  h_wall_ne:       integer,
+  h_wall_se:       integer,
+}
+```
+
+| the schema | in moros |
+|---|---|
+| `layer*` | **`cy`** — the vertical index, on `HexAddress` and every `map_*` call |
+| `wall1..3` | `h_wall_n` / `h_wall_ne` / `h_wall_se` — the three **owned** edges; `map_set_wall_dir` maps the other three onto the neighbour that owns them |
+| `material` | `h_material` → `MaterialDef`, whose `md_category` includes `terrain`, `floor`, **`roof`**, `stair`, `water`, `void` |
+| `item` | `h_item` → `ItemDef`, whose `id_kind` includes `PILLAR`, **`TREE`**, `FURNITURE`, `CONTAINER` |
+| — | `h_item_rotation` packs a **5-bit rotation, 0–23** — items place at **24** rotations |
+
+**The wall shape vocabulary already exists** as `WallDef.wd_body`:
+`SOLID · HALF_HEIGHT · FENCE · BATTLEMENT · THICK_FLAT · THICK_CURVED · ROAD_GUIDE` — so
+`THICK_CURVED` *is* the rounded slot, and an **octagon body is a new value in this enumeration**,
+exactly the extension shape (`DESIGN.md` §4.1). `WallDef` also carries **`wd_thickness: float`**:
+thickness lives in the **palette**, not the cell — a cell stores a wall *id*, and the definition
+behind it carries body and thickness.
+
 **We limit the model to what the foxel can store.** This is the binding constraint on `𝕄*`, and
 it replaces every abstract argument about what "fits": a model is admissible **iff it draws into
 this schema exactly**.
@@ -130,10 +159,10 @@ an annotation *beside* the material, it **is** the material.
 > this land in six slots per point per layer, exactly." * The census (`DESIGN.md` §8) stops being
 > a search for an unknown bound and becomes an enumeration against a **known schema**.
 
-**What the schema forecloses**, and it is worth stating plainly because each was an open question:
-no sub-cell geometry (so no triangle subdivision), no wall thickness beyond the material carried
-on an edge, no second material on the same edge, and no geometry that is not a height, an edge, or
-an occupant.
+**What the schema forecloses**, stated plainly because each was an open question: no sub-cell
+geometry (so no triangle subdivision), no second wall on the same edge, and no geometry that is
+not a height, an edge, or an occupant. **Thickness is *not* foreclosed** — it comes from the
+`WallDef` behind the id, not from the cell.
 
 ## 3. Maps
 
@@ -213,6 +242,11 @@ Prior art. **Not open**; re-deriving these is waste.
 | **X8** | a way is an exact **centreline plus offsets**, never a rasterised band | `5-geometry/ways.py` |
 | **X9** | **width-normalise before ranking by heading**, or the table inverts — this reversed a conclusion in crawler before it was caught | `directions.py` METHOD NOTE |
 | **X10** | the triangle-subdivision **wall band model is validated in 2D**; corner tests pass | `WALLS.md` |
+| **X11** | the foxel **exists**: `Hex`/`HexAddress`/`Chunk`, layers are `cy`, walls are the three owned edges | moros `moros_map/src/types.loft` |
+| **X12** | the **wall shape vocabulary** is `WallDef.wd_body` (`SOLID…THICK_CURVED…`), and **thickness lives in the palette** (`wd_thickness`), not the cell | moros `moros_map/src/palette.loft` |
+| **X13** | **trees are items** (`ItemDef.id_kind = TREE`) and **roofs are materials** (`MaterialDef.md_category = roof`) — OD-3 and OD-2 confirmed against code, not inferred | moros `palette.loft` |
+| **X14** | items carry a **5-bit rotation, 0–23** — the 24-set is already in the storage | moros `types.loft` |
+| **X15** | **a Map↔`hex_field` round trip already exists and is lossy**: *"What crosses today: occupancy, height, material. Items, item rotation and the three wall bytes do NOT."* Its test is **green for the wrong reason** — see `DESIGN.md` §11 | moros `moros_map.loft` § *the shared document format* |
 
 ## 8. Relation to `SPEC.md`
 
