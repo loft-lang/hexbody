@@ -485,11 +485,19 @@ arbitration.
 *(Folded in rather than numbered: the grammar has no **wall thickness** and no **interior walls** —
 OD-7 decides both.)*
 
+## 10.1 Follow-up created by the doors-as-materials fix
+
+**Compound materials.** A doored edge now carries `OPEN_DOOR`, having lost `WALL_COTTAGE` — the
+loss `ROUNDTRIP` §2.4.1 predicts. Nothing today reads a doored edge's wall material, so the gate
+and the render are unaffected; but **`rebuild` will need it**, because recovering "a door in a
+cottage wall" from a bare `OPEN_DOOR` is impossible. The material vocabulary must carry the
+composition before phase **E**. Cost: the table grows with (wall kinds × feature kinds).
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |
 |---|---|---|
-| `src/housedraw.loft:299` | **A concrete fix, now that OD-9 is closed.** `place_opening` writes `OPEN_DOOR=1` / `OPEN_WINDOW=2` into the EdgeSet **surface-id** slot (`edge_set_surf`). Doors and windows are **materials on the wall slot** (`ROUNDTRIP` §2.4.1), so they belong in `edge_set_mat` — the same call `draw_walls` already uses at `:195`. This frees the `surf` slot for the analytic surface it is named for, and removes the two-meanings-one-integer collision | **D**, **E₂** |
+| `src/housedraw.loft:299` | ~~`place_opening` wrote the opening kind into the **surface-id** slot~~ — **FIXED**: doors and windows are now materials via `edge_set_mat`, per `ROUNDTRIP` §2.4.1. Gate green and `house12.png` byte-identical, so the change is behaviour-preserving. The `surf` slot is now unused outside `hexedge`, free for the analytic surface it is named for | **D**, **E₂** |
 | `src/hexroof.loft:493` | `roof_match(..., tol: float)` — a tolerance inside a recovery | **P4**; gated by OD-2 |
 | `SPEC` **L4** | superseded on the assumption the flip approximates — **pending OD-5** | **G**, **H** |
 | `PLAN.md` **M0** | named the work a *fit*; **D**/**E₂** admit no approximation on undamaged geometry — it is a **recovery** | **D** |

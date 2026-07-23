@@ -142,7 +142,7 @@ fn main() {
                 ux = -ey / el * 0.5 ?? 0.0;
                 uy = ex / el * 0.5 ?? 0.0;
                 col = wall_col;
-                sf = edge_surf(edges, wq, wr, nq, nr);
+                sf = edge_mat(edges, wq, wr, nq, nr);
                 if sf == OPEN_DOOR { col = door_col; }
                 if sf == OPEN_WINDOW { col = win_col; }
                 strip(cv, mx - ux, my - uy, mx + ux, my + uy, ox, oy, 0.24, col);
