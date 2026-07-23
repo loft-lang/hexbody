@@ -863,6 +863,47 @@ correctness.
 rule; (2) measure both bands in loft, per family; (3) check them against the triangle
 subdivision — confirming or correcting the "3".
 
+## 10.6 The triangle space, and the wall strip — found in crawler, rendered
+
+![the 18-triangle fan](shots/fan18.png)
+![the straight strips](shots/fan18_strips.png)
+
+**The space is `crawler/src/realworld/trimesh.loft`** (+ `plans/1-ortler-worldgen-fixture/trimesh.py`),
+not a uniform triangular lattice. **18 fan triangles over 19 vertices** per hex — centre, 6
+corners, 12 edge-thirds — watertight by construction (a corner is shared by 3 hexes, an
+edge-third by 2), and already gated in the Ortler fixture. Fan order:
+
+```
+loc = 3k+0 : (centre, corner_k,     edge_(k,1/3))   flank L of side k
+loc = 3k+1 : (centre, edge_(k,1/3), edge_(k,2/3))   MIDDLE  of side k
+loc = 3k+2 : (centre, edge_(k,2/3), corner_(k+1))   flank R of side k
+```
+
+**The wall is the chain of MIDDLE triangles** — `shots/fan18_strips.png` isolates them. Opposite
+sides `k` and `k+3` share the centre vertex, so their two middles form **one straight strip
+through the hex centre, one triangle thick, running edge-third to edge-third**. Chained across
+hexes those strips are continuous and exactly straight. Three axis families → strips at 0°, 60°,
+120°. The flank triangles belong to no strip.
+
+**This is the wall "on the average of the lines that already exist"**: the edge-thirds are the
+points that divide the existing hex edges in 3, and the strip runs between them through the
+centre — all 19 vertices already exist in the mesh.
+
+### What I had wrong, and why it took so long
+
+| | I built | actually |
+|---|---|---|
+| the space | a **uniform** triangular lattice at 1/3 hex-edge | the **18-triangle fan** from each hex centre |
+| the selection | triangles hit by a point probe | the **middle** triangle of each side |
+| the thickness | a multi-triangle band from a distance threshold | **one triangle** |
+
+The point probe is the centroid rule `WALLS.md` explicitly names as the bug (*"not its centroid —
+that's the bug that drops half the triangles"*). And `tools/wallproto/walltri.py` — 139 lines,
+renders 6 forms, runs corner tests — had already done the whole exercise on a *different* space.
+**I found `tools/wallproto/` early enough to cite it as `X10`'s reference and still did not read
+it.** `CLAUDE.md`'s own rule covers exactly this: *look in crawler before building; specifying
+from scratch what already exists is the most likely way to waste effort here.*
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |
