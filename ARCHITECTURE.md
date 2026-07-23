@@ -98,6 +98,18 @@ acceleration exceeds grip strength**, at which point the player becomes a free b
 the residual velocity. Being thrown off a colossus and a wagon breaking off a train are one
 mechanism: *decouple under force* — which is destruction applied to a joint.
 
+## Wall features and the layer stack
+
+A wall is stored as a strip of edges in **two not-equal directions** (three along a lattice
+line, a spread for an arc). Openings — doors, windows, loopholes — are placed *inside* that
+wall, and a wall carries a **stack of layers**: storage → surface → material → feature
+intervals → dressing. The load-bearing rule is that **a feature is an interval on the fitted
+surface, and the two-direction edge strip is storage the author never sees** — the mantra made
+concrete. Clear width is a surface quantity, a door annotates its edges (never deletes), a
+window overrides opacity but not `solid` and carries a vertical `[sill, head]` interval the
+scalar height cannot. Full design, the concrete measured end-result, the chokepoint, and the
+gates: **[`design/FEATURES.md`](design/FEATURES.md).**
+
 ## Destruction models — derived, field-native, mass-aware
 
 Destruction is *field mutation + re-derivation*, and each model is **derived from the intact
