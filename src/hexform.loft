@@ -84,3 +84,74 @@ pub fn head_of_step(dk: integer, dm: integer) -> integer {
   }
   -1
 }
+
+// ── LAW J — A STENCIL BOUNDARY IS A CLOSED TURTLE CYCLE (step S1) ───────────
+//
+// A Form is a walk: start facing `fm_h0`, and for each side walk `fm_len[i]` steps in the
+// current heading, then turn by `fm_turn[i]`.  It is admissible only if it CLOSES, and that
+// is two independent conditions:
+//
+//     sum(len_i * e(h_i)) = (0, 0)     the walk returns to its start
+//     sum(turn_i)         = 12         it turned through exactly one revolution
+//
+// NEITHER IMPLIES THE OTHER, and the gate proves it both ways.  The last turn happens AFTER
+// the last side, so it cannot move the endpoint — a wrong final turn leaves the vector sum
+// at (0,0) and is caught only by the turn total.  Conversely a wrong LENGTH leaves the turn
+// total at 12 and is caught only by the vector sum.
+//
+// THE TURN TOTAL IS +12, NOT -12.  A cycle walked the other way round is the same shape with
+// turn total -12, so requiring +12 picks one spelling of the two — the canonical-form rule
+// C3 (`DESIGN.md` §3) applied at its cheapest point, before anything is written down.
+pub struct Form {
+  fm_h0:   integer,
+  fm_len:  vector<integer>,
+  fm_turn: vector<integer>,
+}
+
+// One full revolution, in twelfths.
+pub const TURN_FULL = 12;
+
+pub fn form_new(h0: integer, lens: vector<integer>, turns: vector<integer>) -> Form {
+  Form { fm_h0: head_norm(h0), fm_len: lens, fm_turn: turns }
+}
+
+pub fn form_sides(f: Form) -> integer { len(f.fm_len) }
+
+// The heading side `i` runs in: the start heading plus every turn taken before it.
+pub fn form_heading(f: Form, i: integer) -> integer {
+  turns = f.fm_turn;
+  h = f.fm_h0;
+  for hj in 0..i { h = h + (turns[hj] ?? 0); }
+  head_norm(h)
+}
+
+pub fn form_turn_sum(f: Form) -> integer {
+  turns = f.fm_turn;
+  total = 0;
+  for ti in 0..len(turns) { total = total + (turns[ti] ?? 0); }
+  total
+}
+
+// Where the walk ends up, relative to where it started, in doubled coordinates.
+pub fn form_close(f: Form) -> (integer, integer) {
+  lens = f.fm_len;
+  turns = f.fm_turn;
+  ck = 0;
+  cm = 0;
+  h = f.fm_h0;
+  for si in 0..len(lens) {
+    st = head_step(h);
+    sl = lens[si] ?? 0;
+    ck = ck + sl * st.0;
+    cm = cm + sl * st.1;
+    h = h + (turns[si] ?? 0);
+  }
+  (ck, cm)
+}
+
+// Law J.  Both conditions, and a side count that can bound a region at all.
+pub fn form_closes(f: Form) -> boolean {
+  if form_sides(f) < 3 { return false; }
+  res = form_close(f);
+  res.0 == 0 && res.1 == 0 && form_turn_sum(f) == TURN_FULL
+}

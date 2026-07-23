@@ -43,25 +43,46 @@ edge-neighbour directions (`nb_q`/`nb_r`); odd `h` are the six vertex directions
      to `0..11` — `((h % 12) + 12) % 12` — *before* indexing. Both traps return a plausible wrong
      answer rather than failing, which is why they are S0's gate rather than S3's debugging.
 
-## S1 · law **J**, closure — `src/hexform.loft` · XS
+## S1 ✅ · law **J**, closure — `src/hexform.loft` · XS · **DONE**
 
 `cycle_closes(h0, lens, turns) → bool`: `Σ turnᵢ = 12` **and** `Σ lenᵢ·e(hᵢ) = (0,0)`, integer
 arithmetic only.
 
-- **gate** `tests/form.loft`: the equilateral triangle (`len 1`, `turn 4` ×3) closes; the house outline
-  (`len 4,5,4,5`, `turn 3` ×4) closes.
-- **control**: drop one turn → non-zero vector sum, and `Σ turn ≠ 12`.
+- **gate** `tests/form.loft` §7: five admissible forms close — triangles at `len 1` and `len 3`,
+  a **vertex-class** triangle (`h0 = 1`), a hexagon, a rhombus `4×5`.
+- **control** §8, and it is sharper than planned: **neither condition implies the other**, so
+  each needs a control the other misses.
+  - *dropped final turn* → residual stays `(0,0)`, `Σ turn = 11`. The last turn happens **after**
+    the last side, so it cannot move the endpoint — only the turn total sees it.
+  - *wrong side length* → `Σ turn = 12`, residual `(−1,3)`. Only the vector sum sees it.
+  - *walked clockwise* → residual `(0,0)`, `Σ turn = −12` — a genuine closed cycle in the other
+    direction, rejected so that **C3** has one spelling per shape.
+  - *2 sides* → rejected; it bounds nothing.
+- **note**: the planned second case was "the house outline (`len 4,5,4,5`, `turn 3` ×4)". That is
+  **not a lattice cycle** — headings 0/3/6/9 alternate edge and vertex class, whose steps differ
+  by `√3`, so `4,5,4,5` there is a rhombus in world space, not the 6.00 m × 7.50 m house.
+  `housedraw`'s `Plan` is a **continuous** rectangle rasterised by centre-in-region, not a turtle
+  polygon at all. The rhombus `[4,5,4,5]` with turns `[2,4,2,4]` (all edge-class) replaces it.
+  **This is a real constraint on S3's cross-check** — see there.
 
 ## S3 · turtle → cells — `src/hexform.loft` · S
 
 Walk the cycle and produce the filled region as a `HexSet` (**fill, then take the boundary** —
 `SPEC` **I3**, never a buffered band).
 
-- **gate** `tests/form.loft`: the triangle's cell count matches the closed-form prediction; **the house
-  outline reproduces `housedraw`'s 27 cells exactly**.
+- **gate** `tests/form.loft`: the triangle's and rhombus's cell counts match the closed-form
+  prediction.
 - **control**: a non-closing cycle → refused, not silently patched.
-- **the cross-check is the point.** S3 is the first step that can be validated against the
-  existing green gate rather than against its own expectation. Take it.
+- **the planned cross-check against `housedraw`'s 27 cells does not work as written** (found at
+  S1). `housedraw`'s `Plan` is a **continuous rectangle rasterised by centre-in-region**, not a
+  turtle polygon, and its two side directions are both in units of `s` — which no pair of the 12
+  headings gives, since headings 90° apart are in different length classes. So a turtle cycle
+  cannot express that house.
+- **what to cross-check instead**, in preference order: (a) a **rhombus** drawn both ways — turtle
+  fill vs a `Plan` with the matching parallelogram — if `housedraw` can express one; (b) Euler /
+  shoelace: the enclosed cell count from an independent closed-form area, which needs no second
+  implementation; (c) failing both, accept that S3 has **no external cross-check** and say so,
+  rather than inventing agreement between two things that do not model the same shape.
 
 ## S4 · turtle → walls — `src/hexform.loft` · S
 
