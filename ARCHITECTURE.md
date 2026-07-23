@@ -98,6 +98,13 @@ acceleration exceeds grip strength**, at which point the player becomes a free b
 the residual velocity. Being thrown off a colossus and a wagon breaking off a train are one
 mechanism: *decouple under force* — which is destruction applied to a joint.
 
+**The articulated vehicle — a wagon behind a car, truck, or train — is the worked case**: a
+chain of separate bodies joined by couplings, each trailing body *following* through derived
+trailer kinematics (its wheels' rolling constraint is what makes it swing to the pull and stay
+in line), with correct wheel turning (rotation = travel/radius, front wheels steering), rendered
+at its own pose, colliding at its own proxy, and detachable. Full design, including the honest
+hard cases (jackknife, reversing): **[`design/VEHICLES.md`](design/VEHICLES.md).**
+
 ## Wall features and the layer stack
 
 A wall is stored as a strip of edges in **two not-equal directions** (three along a lattice
