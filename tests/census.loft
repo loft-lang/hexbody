@@ -225,6 +225,71 @@ fn main() {
   println("   `rebuild` can be exact.  Length alone never collides; what unequal sides add is");
   println("   CHIRALITY, and a mirror is one of the 12 orientations.");
 
+  // ── 5. A3 — THE SECOND GROWTH AXIS: SIDE COUNT ───────────────────────────
+  //
+  // A2 grew `len`; A3 grows the number of SIDES. Held at len 1 so the axis stays orthogonal to
+  // A2's — and because growing BOTH at once is exactly what does not fit (section 6).
+  println("");
+  println("5. SIDE COUNT — 4 (a house's), 5, 6, at unit length");
+  println("   sides  forms  shapes  distinct fields  injective?");
+  nsidebad = 0;
+  for sd in 3..7 {
+    sf = forms_sides(sd, 1);
+    ns2 = len(sf);
+    sdigs: vector<text> = [];
+    snorm: vector<text> = [];
+    for sfi in 0..ns2 {
+      sff = sf[sfi] ?? form_new(0, [], []);
+      scc = hexset_chunk(Q0, R0, W, H);
+      form_fill(sff, 0, 0, scc);
+      sdigs += [digest_text(field_digest(scc))];
+      snorm += [field_norm_text(scc)];
+    }
+    nsh = 0;
+    for shi in 0..ns2 {
+      fsh = true;
+      for shk in 0..shi { if (sdigs[shk] ?? "") == (sdigs[shi] ?? "") { fsh = false; } }
+      if fsh { nsh = nsh + 1; }
+    }
+    nnm = 0;
+    for nmi in 0..ns2 {
+      fnm = true;
+      for nmk in 0..nmi { if (snorm[nmk] ?? "") == (snorm[nmi] ?? "") { fnm = false; } }
+      if fnm { nnm = nnm + 1; }
+    }
+    sinj = nnm == ns2;
+    println("   {sd:>5} {ns2:>6} {nsh:>7} {nnm:>16}  {sinj}");
+    if !sinj { nsidebad = nsidebad + 1; }
+    if ns2 <= 0 { println("  FAIL: no forms at {sd} sides"); ok = false; }
+  }
+  if nsidebad != 0 {
+    println("  FAIL: `draw` is not injective at some side count — the frontier is below it");
+    ok = false;
+  }
+
+  // ── 6. THE FRONTIER IS NOW COST, NOT CORRECTNESS ──────────────────────────
+  //
+  // The two axes MULTIPLY. Law F has not failed anywhere yet; what fails is the affordability of
+  // deciding it exhaustively, and that is a frontier worth measuring rather than discovering by
+  // a gate that quietly takes an hour.
+  println("");
+  println("6. THE COST FRONTIER — the two axes multiply");
+  println("   sides x maxlen -> canonical forms");
+  c31 = len(forms_sides(3, 1));
+  c32 = len(forms_sides(3, 2));
+  c41 = len(forms_sides(4, 1));
+  c42 = len(forms_sides(4, 2));
+  println("     3 x 1 -> {c31:>5}      3 x 2 -> {c32:>5}");
+  println("     4 x 1 -> {c41:>5}      4 x 2 -> {c42:>5}");
+  println("   measured out of gate (a probe, T2): 5x2 -> 372, 6x2 -> 900;");
+  println("   sides 3-6 at maxlen 2 is 1442 forms and ~66 s just to ENUMERATE.");
+  if c42 <= c41 {
+    println("  FAIL: growing len did not grow the space — the axes are not independent"); ok = false;
+  }
+  println("   => enumerate-and-match recovery is affordable on ONE axis at a time. The 4-sided");
+  println("      house [4,5,4,5] needs maxlen 5 (~1.2M proposals), so reaching it wants INDEXED");
+  println("      recovery, not enumeration. That is the real limit this rung found.");
+
   println("");
   if ok { println("=== CENSUS OK ==="); }
   else { println("=== census test FAILED ==="); }

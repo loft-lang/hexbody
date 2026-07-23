@@ -42,7 +42,17 @@ pub struct Rebuilt {
 // mismatch fails the gate rather than passing quietly.
 pub const LEVEL = 2;
 
-pub fn candidate_forms() -> vector<Form> { forms_upto(LEVEL) }
+// The candidate space: A1/A2 (3 sides, len <= LEVEL) plus A3 (side counts 4..6 at len 1).
+//
+// ENUMERATING THIS IS THE EXPENSIVE PART, so callers that recover many fields must build it ONCE
+// and pass it to `rebuild_with`. `rebuild` re-enumerates on every call, which is fine for a single
+// lookup and quadratic waste over a corpus.
+pub fn candidate_forms() -> vector<Form> {
+  out = forms_upto(LEVEL);
+  a3 = forms_a3();
+  for ai in 0..len(a3) { out += [a3[ai] ?? form_new(0, [], [])]; }
+  out
+}
 
 // Retained for the A1 gates: the level-1 enumeration on its own.
 pub fn level1_forms() -> vector<Form> {
@@ -88,9 +98,11 @@ fn sym_diff(a: vector<integer>, b: vector<integer>) -> integer {
 
 // THE ROUTINE. Match the field against every admitted form, translation-normalised — WHERE it was
 // drawn is placement's business (the `place` element), not the stencil's.
-pub fn rebuild(cells: HexSet) -> Rebuilt {
+pub fn rebuild(cells: HexSet) -> Rebuilt { rebuild_with(candidate_forms(), cells) }
+
+// The core, with the candidate set supplied — build it once per gate run, not once per lookup.
+pub fn rebuild_with(cand: vector<Form>, cells: HexSet) -> Rebuilt {
   want = field_norm(cells);
-  cand = candidate_forms();
   nmatch = 0;
   best = form_new(0, [], []);
   rho = -1;
@@ -117,6 +129,12 @@ pub fn rebuild(cells: HexSet) -> Rebuilt {
 
 // The round trip in one call: field -> model -> canonical text. Empty when recovery is not R1,
 // so a caller cannot accidentally spell an R2 guess as if it were an authored stencil.
+pub fn rebuild_text_with(cand: vector<Form>, cells: HexSet, name: text) -> text {
+  r = rebuild_with(cand, cells);
+  if r.rb_regime != REGIME_R1 { return ""; }
+  form_write(r.rb_form, name)
+}
+
 pub fn rebuild_text(cells: HexSet, name: text) -> text {
   r = rebuild(cells);
   if r.rb_regime != REGIME_R1 { return ""; }

@@ -32,7 +32,7 @@ const R0 = -30;
 
 // THE LEVEL THIS RUN WRITES.  Bump it, run once, commit; never re-run for a level that already
 // has entries — the guard below refuses rather than trusting anyone to remember.
-const LEVEL = 2;
+const LEVEL = 3;
 
 fn main() {
   dir = "{source_dir()}/../corpus/a{LEVEL}";
@@ -55,9 +55,10 @@ fn main() {
   mkdir_all(dir);
   println("writing the level-{LEVEL} corpus to {dir}");
 
-  // Only the forms NEW at this level — longest side exactly LEVEL — so earlier levels stay
-  // untouched and a1 u a2 is the whole admitted set up to here.
-  fs = forms_at_level(LEVEL);
+  // What is NEW at this rung.  a1/a2 grew `len` on 3 sides; a3 grows the SIDE COUNT (4, 5, 6) at
+  // unit length, which is the rung's own axis.  Earlier levels stay untouched.
+  fs = forms_a3();
+  if LEVEL < 3 { fs = forms_at_level(LEVEL); }
   texts: vector<text> = [];
   digests: vector<text> = [];
   for fi in 0..len(fs) {

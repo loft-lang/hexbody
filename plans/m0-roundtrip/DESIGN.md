@@ -1791,6 +1791,56 @@ snapshotting the names before any file read; a 20-line standalone repro is filed
 `corpusgen` now also **refuses** to overwrite a level that already has entries, so the
 never-regenerate rule is enforced rather than trusted.
 
+## 10.20 A3 — side count grows cleanly; the frontier becomes COST
+
+### The axis itself is fine
+
+| sides | forms | shapes | distinct fields | `draw` injective? |
+|---|---|---|---|---|
+| 3 | 10 | 3 | 10 | ✅ |
+| 4 | 21 | 5 | 21 | ✅ |
+| 5 | 30 | 4 | 30 | ✅ |
+| 6 | 36 | 9 | 36 | ✅ |
+
+Law F holds at every side count. `corpus/a3/` adds the 87 forms with 4–6 sides at unit length, and
+`rt_trip` now covers **119 committed entries** across a1 + a2 + a3 — all byte-for-byte, all R1 with
+`ρ = 0` and exactly one match.
+
+The enumerator is parameterised in sides now (`forms_sides`), via a mixed-radix odometer over the
+turn tuple rather than nested loops — the side count is an argument, not a shape baked into the
+code. And `rebuild`'s candidate space is built **once per run** (`rebuild_with`); it was being
+re-enumerated on every lookup, which is quadratic over a corpus.
+
+### The finding: the two axes multiply
+
+| sides × maxlen 1 | × maxlen 2 |
+|---|---|
+| 3 → 10 | 3 → 32 |
+| 4 → 21 | 4 → **138** |
+| 5 → 30 | 5 → **372** |
+| 6 → 36 | 6 → **900** |
+
+Sides 3–6 at maxlen 2 is **1442 forms and ~66 s merely to enumerate**. Nothing has failed law F —
+**what stops being affordable is *deciding* it exhaustively.**
+
+> `DESIGN.md` §8 says *"within the frontier law F is decided, not sampled."* That still holds, but
+> the frontier now has a **measured cost boundary**, and it is reached one axis at a time.
+
+### And that is what puts today's house out of reach
+
+The 4-sided house `[4,5,4,5]` needs `maxlen 5` — roughly **1.2 M proposals**. `rebuild` cannot
+enumerate that class, so the R1 construction that has carried every rung so far **does not reach
+the shape the whole project is named for**.
+
+The way through is not a bigger enumeration but a **different recovery**: key the field by an
+invariant and *look the form up*, instead of drawing every candidate and comparing. The census
+already computes exactly such a key — `field_norm` — so indexed recovery is a re-use of machinery
+that exists, not new theory. What it needs is the inverse map (`field_norm → form`) built once,
+which is the natural next step and the first time recovery stops being brute force.
+
+Recorded as `X43`, with the side-count half gated in-repo (T1) and the 5×2 / 6×2 costs measured by
+a probe (T2), labelled as such.
+
 ## 11. Known conflicts in the current tree
 
 | site | conflict | law |

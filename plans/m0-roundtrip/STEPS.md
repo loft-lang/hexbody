@@ -382,6 +382,42 @@ unequal sides *do* add is something level 1 could not show.
   says OK is worse than one that fails. Worked around by snapshotting the names before any file
   read; 20-line standalone repro filed.
 
+## A3 ✅ · grow side count — 4, 5, 6 — **DONE** *(the houses rung)*
+
+- **the enumerator is now parameterised in SIDES too** (`forms_sides(sides, maxlen)`), using a
+  mixed-radix odometer over the turn tuple rather than nested loops, so the side count is an
+  argument instead of a shape baked into the code.
+
+  | sides | forms | shapes | distinct fields | `draw` injective? |
+  |---|---|---|---|---|
+  | 3 | 10 | 3 | 10 | ✅ |
+  | 4 | 21 | 5 | 21 | ✅ |
+  | 5 | 30 | 4 | 30 | ✅ |
+  | 6 | 36 | 9 | 36 | ✅ |
+
+- **law F holds at every side count.** `corpus/a3/` adds the **87** forms with 4–6 sides at unit
+  length; `rt_trip` now covers **119 committed entries across a1 + a2 + a3**, all byte-for-byte,
+  all R1 with `ρ = 0` and exactly one match.
+- **`rebuild`'s candidate space is now built ONCE per run** (`rebuild_with`). It was re-enumerated
+  on every lookup, which is quadratic over a corpus and was already wasteful at 32 entries.
+- **THE FINDING: the frontier is now COST, not correctness.** The two growth axes MULTIPLY:
+
+  | sides × maxlen | forms |
+  |---|---|
+  | 3 × 1 → 10 | 3 × 2 → 32 |
+  | 4 × 1 → 21 | 4 × 2 → **138** |
+  | 5 × 1 → 30 | 5 × 2 → **372** |
+  | 6 × 1 → 36 | 6 × 2 → **900** |
+
+  Sides 3–6 at maxlen 2 is **1442 forms and ~66 s just to enumerate**. Law F has not failed
+  anywhere — what fails is the affordability of *deciding* it exhaustively.
+- **and that is what puts today's house out of reach.** The 4-sided house `[4,5,4,5]` needs
+  `maxlen 5` — roughly **1.2 M proposals** — so `rebuild` cannot enumerate its class. Reaching it
+  wants **indexed recovery** (key the field by an invariant and look the form up) rather than
+  enumerate-and-match. That is a real limit this rung found, recorded rather than papered over:
+  `DESIGN.md` §8's *"within the frontier law F is decided, not sampled"* now has a measured
+  boundary on where that frontier can be afforded.
+
 ## Order, and where it can go wrong
 
 ```

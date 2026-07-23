@@ -310,3 +310,69 @@ pub fn turns_reverse_eq(a: vector<integer>, b: vector<integer>) -> boolean {
   for ri in 0..n { rev += [a[n - 1 - ri] ?? 0]; }
   turns_cyclic_eq(rev, b)
 }
+
+// ── THE SECOND GROWTH AXIS: SIDE COUNT (rung A3) ───────────────────────────
+//
+// A2 grew `len`; A3 grows the number of SIDES — 4 (a house's side count), 5, 6.  The two axes are
+// orthogonal and they MULTIPLY, which is the practical frontier this rung found: see §10.20.
+//
+// The turn tuple is enumerated with a mixed-radix odometer rather than nested loops, so the side
+// count is a parameter instead of a shape baked into the code.  `sides - 1` digits in 1..11, the
+// last determined by `sum = 12` (law J's turn condition, imposed by construction).
+fn ipow(b: integer, e: integer) -> integer {
+  r = 1;
+  for pi in 0..e { r = r * b; }
+  r
+}
+
+pub fn forms_sides(sides: integer, maxlen: integer) -> vector<Form> {
+  out: vector<Form> = [];
+  texts: vector<text> = [];
+  ncomb = ipow(11, sides - 1);
+  nlen = ipow(maxlen, sides);
+  for ci in 0..ncomb {
+    turns: vector<integer> = [];
+    rest = ci;
+    tot = 0;
+    for tj in 0..sides - 1 {
+      dg = ((rest % 11) ?? 0) + 1;
+      rest = (rest / 11) ?? 0;
+      turns += [dg];
+      tot = tot + dg;
+    }
+    last = 12 - tot;
+    if last >= 1 && last <= 11 {
+      turns += [last];
+      for li in 0..nlen {
+        lens: vector<integer> = [];
+        lrest = li;
+        for lj in 0..sides {
+          lens += [((lrest % maxlen) ?? 0) + 1];
+          lrest = (lrest / maxlen) ?? 0;
+        }
+        for eh in 0..12 {
+          ef = form_new(eh, lens, turns);
+          if form_closes(ef) {
+            cf = form_canon(ef);
+            ct = form_write(cf, "x");
+            seen = false;
+            for si in 0..len(texts) { if (texts[si] ?? "") == ct { seen = true; } }
+            if !seen { texts += [ct]; out += [cf]; }
+          }
+        }
+      }
+    }
+  }
+  out
+}
+
+// The A3 set: side counts 4..6 at unit length — the rung's own axis, held at `len 1` so it stays
+// orthogonal to A2's.  Growing BOTH at once is what does not fit (§10.20).
+pub fn forms_a3() -> vector<Form> {
+  out: vector<Form> = [];
+  for sd in 4..7 {
+    fs = forms_sides(sd, 1);
+    for fi in 0..len(fs) { out += [fs[fi] ?? form_new(0, [], [])]; }
+  }
+  out
+}
