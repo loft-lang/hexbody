@@ -192,6 +192,9 @@ cannot fire is not a check.
 | **authored motion + plant** | a house-part moved by a 2-keyframe track (a stomp); swept proxy between frames; derived ground-plant | the geometry×motion blend |
 | **breakable couplings** | attach/detach a wagon; decouple-under-force | grip / throw-off |
 | **I-CROSS in a moving frame** | the crossing test in a part's local frame while the part moves | the one genuinely new algorithm |
-| **the colossus** | a procedural, destructible body you climb in its moving frame, that crushes buildings and can lose a decoupled limb | **the acceptance test — every piece together** |
+| **the derailment** | a coupled train run off the rails: wagons tumble, collide, pile up, interiors rolling through the tumble, couplings snapping | **the first full-stack acceptance test — un-fakeable; showing it *is* proving it** |
+| **the colossus** | a procedural, destructible body you climb in its moving frame, that crushes buildings and can lose a decoupled limb | **the larger capstone — every piece, at scale** |
 
-`bodytest` + one wheel is the first brick; the colossus is the arch it is holding up.
+`bodytest` + one wheel is the first brick; **the derailment is the first full-stack proof**
+(un-fakeable — showing it is proving it, and it is the minimal inside-the-robot case,
+[`design/DYNAMICS.md`](design/DYNAMICS.md)); the colossus is the larger capstone beyond it.

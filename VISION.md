@@ -73,6 +73,33 @@ by many systems at once** — combat sees a hurtbox, traversal sees a standable 
 an actor — unified by the fact that they all consume the current pose and proxy. It never
 *changes*; it was always both.
 
+## The hero demo: a train going off the rails
+
+Everything above is a promise; this is the one thing you *show* to prove it, and it is chosen
+for a precise reason: **for a derailment, showing it and proving it are the same act.** You
+cannot fake a real one — a canned animation would not tumble, pile, or roll the interior over
+correctly — so if it looks right, the stack *is* right. The demo and the acceptance test are the
+same event, which is rare: most impressive demos can be Potemkin set-pieces, this one cannot.
+
+And one legible crash exercises the whole promise — the four-step gold (create → stitch →
+animate → traverse inside) in a single scene: produced-geometry wagons, stitched into a coupled
+train, animated on the rails and then tumbling with collisions, their interiors rolling over as
+they go, couplings snapping. It needs no onboarding — everyone already knows what a derailing
+train looks like — and it proves the *art-is-not-the-value* thesis in passing: placeholder
+houses tumbling down an embankment still read unmistakably as a train wreck.
+
+So it plays three roles at once — a **demo** that sells the capability breadth in one image
+(disaster game, physics toy, mecha game); an **acceptance test**, because if it works the stack
+integrates; and a **forcing function**, because you cannot fake it, so building it forces every
+piece to exist and compose. It is the diorama that both drives and proves the substrate.
+
+It is the **first full-stack target**, deliberately *ahead* of the colossus: smaller — one
+train, one embankment, one tumble, versus a whole procedural climbable colossus — but exercising
+the same stack end to end, including the inside-the-robot case at wagon scale (a tumbling
+wagon's interior tilting is the minimal instance of walls-become-floors; see
+[`design/DYNAMICS.md`](design/DYNAMICS.md)). Build toward the derailment first; the colossus is
+the later, larger capstone.
+
 ## The frontier — and why it is smaller than it first looks
 
 The indie path depends on **produced geometry reaching *shippable aesthetic quality* in 3D**,
