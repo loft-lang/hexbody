@@ -1,6 +1,6 @@
 # Plan template
 
-Copy this file to `plans/<id>-<slug>/README.md`. The `<id>` is the **`jjstwerff/hexbody` issue
+Copy this file to `plans/<id>-<slug>/README.md`. The `<id>` is the **`loft-lang/hexbody` issue
 number** — claimed *before* the directory exists — or, until hexbody has a tracker, the
 **`PLAN.md` milestone slug** (see [`README.md`](README.md) § Identity). Delete the guidance
 blocks (marked *(delete)*) as you fill it in. Closing or deferring: [`_LIFECYCLE.md`](_LIFECYCLE.md).
@@ -14,7 +14,7 @@ phase is *characterize the problem* rather than *design + build*, use
 
 # `<id>` — `<Plan title>`
 
-**Issue:** `jjstwerff/hexbody#<N>` *(or: PLAN.md milestone `<M?>`, pre-tracker)* ·
+**Issue:** `loft-lang/hexbody#<N>` *(or: PLAN.md milestone `<M?>`, pre-tracker)* ·
 **Value:** `<S|R|G|F|U|C|Q|N>` · **Effort:** `<XS|S|M|MH|H|VH>`
 
 ## Status (REQUIRED)

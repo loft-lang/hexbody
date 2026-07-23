@@ -41,7 +41,7 @@ directory that only points back at it.
 
 ## Identity — the issue number, claimed first
 
-The org convention is that a plan's identity is its **`jjstwerff/hexbody` issue number**, not a
+The org convention is that a plan's identity is its **`loft-lang/hexbody` issue number**, not a
 local integer — open the issue first, then name the directory after the number it returns; never
 pick the number by scanning `plans/`.
 

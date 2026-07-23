@@ -20,7 +20,7 @@ Reading order for whoever picks this up cold: **Status → Probes → Clusters �
 
 # `<N>` — `<Investigation title>`
 
-**Issue:** [`jjstwerff/hexbody#<N>`](https://github.com/jjstwerff/hexbody/issues/<N>) ·
+**Issue:** [`loft-lang/hexbody#<N>`](https://github.com/loft-lang/hexbody/issues/<N>) ·
 **Value:** `<S|R|G|F|U|C|Q|N>` · **Effort:** `<XS|S|M|MH|H|VH>`
 
 ## Status (REQUIRED)

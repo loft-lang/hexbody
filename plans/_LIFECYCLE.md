@@ -45,11 +45,11 @@ there are no `finished/` subdirectories.
 
 ```sh
 # Closing:
-gh issue edit <N> -R jjstwerff/hexbody --remove-label status:active --add-label status:finished
-gh issue close <N> -R jjstwerff/hexbody
+gh issue edit <N> -R loft-lang/hexbody --remove-label status:active --add-label status:finished
+gh issue close <N> -R loft-lang/hexbody
 
 # Deferring (issue stays OPEN — record the trigger in the body and the plan Status):
-gh issue edit <N> -R jjstwerff/hexbody --remove-label status:active --add-label status:future
+gh issue edit <N> -R loft-lang/hexbody --remove-label status:active --add-label status:future
 ```
 
 **A closed issue must carry `status:finished` or `status:declined` — never a live
