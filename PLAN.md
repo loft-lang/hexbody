@@ -8,8 +8,9 @@ dependency is **the fit**. Sequenced by the critical path.
 
 Each milestone lists **produce** (the loft modules), **gate** (with a control that must fire),
 **depends on**, and **done when**. Names like `proxy.loft` are proposed, not fixed. Each
-milestone gets its own detailed plan when it is *started* (crawler's `plans/<N>` pattern); this
-is the master sequence, and it is the thing to keep honest as reality edits it.
+milestone earns its own detailed plan directory when it is *started* — the org plan convention,
+imported from crawler and bound for hexbody in [`plans/README.md`](plans/README.md). This file
+is the synthesis layer (crawler's `ROADMAP.md` role), not a plan index.
 
 ---
 
