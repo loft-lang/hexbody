@@ -28,6 +28,13 @@ the first brick to the derailment hero demo — is in [`PLAN.md`](PLAN.md).
 (I) and contracts (K) as short, formal, falsifiable items. **Build and verify against `SPEC.md`,
 not the prose;** the prose says *why*, the spec says *what*, checkably.
 
+**[`ROUNDTRIP.md`](ROUNDTRIP.md) is the formal model** — the objects (`𝕄*` the fitting model, `𝕋`
+its canonical text, `𝔽` the field), the maps (`snap`, `write`/`read`, `draw`/`rebuild`) and the
+laws **A–J** between them. The exact world model is drawn onto the field and **rebuilt from it
+exactly**; `snap` is the only lossy step and it reports its residual. `SPEC` says *what must be
+achieved*, `ROUNDTRIP` says *what the objects are and which equations hold* — and on any question
+about an object, a map, or a law, `ROUNDTRIP` is authoritative.
+
 ## Lineage
 
 - **Built on `hex_field`** (the exact-integer field core: `HexSet`, `EdgeSet`, `Heights`,

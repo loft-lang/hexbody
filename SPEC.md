@@ -7,6 +7,12 @@ always hold (**I**nvariants), and the interfaces that must not change shape (**K
 say *why*; this says *what*, checkably. On disagreement, the spec is authoritative for building
 — reconcile the prose to it.
 
+**[`ROUNDTRIP.md`](ROUNDTRIP.md) is the formal peer** — the objects (`𝕄`, `𝕄*`, `𝕋`, `𝔽`), the maps
+(`snap`, `write`/`read`, `draw`/`rebuild`) and the laws **A–I** that hold between them. This file
+says *what must be achieved*; `ROUNDTRIP` says *what the objects are and which equations hold*. On
+disagreement about an object, a map, or a law, **`ROUNDTRIP` is authoritative**; the items below
+cite it by law letter.
+
 **Every item has a CHECK** — the gate or control that makes it falsifiable. An item without a
 check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate and in each
 `src/*test.loft` gate, so a test names the spec item it defends.
@@ -33,8 +39,8 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 |---|---|---|
 | **L1** | **bounded simulation** — derive the consequence, never simulate the impulse. Full rigid-body dynamics **only** where a feature earns it; earned set = {**G★** derailment} | Newtonian response added anywhere outside the earned set |
 | **L2** | **dynamics scope** — simulate to a *plausible rest*, not frame-perfect physics | chasing joule-accuracy or a general constraint solver |
-| **L3** | **efficiency preservation** *(gap-fill)* — the 2.5-D field is the **stored truth**; the tiltable/complex (patch-atlas) model is a **derived, on-demand overlay**: never persisted, never a branch in a hot-path op | the atlas is stored, or a field/proxy/collision op branches on "tiltable" |
-| **L4** | **no mirror** — orientation is a minimal affine **morph**, never a mirror (gives up true mirror-symmetry); morph = 0 at the 6 exact rotations, bounded elsewhere; beyond tolerance the plot is **flagged**, not stretched | a mirror path, or a silent over-tolerance stretch |
+| **L3** | **efficiency preservation** *(gap-fill)* — the 2.5-D field is the **stored truth** *(for the **world**; a **body**'s truth is its original + pose — [`ROUNDTRIP.md`](ROUNDTRIP.md) §2.1)*; the tiltable/complex (patch-atlas) model is a **derived, on-demand overlay**: never persisted, never a branch in a hot-path op | the atlas is stored, or a field/proxy/collision op branches on "tiltable" |
+| **L4** | ~~**no mirror**~~ — **SUPERSEDED** by [`ROUNDTRIP.md`](ROUNDTRIP.md) laws **G**/**H**. The flip exists (`hex_field::stencil_mirror`; `housetest`'s 12 = 6 × 2) and mutates by approximation; it is governed by *commutation* and *no drift under repetition*, not forbidden. What survives L4: beyond tolerance a plot is **flagged**, never silently stretched | a flip that fails to commute, drifts under `φ¹²`, or a silent over-tolerance stretch |
 | **L5** | **compute boundary** — hexbody computes only what is *derivable from the model*; authored motion tracks and feel-tuning stay the consumer's | hexbody authors gaits, or claims to validate "feel" |
 | **L6** | **the seam** — hexbody owns the geometry/body/seating **mechanism**; the world/consumer owns placement and content; the seam runs one way | settlement/world/placement logic inside hexbody |
 | **L7** | **determinism** — all simulation is deterministic (fixed timestep, reproducible math): same input → **byte-identical** result. Built from line one | any frame-rate-dependent or non-reproducible step |
@@ -57,6 +63,20 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 | **I10** | a coupling point stays **coincident** every tick; decouple → free body with the residual velocity | let the drawbar-eye drift free → it detaches geometrically without a decouple |
 | **I11** | the forward trailer-follow is **stable** — a drifted wagon returns to the drawbar, does not snake | overshoot gain → it oscillates (and isolates that reverse is the only unstable case) |
 
+**Round-trip items** — defined formally in [`ROUNDTRIP.md`](ROUNDTRIP.md); the law letter is the definition.
+
+| ID | invariant | law | control that must fire |
+|---|---|---|---|
+| **I-RT** | `rebuild(draw(m)) = m` for every fitting model — the field is invertible, not approximated | **D** | a non-fitting model bypassing `snap` → the text diff fires |
+| **I-TOTAL** | `rebuild` is **total** and never fails; **exact** (`ρ = 0`) on undamaged fields, **approximate with a reported residual** on damaged ones — a ruin yields a *new original*, not a recovered one | **E₁**,**E₂**,**E₃** | hand-corrupt an `EdgeSet` → still lands in `𝕄*` · crumble a wall → `ρ > 0` is surfaced, not swallowed |
+| **I-POSE** | a body is `⟨original, pose, joints⟩` — original and pose **stored**, local field **derived**, and a body is **never stamped into the world field**. A robot's limb and a derailed wagon are the same case: an exact original at an arbitrary continuous pose | §1.2 | stamp a free-posed body into the world lattice → it can only land on one of the 12 |
+| **I-SEAM** | collision reads many frames at once (base world + each posed body). Imprecision — cracks, jank — is allowed **only on the seam between frames**, bounded by `ε_seam` metres and **deterministic**; inside any frame the error is **exactly 0** | **K₁** | "fix" a crack by snapping a body's wall onto the world lattice → interior error ≠ 0, and law **D** is void for that body |
+| **I-ARBIT** | frames that disagree are arbitrated **deterministically over a total order**, failing safe toward *solid*. Exact at `κ ≤ 1`, arbitrated at `κ = 2`, conservative **and counted** at `κ ≥ 3` — the "3+ is rare" claim is a measured rate, never an assumption | **K₂** | tie-break on iteration order instead of frame identity → replay diverges (`I9`) |
+| **I-FLIP** | the flip commutes with the round trip and does not drift under repetition | **G**, **H** | inject a rounding step → `φ¹²` diverges from the original |
+| **I-EXACT** | round-trip equality is **byte equality**; no `ε` exists in the comparison | **P4** | an `ε` in the comparator means `𝕄*` is wider than `draw` is injective on |
+| **I-CLOSE** | a stencil boundary is a closed turtle cycle over `H₁₂`, exact in `ℤ²` | **J** | drop one turn → the vector sum is non-zero |
+| **I-DOMAIN** | `O` (placing a stencil), `H₁₂` (a stencil's sides), `D` (world linework) are three distinct sets; no grammar production crosses them | §1.1 | a stencil placed at one of the 24 → unparseable |
+
 ## K — Contracts (interfaces that must not change shape)
 
 | ID | contract |
@@ -64,6 +84,7 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 | **K-PROXY** | a `Body` provides a **proxy**; the proxy is the interface — field-derived in the prototype, mesh/authored in a shipped game; its error bound is stated; a consumer runs a conformance gate on their mesh |
 | **K-JOINT** | the **joint value** is the interface; downstream (proxy, collision, render) is blind to whether it came from a constraint (derived) or a track (authored) |
 | **K-SEAT** | `seat(stencil, terrain) → (z0, T', residual)`; `z0` minimises the chosen earthwork objective; `T'` drains; `residual` flags an unseatable plot |
+| **K-FIT** | `fits?(m) → bool` and `snap(m) → (m*, residual)` are **one chokepoint**, consulted by the round-trip gate *and* by the editor. The editor may be stricter, never looser: `authorable ⊆ { m : fits?(m) }`. A non-fitting model is **flagged with its residual**, never silently snapped ([`ROUNDTRIP.md`](ROUNDTRIP.md) §5) |
 
 ---
 
