@@ -21,7 +21,8 @@ any scale — a person, a cart, a blimp, a colossus — get proxies for free.
 
 The **why and the goals** are in [`VISION.md`](VISION.md); the **how** — the mechanism, the
 proxy contract, the destruction models, the roadmap — is in
-[`ARCHITECTURE.md`](ARCHITECTURE.md).
+[`ARCHITECTURE.md`](ARCHITECTURE.md); and **what to build, in what order** — the milestones from
+the first brick to the derailment hero demo — is in [`PLAN.md`](PLAN.md).
 
 ## Lineage
 
