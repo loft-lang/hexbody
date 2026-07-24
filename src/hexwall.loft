@@ -181,15 +181,29 @@ fn wall_along(w: Wall, px: float, py: float) -> float {
 // WITHIN the run?  A hex edge is marked iff its two owning cells answer yes.
 //
 // The tie-break (offset == 0 counts as the positive side) makes the test total and
-// deterministic (`I9`); for a wall anchored on a vertex it never fires, because a vertex is
-// never at the same offset as a cell centre — but a wall centred on a hex CENTRE (the bare
-// `wall_new(d, 0, 0, …)` form) can put a whole row of centres on the line, and then the
-// tie-break places the boundary just to one side of them rather than through them.
+// deterministic (`I9`).  A wall centred on a hex CENTRE (the bare `wall_new(d, 0, 0, …)` form) can
+// put a whole row of centres on the line, and then the tie-break places the boundary just to one
+// side of them rather than through them.
+//
+// ⚠ THE COMPARISON MUST TREAT A MATHEMATICAL ZERO AS ZERO — that is what `WALL_EPS` is doing here.
+// This comment used to claim a VERTEX-anchored wall never puts a cell centre on the line, so the
+// tie-break could never fire.  **That is false**, and `tests/flip.loft` caught it: the `N = 1`
+// family (30/90/150…) at `p = 3` does — e.g. `d = 2` from vertex `(3,0)` puts cell `(1,1)` exactly
+// on the line.  Its offset is mathematically 0, but in FLOAT it comes out as `−1.39e-16` in one
+// orientation and as a clean `0` in the rotation of the same wall.  A bare `oc >= 0.0` then sorts
+// that one cell onto opposite sides in the two orientations, and the rasterisation stops being
+// rotation-covariant — 18 cases, exactly the ones with a centre on the line.
+//
+// Comparing against `−WALL_EPS` instead makes a zero read as zero in EVERY orientation, so the
+// documented tie-break behaves as documented.  This is not a tolerance in a fit (`P4`): the
+// quantity is *exactly* zero and the epsilon only removes rounding noise from a SIGN test.  It
+// cannot misclassify a genuinely off-line cell either — a cell centre that is not on the line sits
+// an algebraic distance away, orders of magnitude above `1e-9`.
 pub fn wall_separates(w: Wall, cx: float, cy: float, nx: float, ny: float) -> boolean {
   oc = wall_offset_signed(w, cx, cy);
   on = wall_offset_signed(w, nx, ny);
-  pc = oc >= 0.0;
-  pn = on >= 0.0;
+  pc = oc > 0.0 - WALL_EPS;
+  pn = on > 0.0 - WALL_EPS;
   if pc == pn { return false; }
   // where the segment C->N crosses the line, and whether that point is within the run
   t = (oc / (oc - on)) ?? 0.5;

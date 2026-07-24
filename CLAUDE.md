@@ -390,10 +390,21 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   is wrong — and only the two directions the mirror **fixes** (90°, 270°) expose it, because
   everywhere else the two rules agree. **Measured: 96/96 mirror cases exact, 48 of them in-between**,
   so the in-between directions survive every orientation and a stencil *may* carry one.
-- ⚠ **OPEN: the `N=1` family (30/90/150…) fails the naive ROTATION rule** — 18 cases, all at `p=3`,
-  never at the 180° rotation. **Pinned, not explained**: the gate asserts the count so it cannot
-  drift. Not called a rasteriser defect, because the mirror rule needed a traversal correction before
-  it was right and this may be the same. Houses are unaffected (`draw_walls`).
+- **The flip gate FOUND AND FIXED a real defect — a false comment, and a float sign test.** It first
+  reported 18 `N=1` rotation mismatches. `wall_separates`'s own comment claimed *"for a wall anchored
+  on a vertex it never fires, because a vertex is never at the same offset as a cell centre"* — **it
+  does**: `d=2` from vertex `(3,0)` at `p=3` puts cell `(1,1)` exactly on the line. That offset is
+  mathematically **0**, but in float it is **`−1.39e-16`** in one orientation and a clean **`0`** in
+  the rotation of the same wall, so `oc >= 0.0` sorted one cell onto **opposite sides** and the
+  rasterisation was not rotation-covariant. Fixed by comparing against `−WALL_EPS`. **Not a `P4`
+  tolerance**: the quantity is exactly zero; the epsilon only removes rounding noise from a **sign**
+  test. Rotation is now exact for all three families.
+- ⚠ **A comment asserting "this case never happens" is a claim like any other — measure it.** That
+  one was load-bearing, wrong, and had been sitting under a green suite because nothing exercised
+  `wall_write` under the orientations.
+- **The fix SHARPENED the control rather than breaking it**: the naive mirror rule now fails on the
+  whole chiral `N=1` family (6 of 6, no other family), where float noise had masked four of six. A
+  control's failure set moving after a fix is worth re-deriving, not re-baselining.
 - **`OD-13` — THE IN-BETWEEN 12 MUST BE FIRST CLASS.** User, 2026-07-24: *"the normal 12 directions
   are fine but a city/castle needs more directions to be believable so the other 12 need to be first
   class."* This is a **requirement**, not an open question — and it **contradicts `ROUNDTRIP` §2.2**

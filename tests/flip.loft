@@ -156,26 +156,27 @@ fn main() {
     ok = false;
   }
 
-  // ── 2b. THE N=1 FAMILY DOES NOT ROTATE UNDER THIS RULE — an OPEN question ──
+  // ── 2b. THE N=1 ROTATION ANOMALY — FOUND HERE, AND RESOLVED ───────────────
   //
-  // Found by this gate, not assumed.  Every failure is `N = 1`, at `p = 3` only, and never at
-  // `n = 3` (the 180° rotation).  It is NOT called a rasteriser defect here, because the mirror
-  // rule in §3 needed a traversal correction before it was right, and this may be the same kind of
-  // thing — the naive rotation rule may simply be wrong for the staircase family.  Either way it is
-  // pinned: the count is asserted, so it cannot drift, improve or worsen unnoticed.
+  // This gate first reported 18 `N = 1` mismatches, all at `p = 3`.  The root cause was in
+  // `wall_separates`, whose comment claimed a VERTEX-anchored wall never puts a cell centre exactly
+  // on the wall line, so its `oc >= 0.0` tie-break could never fire.  **That claim was false.**
+  // `d = 2` from vertex `(3,0)` at `p = 3` puts cell `(1,1)` exactly on the line — and while the
+  // offset is mathematically 0, in FLOAT it comes out `−1.39e-16` in one orientation and a clean
+  // `0` in the rotation of the same wall.  A bare `>= 0.0` then sorted that one cell onto opposite
+  // sides in the two orientations, so the rasterisation was not rotation-covariant.
   //
-  // It does not touch what this gate was written for: the in-between directions are clean, and
-  // HOUSES never come near it — they are drawn by `draw_walls` (the exact combinatorial boundary),
-  // gated 12/12 by `tests/house.loft`, not by `wall_write`.
+  // Fixed by comparing against `−WALL_EPS`, which makes a mathematical zero read as zero in every
+  // orientation.  Not a tolerance in a fit (`P4`): the quantity is *exactly* zero and the epsilon
+  // only removes rounding noise from a SIGN test.
+  //
+  // The assertion stays as a REGRESSION GUARD.  Houses never came near this — they are drawn by
+  // `draw_walls` (the exact combinatorial boundary), gated 12/12 by `tests/house.loft`.
   println("");
-  println("2b. OPEN — the N=1 family (30/90/150…) does not satisfy the naive rotation rule");
-  println("    {bad1} cases, all at p=3, none at n=3 (the 180° rotation). Pinned, not explained:");
-  println("    either the rule needs the traversal care §3's mirror needed, or `wall_write` is not");
-  println("    rotation-covariant for the staircase family. Houses are unaffected (draw_walls).");
-  if bad1 != 18 {
-    println("  FAIL: the N=1 rotation anomaly moved — it was 18 cases, now {bad1}. Re-diagnose"
-            + " rather than re-baselining: it either got fixed (good, remove this) or spread");
-    ok = false;
+  println("2b. the N=1 rotation anomaly — found by this gate, root-caused, fixed: {bad1} left");
+  if bad1 != 0 {
+    println("  FAIL: the N=1 rotation anomaly is back ({bad1} cases). `wall_separates`'s sign test"
+            + " has lost its zero-tolerance again — see the comment there"); ok = false;
   }
 
   // ── 3. A WALL SEGMENT MIRRORS EXACTLY ─────────────────────────────────────
@@ -211,12 +212,19 @@ fn main() {
   // ── 4. CONTROL — THE NAIVE MIRROR RULE MUST FAIL ──────────────────────────
   //
   // Treating the wall as a directed ray gives `d → 12−d` anchored at the mirrored START.  That is
-  // wrong, and it is wrong in a way almost nothing exposes: for every direction except the two the
-  // mirror FIXES (90° and 270°), the two rules agree.  So the control both fires and names its
-  // failure set — if it ever stopped firing, §3's rule would be untested.
+  // wrong, and it fails on **exactly the `N = 1` family** (30/90/150…) — at every length, and never
+  // on `N = 3` or `N = 39`.  Structural rather than incidental: `N = 1` is the three-axis STAIRCASE,
+  // the chiral one, so its mirror is the other-handed staircase and only reversing traversal
+  // reproduces it.  The symmetric families are reproduced by either rule, so they cannot tell the
+  // two apart.
+  //
+  // *(Before the `wall_separates` fix in §2b this reported only 2 directions — float noise was
+  // masking four of the six.  The fix sharpened the control rather than breaking it.)*
   println("");
   println("4. CONTROL — the naive rule (d→12−d at the mirrored START) must fail");
   naive_bad = 0;
+  naive_n1 = 0;
+  naive_other = 0;
   naive_list = "";
   for d4 in 0..24 {
     base3 = draw_wall(d4, 3, 0, 3);
@@ -224,24 +232,25 @@ fn main() {
     if keydiff(edge_keys(base3, 0, true), edge_keys(naive, 0, false)) != 0 {
       naive_bad = naive_bad + 1;
       naive_list = naive_list + "{d4} ";
+      if tri_n2(d4) == 1 { naive_n1 = naive_n1 + 1; } else { naive_other = naive_other + 1; }
     }
   }
-  println("   the naive rule fails on {naive_bad} of 24 directions: {naive_list}");
-  println("   (these are exactly the directions the mirror FIXES, where reversing traversal is the"
-          + " only difference and nothing else masks it)");
+  println("   the naive rule fails on {naive_bad} of 24: {naive_list}");
+  println("   all N=1 (the chiral staircase family): {naive_n1} of 6;  any other family:"
+          + " {naive_other} (want 6 and 0)");
   if naive_bad == 0 {
     println("  FAIL: control did not fire — the naive rule works, so section 3 proves nothing about"
             + " the traversal rule"); ok = false;
   }
-  if naive_bad != 2 {
-    println("  FAIL: the naive rule failed on {naive_bad} directions, expected exactly 2 (the"
-            + " self-mirror pair) — the failure set is not what it should be"); ok = false;
+  if naive_n1 != 6 || naive_other != 0 {
+    println("  FAIL: the naive rule's failure set is not the N=1 family — it should fail on exactly"
+            + " the chiral staircase directions and no others"); ok = false;
   }
 
   println("");
   println("   Linework is closed under the 12 orientations, in-between directions included, so a");
   println("   stencil MAY carry one: the geometry survives. The segment mirror rule is d → −d at");
-  println("   the mirrored FAR END — the naive d → 12−d is wrong and only 90°/270° expose it.");
+  println("   the mirrored FAR END; the naive d → 12−d is wrong on the whole chiral N=1 family.");
 
   println("");
   if ok { println("=== FLIP OK ==="); }

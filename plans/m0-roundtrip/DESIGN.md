@@ -604,9 +604,11 @@ settled core, so it moves only once the replacement is built rather than asserte
 with no lattice anchoring, so a stencil-local road raises anchoring and recovery questions walls do
 not. Treat "stencils carry roads" as unexamined.
 
-**Also open, and now more relevant:** the `N = 1` rotation anomaly (`X57`, 18 cases pinned). It is in
-the 30/90/150° family — *house* angles — but a castle drawing those as **linework** rather than as a
-house footprint would meet it.
+**One thing that WAS open here is now closed:** the `N = 1` rotation anomaly (`X57`) was a real
+defect in `wall_separates` — a float sign test on a mathematically-zero offset, under a comment that
+wrongly claimed the case could not arise. Fixed; rotation is exact for all three families. It mattered
+for exactly this rung: those are the 30/90/150° *house* angles, and a castle drawing them as
+**linework** rather than as a house footprint is precisely what would have met it.
 
 ---
 

@@ -986,14 +986,35 @@ exposes, because for every direction *except the two the mirror fixes* (90°, 27
 agree. There, reversing traversal is the only difference and nothing masks it. That is the gate's
 control, and it fires on exactly those two.
 
-### ⚠ One open anomaly, pinned rather than explained
+### The gate found a real defect — a false comment, and a float sign test
 
-The **`N = 1` family** (30/90/150…) does **not** satisfy the naive *rotation* rule: **18** cases, all
-at `p = 3`, never at the 180° rotation. It is **not** called a rasteriser defect — the mirror rule
-needed a traversal correction before it was right, and this may be the same kind of thing. The gate
-**asserts the count**, so it cannot drift, improve or worsen unnoticed. It does not touch what the
-gate was written for (the in-between directions are clean), and **houses are unaffected** — they go
-through `draw_walls`, gated 12/12 by `tests/house.loft`.
+It first reported **18** `N = 1` rotation mismatches. The root cause was a claim in
+`wall_separates`'s own comment:
+
+> *"for a wall anchored on a vertex it never fires, because a vertex is never at the same offset as
+> a cell centre"*
+
+**False.** `d = 2` from vertex `(3,0)` at `p = 3` puts cell `(1,1)` **exactly on the line**. The
+offset is mathematically `0` — but in float it evaluates to `−1.39e-16` in one orientation and a
+clean `0` in the rotation of the same wall:
+
+| | offset of the on-line cell | `oc >= 0.0` |
+|---|---|---|
+| `d=2 p=3` from `(3,0)` | `−1.3877787807814457e-16` | **false** → negative side |
+| its 60° rotation, `d=6` from `(0,3)` | `0` | **true** → positive side |
+
+One cell, sorted onto opposite sides in the two orientations — so the rasterisation was not
+rotation-covariant. Fixed by comparing against `−WALL_EPS`, which makes a mathematical zero read as
+zero in **every** orientation. That is not a tolerance in a fit (`P4`): the quantity is *exactly*
+zero and the epsilon only removes rounding noise from a **sign** test.
+
+**The fix sharpened the control rather than breaking it.** The naive mirror rule now fails on the
+**whole chiral `N = 1` family** — 6 of 6, and no other family, at every length — where float noise
+had been masking four of the six. `N = 1` is the three-axis staircase, so its mirror is the
+other-handed staircase and only reversing traversal reproduces it; the symmetric families cannot
+tell the two rules apart. The gate keeps the count as a regression guard.
+
+**Houses never came near it** — `draw_walls` is the exact combinatorial boundary, gated 12/12.
 
 ### What this does NOT establish
 
