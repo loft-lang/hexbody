@@ -237,9 +237,15 @@ pub fn line_hexes(x0: float, y0: float, x1: float, y1: float, cells: HexSet) -> 
   dy = y1 - y0;
   ln = sqrt(dx * dx + dy * dy) ?? 0.0;
   steps = ((ln * 3.0) as integer) + 1;
+  // `/` is FALLIBLE in loft, so `t` below types as `float?`.  `steps` is `(..) + 1` on a
+  // non-negative `sqrt`, so it is at least 1 and the divide cannot fail — but a null `t` taken as
+  // `0.0` would put EVERY sample on the start point, laying a one-cell stub where a wall was asked
+  // for and returning a plausible count for it.  Refuse instead: 0 cells is visible to the caller,
+  // a collapsed wall is not.  The `?? 0.0` below is unreachable past this guard.
+  if steps < 1 { return 0; }
   n = 0;
   for si in 0..steps + 1 {
-    t = (si as float) / (steps as float);
+    t = (si as float) / (steps as float) ?? 0.0;
     (hq, hr) = px_to_hex(x0 + dx * t, y0 + dy * t);
     if !hexset_get(cells, hq, hr) {
       hexset_set(cells, hq, hr, true);

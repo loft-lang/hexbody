@@ -245,8 +245,19 @@ pub fn surface_miter(p: Plan, cells: HexSet, sa: integer, sb: integer)
 // render made visible.
 pub fn surface_quad(p: Plan, cells: HexSet, side: integer, nsides: integer)
                     -> (float, float, float, float) {
-  prev = ((side - 1) % nsides + nsides) % nsides;
-  next = (side + 1) % nsides;
+  // `%` is FALLIBLE in loft, so `nsides = 0` types `prev`/`next` as `integer?` — and a null index
+  // arriving at `surface_miter` would read as a valid-looking side **0** rather than a refusal: a
+  // silently wrong corner instead of a caught one.  A miter needs `prev != side != next`, so it
+  // needs at least three sides; below that there is no corner to cut and the honest answer is the
+  // un-mitered span, which is already this function's defined escape when a miter fails.
+  //
+  // Every caller passes 4, so this cannot fire today — but *"this cannot fire"* is a claim like
+  // any other (`X57`: `wall_separates`' comment said exactly that, was wrong, and was
+  // load-bearing under a green suite).  The `?? 0` below is unreachable PAST this guard; the
+  // guard is what refuses, the `??` only discharges the type.
+  if nsides < 3 { return surface_span(p, cells, side); }
+  prev = ((side - 1) % nsides + nsides) % nsides ?? 0;
+  next = (side + 1) % nsides ?? 0;
   (ax, ay, aok) = surface_miter(p, cells, prev, side);
   (bx, by, bok) = surface_miter(p, cells, side, next);
   if !aok || !bok { return surface_span(p, cells, side); }

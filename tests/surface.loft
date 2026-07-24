@@ -323,6 +323,32 @@ fn main() {
             + " nothing and G2 is vacuous"); ok = false;
   }
 
+  // ── 9. THE DEGENERATE-SIDE GUARD ──────────────────────────────────────────
+  //
+  // `surface_quad` refuses to miter below three sides, because `%` is fallible and a null index
+  // would reach `surface_miter` as a valid-looking side 0 — a silently wrong corner.  Every
+  // caller passes 4, so the guard is unreachable in ordinary use; that is exactly why it is
+  // measured here rather than trusted.  A guard nothing exercises is a comment with a semicolon.
+  println("");
+  println("9. THE GUARD — surface_quad refuses to miter below 3 sides, and falls back to the span");
+  (qx0, qy0, qx1, qy1) = surface_quad(fpl, fcells, 0, 4);
+  (dx0, dy0, dx1, dy1) = surface_quad(fpl, fcells, 0, 2);
+  (px0, py0, px1, py1) = surface_span(fpl, fcells, 0);
+  mitered = qx0 != px0 || qy0 != py0 || qx1 != px1 || qy1 != py1;
+  fellback = dx0 == px0 && dy0 == py0 && dx1 == px1 && dy1 == py1;
+  println("   nsides 2 -> the un-mitered span, exactly: {fellback}");
+  println("   nsides 4 -> a MITERED quad, different from the span: {mitered}");
+  if !fellback {
+    println("  FAIL: the guard did not fall back to surface_span — a degenerate side count is"
+            + " reaching the miter, where a null index reads as side 0"); ok = false;
+  }
+  // CONTROL: the two must DIFFER at nsides 4, or "falls back to the span" is vacuous — it would
+  // be satisfied by a surface_quad that never mitered anything.
+  if !mitered {
+    println("  FAIL: control did not fire — the mitered quad equals the span, so the fallback"
+            + " above proves nothing about the guard"); ok = false;
+  }
+
   println("");
   if ok { println("=== SURFACE OK ==="); }
   else { println("=== surface test FAILED ==="); }
