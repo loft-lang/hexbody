@@ -40,7 +40,7 @@ pub fn orient_k(k: integer, m: integer, o: integer) -> integer {
   ok2 = k;
   om2 = m;
   if o >= 6 { ok2 = refl_k(k); om2 = refl_m(m); }
-  for oi in 0..(o % 6) {
+  for _ in 0..(o % 6) {
     nk = ((ok2 - om2) / 2) ?? 0;
     nm = ((3 * ok2 + om2) / 2) ?? 0;
     ok2 = nk;
@@ -53,7 +53,7 @@ pub fn orient_m(k: integer, m: integer, o: integer) -> integer {
   ok3 = k;
   om3 = m;
   if o >= 6 { ok3 = refl_k(k); om3 = refl_m(m); }
-  for oj in 0..(o % 6) {
+  for _ in 0..(o % 6) {
     nk2 = ((ok3 - om3) / 2) ?? 0;
     nm2 = ((3 * ok3 + om3) / 2) ?? 0;
     ok3 = nk2;
@@ -321,7 +321,7 @@ pub fn turns_reverse_eq(a: vector<integer>, b: vector<integer>) -> boolean {
 // last determined by `sum = 12` (law J's turn condition, imposed by construction).
 fn ipow(b: integer, e: integer) -> integer {
   r = 1;
-  for pi in 0..e { r = r * b; }
+  for _ in 0..e { r = r * b; }
   r
 }
 
@@ -334,7 +334,7 @@ pub fn forms_sides(sides: integer, maxlen: integer) -> vector<Form> {
     turns: vector<integer> = [];
     rest = ci;
     tot = 0;
-    for tj in 0..sides - 1 {
+    for _ in 0..sides - 1 {
       dg = ((rest % 11) ?? 0) + 1;
       rest = (rest / 11) ?? 0;
       turns += [dg];
@@ -346,7 +346,7 @@ pub fn forms_sides(sides: integer, maxlen: integer) -> vector<Form> {
       for li in 0..nlen {
         lens: vector<integer> = [];
         lrest = li;
-        for lj in 0..sides {
+        for _ in 0..sides {
           lens += [((lrest % maxlen) ?? 0) + 1];
           lrest = (lrest / maxlen) ?? 0;
         }

@@ -84,7 +84,6 @@ fn cmp_vec(a: vector<integer>, b: vector<integer>) -> integer {
 pub fn form_canon(f: Form) -> Form {
   n = len(f.fm_len);
   if n == 0 { return f; }
-  best = 0;
   bt = shift_turns(f.fm_turn, 0);
   bl = shift_lens(f.fm_len, 0);
   bh = shift_h0(f, 0);
@@ -97,7 +96,7 @@ pub fn form_canon(f: Form) -> Form {
     if ord == 0 {
       if ch < bh { ord = -1; } else { ord = 1; }
     }
-    if ord < 0 { best = si; bt = ct; bl = cl; bh = ch; }
+    if ord < 0 { bt = ct; bl = cl; bh = ch; }
   }
   form_new(bh, bl, bt)
 }

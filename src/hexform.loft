@@ -174,8 +174,8 @@ pub fn form_closes(f: Form) -> boolean {
 //
 // That is why `housedraw`'s Plan is a CONTINUOUS rectangle rasterised centre-in-region, and
 // why it — not a turtle cycle — is domain A's shape primitive.  See DESIGN.md §10.4.
-pub fn perp_k(k: integer, m: integer) -> integer { -m }
-pub fn perp_m(k: integer, m: integer) -> integer { 3 * k }
+pub fn perp_k(_k: integer, m: integer) -> integer { -m }
+pub fn perp_m(k: integer, _m: integer) -> integer { 3 * k }
 
 // 4 * the squared world length of an arbitrary doubled-coordinate vector.
 pub fn vec_n2_4(k: integer, m: integer) -> integer { 3 * k * k + m * m }

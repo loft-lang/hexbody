@@ -124,8 +124,8 @@ pub fn wall_step_m(d24: integer) -> integer {
 pub fn wall_is_exact(d24: integer) -> boolean { (((d24 % D24) + D24) % D24) % 2 == 0 }
 
 // World direction of a doubled-coordinate vector: x = k*sqrt(3)/2, y = m/2.
-fn dir_x(k: integer, m: integer) -> float { (k as float) * 0.8660254037844386 }
-fn dir_y(k: integer, m: integer) -> float { (m as float) * 0.5 }
+fn dir_x(k: integer, _m: integer) -> float { (k as float) * 0.8660254037844386 }
+fn dir_y(_k: integer, m: integer) -> float { (m as float) * 0.5 }
 
 pub fn wall_new(d24: integer, ox: float, oy: float, half: float, mat: integer) -> Wall {
   sk = wall_step_k(d24);
@@ -199,6 +199,8 @@ fn wall_along(w: Wall, px: float, py: float) -> float {
 // quantity is *exactly* zero and the epsilon only removes rounding noise from a SIGN test.  It
 // cannot misclassify a genuinely off-line cell either — a cell centre that is not on the line sits
 // an algebraic distance away, orders of magnitude above `1e-9`.
+const WALL_EPS = 0.000000001;   // a float SIGN-test guard, not a P4 tolerance
+
 pub fn wall_separates(w: Wall, cx: float, cy: float, nx: float, ny: float) -> boolean {
   oc = wall_offset_signed(w, cx, cy);
   on = wall_offset_signed(w, nx, ny);
@@ -216,7 +218,6 @@ pub fn wall_separates(w: Wall, cx: float, cy: float, nx: float, ny: float) -> bo
 // The endpoint edges sit exactly at along = +-wa_half; include them so the chain reaches its
 // vertices.  A rasterisation tie-break, not a geometric fudge — the same role `draw_floor`'s
 // EPS plays, and it never moves a mark off its edge.
-const WALL_EPS = 0.000000001;
 
 // ── THE EDGE TABLE IS hex_grid's, NOT OURS ─────────────────────────────────
 //
@@ -579,7 +580,7 @@ pub fn wall_snap_p(d24: integer, a0: integer, b0: integer, want: integer) -> int
 }
 
 // World position of a triangle-lattice point, in world units.
-pub fn tri_x(a: integer, b: integer) -> float { (a as float) * 0.28867513459481287 }
+pub fn tri_x(a: integer, _b: integer) -> float { (a as float) * 0.28867513459481287 }
 pub fn tri_y(a: integer, b: integer) -> float {
   (a as float) / 6.0 + (b as float) / 3.0
 }
