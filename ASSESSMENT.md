@@ -190,14 +190,20 @@ storage/doorstep/vocabulary stack is now gated or schema-checked.*
 
 ### The frontier now
 
-0. **Arm a forward gate before writing body code. [G] there is currently none.** `SURFACE_LANDED`
-   is `true`, and the runner's `run_red` — the machinery that *asserts* a gate is red for its stated
-   reason — is defined but no longer invoked by the table. So the project enters its first unbuilt
-   half with **zero armed tripwires**, having just credited that pattern (§6) for its best result.
-   **[J]** The body's falsifiable equivalent of `write(rebuild(draw(read(T)))) = T` is already
-   written down: `I6` — *a part's pose is a pure function of its joint values* — **is** a round trip
-   (joints → pose → recover joints), and `I9`'s byte-identical replay is writable today, red, before
-   anything moves. Cheap, and it decides whether M0's method transfers to motion at all.
+0. ~~**Arm a forward gate before writing body code. [G] there is currently none.**~~ **DONE —
+   `tests/joint.loft`.** The observation held: `SURFACE_LANDED` was `true` and `run_red` was defined
+   but uninvoked, so the project was entering its first unbuilt half with **zero armed tripwires**,
+   having just credited that pattern (§6) for its best result. **[G]** The gate is now written and
+   held red — `run_red` fails if it prints `JOINT OK`, fails if it is red for any other reason, and
+   a tripwire flips it to `JOINT BLOCKED` the moment a body verb is declared in `src/`. Both
+   controls verified live. It states the two checks `G1` must satisfy: **purity by two different
+   paths** (one call always equals itself, so a single path proves nothing) and
+   **`skid = |r·θ − d| = 0`** with the spec's own spin-off-travel control.
+   ⚠ **[J] It deliberately does NOT assert the joint round trip.** I had called `I6` *"a round
+   trip (joints → pose → recover joints)"*; writing the gate corrected that. `I6` gives a
+   **function**, not an injective one, and `θ` vs `θ + 2π` is the obvious collision — so
+   `recover_joints(pose(j)) = j` needs a stated domain, which is a `DESIGN.md` §10 decision before
+   it is any gate's assertion. Same shape `X38`'s census settled for `draw`.
 1. **Start the body** (`G1`) — the first genuinely new subsystem, and the half of "hexbody" that
    does not exist yet (`G1`/`G3`/`G4`/`G6` are all unbuilt). Largest by far. Read `crawler` first
    (`bodytest`). **[J] this is the real next milestone**; everything before it was M0 finishing.
@@ -240,6 +246,13 @@ is ungated. The gap is entirely "not built yet", which is a schedule, not a debt
 - **Where a door's OPEN/CLOSED state lives** (`DESIGN.md` §10.28) — two wall ids (**recommended**:
   free, round-trips today, collider derived at layer 2) vs an `L14` overlay. No round-trip
   consequence either way, which is why it can wait.
+- **Is the joint→pose map INJECTIVE, and on what domain?** *(raised by `tests/joint.loft`, 2026-07-24;
+  the body's first open decision, and the one that decides whether M0's method transfers.)* `I6`
+  gives a **function**; a round trip needs an **injective** one, and a revolute joint at `θ` and
+  `θ + 2π` collides. Likely answer: injective on a stated domain — the same shape `X38` settled for
+  `draw`, where the census decided level 1 finite and injective and *licensed* exact recovery.
+  **Decide before writing the check, not after**: the forward gate deliberately asserts purity and
+  rolling only, and leaves this out.
 - **OD-1** the morph — narrowed to *probably unnecessary* by free poses.
 - **OD-5** is the flip exact — `X2` and `X57` both say yes at T1. **[J] closeable by inspection
   rather than new work.**

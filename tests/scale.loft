@@ -54,7 +54,7 @@ fn fabs(x: float) -> float { if x < 0.0 { 0.0 - x } else { x } }
 fn src_dir() -> text { "{source_dir()}/../src" }
 
 fn src_names() -> vector<text> {
-  names = list_dir(src_dir());
+  names: vector<text> = list_dir(src_dir()) ?? [];
   out: vector<text> = [];
   for ni in 0..len(names) {
     nm = names[ni] ?? "";

@@ -1,0 +1,153 @@
+// joint — THE FORWARD GATE FOR `SPEC` **I6**, AND IT IS RED ON PURPOSE.
+//
+// `I6`: *a part's pose is a **pure function** of its joint values; wheel angle `= travel/radius`.*
+// Control named by the spec: *spin a wheel off-travel → it skids.*
+//
+// Nothing here asserts anything yet, because **`G1` is unbuilt** — there is no body, no part, no
+// joint. This gate exists BEFORE its subject, the way `rt_trip` was written red at `S7` and held
+// red by the runner until `rebuild` landed (`DESIGN.md` §8.0). `tools/run_tests.sh` runs it every
+// time through `run_red`, which **asserts the redness**: it must not print `JOINT OK`, and it must
+// print `JOINT RED` for the stated reason. If it ever goes green by accident the runner FAILS.
+//
+// WHY WRITE IT NOW. `ASSESSMENT.md` §5 item 0: after `G2` and the foxel, **nothing is armed**.
+// `SURFACE_LANDED` sat false from `S4` to `G2` and fired on exactly the step it was aimed at
+// (`X62`) — better than a permanently red suite and better than a forgotten TODO. `M0` is closed
+// and the body is next, so the tripwire for the body belongs in the tree *before* the body does.
+//
+// AND THE HARDER REASON. **`M0`'s method does not transfer to motion unmodified.** Every gate in
+// this repo compares committed bytes to recomputed bytes; a moving part has no corpus. What DOES
+// transfer is the shape of the claim: `I6` says the pose is a *function* of the joints, which is
+// the body's `law D` — and a function that is also injective gives `recover(pose(j)) = j`, the
+// body's round trip. Whether it IS injective is an OPEN QUESTION and this gate must not presume
+// it; see §3.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// WHAT THIS GATE MUST ASSERT WHEN `G1` LANDS. Written now, while the shape is
+// being decided, so it constrains the design instead of being fitted to it.
+//
+//   1  PURITY — pose is a function of the joint values ALONE.
+//      Reach the same joint vector by two DIFFERENT PATHS — set it directly, and set it after
+//      visiting other values — and require the two poses byte-identical. Also: calling `pose`
+//      twice changes nothing, and no elapsed time, frame count or call order appears in the
+//      result.
+//      CONTROL: an accumulating implementation (`pose += delta`) must FAIL the two-path check.
+//      Without a second path the check is vacuous — one call always equals itself.
+//
+//   2  WHEEL ANGLE = TRAVEL / RADIUS, and the skid is the instrument.
+//      For a wheel of radius `r` rolled a distance `d`, the angle is `d/r` and the contact point
+//      does not slip: `skid = |r·θ − d| = 0`, exactly, with no tolerance (law **P4** — this is a
+//      derived quantity, not a measured one).
+//      CONTROL: drive `θ` and `d` INDEPENDENTLY — the spec's own "spin a wheel off-travel" — and
+//      require `skid > 0`. A zero skid on a wheel that was never turned is not a result.
+//      ⚠ `r` is a length: state it in metres and register it (`SPEC` **L8**, `tests/scale.loft`).
+//
+//   3  THE JOINT ROUND TRIP — PROPOSED, NOT `I6`. **Do not assert this until it is decided.**
+//      `I6` says pose is a *function* of the joints; it does NOT say the function is injective,
+//      and `recover_joints(pose(j)) = j` needs injectivity. A revolute joint at `θ` and `θ + 2π`
+//      is the obvious collision, so the answer is probably "injective on a stated domain" rather
+//      than "injective" — which is exactly the shape `X38`'s census settled for `draw`.
+//      **Recorded as an open decision in `ASSESSMENT.md` §5** — `m0-roundtrip`'s `DESIGN.md` is
+//      the wrong home, that plan is closed. If it is admitted, its
+//      control is `M0`'s: a pose produced by something OTHER than a joint value must land in the
+//      body's `R2` with a residual, never silently in `R1`.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// HOW TO TURN IT GREEN. Land `G1`, write §1 and §2 as real checks against the real API, flip
+// `BODY_LANDED`, and MOVE this row out of `run_red` into the runner's table. The runner enforces
+// the last step: while the row is in `run_red`, printing `JOINT OK` is itself a failure.
+
+// The switch. While this is false the gate is red by construction, which is the point.
+const BODY_LANDED = false;
+
+// The verbs `G1` will introduce. If any of them is DECLARED in `src/`, the body has landed and
+// this gate is stale — the tripwire fires and demands the real checks, rather than sitting red
+// beside a subject that now exists. Same failure mode `SURFACE_LANDED` was built to catch.
+fn body_verbs() -> vector<text> {
+  ["joint_pose", "part_pose", "pose_of", "wheel_angle", "joint_value", "part_of",
+   "body_pose", "recover_joints", "joint_recover"]
+}
+
+fn src_dir() -> text { "{source_dir()}/../src" }
+
+fn in_list(v: vector<text>, s: text) -> boolean {
+  for ii in 0..len(v) { if (v[ii] ?? "") == s { return true; } }
+  false
+}
+
+// Every name declared by one source text. A declaration is a line whose first word (after an
+// optional `pub`) is the keyword, so the verb written in a comment never counts — the same
+// instrument `tests/scope.loft` uses, and for the same reason.
+fn declared_names(src: text) -> vector<text> {
+  out: vector<text> = [];
+  lines = src.split('\n');
+  for lj in 0..len(lines) {
+    ln = (lines[lj] ?? "").trim();
+    w = ln.split(' ');
+    kw = w[0] ?? "";
+    nm = w[1] ?? "";
+    if kw == "pub" {
+      kw = w[1] ?? "";
+      nm = w[2] ?? "";
+    }
+    if kw == "fn" || kw == "struct" || kw == "const" || kw == "enum" {
+      nm = (nm.split('(')[0] ?? "").trim();
+      nm = (nm.split(':')[0] ?? "").trim();
+      if nm.len() > 0 { out += [nm]; }
+    }
+  }
+  out
+}
+
+fn main() {
+  println("=== joint — SPEC I6, the forward gate: pose is a pure function of the joints ===");
+  println("");
+  println("This gate is RED ON PURPOSE and asserts nothing yet. It is written before its subject,");
+  println("the way rt_trip was written before rebuild (DESIGN.md 8.0), so that the requirement is");
+  println("in the tree while the body is still being designed rather than after.");
+  println("");
+  println("WHAT IT WILL ASSERT WHEN G1 LANDS:");
+  println("  1  PURITY   same joint vector by two DIFFERENT paths -> byte-identical pose.");
+  println("              CONTROL: an accumulating pose (pose += delta) must fail the two-path");
+  println("              check. One call always equals itself, so one path proves nothing.");
+  println("  2  ROLLING  wheel angle = travel/radius, and skid = |r*theta - d| is EXACTLY 0.");
+  println("              CONTROL: drive theta and d independently (SPEC I6's own 'spin a wheel");
+  println("              off-travel') and require skid > 0.");
+  println("  3  ---      the joint ROUND TRIP is PROPOSED, not I6, and is not asserted here:");
+  println("              I6 gives a function, not an injective one, and theta vs theta+2pi is");
+  println("              the obvious collision. ASSESSMENT.md 5 carries it; decide before any gate asserts it.");
+  println("");
+
+  // ── THE TRIPWIRE — has the body landed while this gate slept? ─────────────
+  names: vector<text> = list_dir(src_dir()) ?? [];
+  verbs = body_verbs();
+  found: vector<text> = [];
+  for ni in 0..len(names) {
+    nm = names[ni] ?? "";
+    if nm.ends_with(".loft") {
+      ds = declared_names(file("{src_dir()}/{nm}").content() ?? "");
+      for di in 0..len(ds) {
+        dn = ds[di] ?? "";
+        if in_list(verbs, dn) { found += ["{dn} in {nm}"]; }
+      }
+    }
+  }
+  nfound = len(found);
+  nmod = len(names);
+  println("TRIPWIRE — is G1 here yet? scanned {nmod} entries in src/ for the body's verbs");
+  for fi in 0..nfound { println("   FOUND {found[fi] ?? \"\"}"); }
+
+  if nfound > 0 || BODY_LANDED {
+    println("");
+    println("JOINT BLOCKED: the body has landed ({nfound} verb(s) declared, BODY_LANDED"
+            + " {BODY_LANDED}) but this gate still asserts nothing.");
+    println("   Write sections 1 and 2 against the real API, flip BODY_LANDED, and move this row");
+    println("   out of run_red into the runner's table. Until then the suite fails HERE, on");
+    println("   purpose: a forward gate that outlives its subject is worse than none, because it");
+    println("   reads as coverage while measuring nothing.");
+    return;
+  }
+
+  println("   0 body verbs declared — G1 is unbuilt, as expected");
+  println("");
+  println("JOINT RED: the body is absent (G1 unbuilt) — this gate asserts nothing yet");
+}

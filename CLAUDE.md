@@ -17,7 +17,13 @@ the geometry itself**. Split out of `crawler` 2026-07-23; `crawler` is its first
 - **loft is upstream and consumer-only** — hexbody never fixes loft. Toolchain defects go to
   crawler's `LOFT-HANDOFF.md` / `FILING.md`, never into a hexbody plan. The
   `stores not freed at program exit` warning on every run is one of these: known, loft-side.
-- **Commit and push only when asked.** Commit messages end with the org `Co-Authored-By` trailer.
+- **PUSHING IS ALWAYS ALLOWED — it is a SAFETY FEATURE, not a commitment.** (User, 2026-07-24,
+  replacing the old *"commit and push only when asked"*.) Work that is pushed is backed up,
+  reviewable and revertible; work sitting in a dirty tree is none of those. So push when a step is
+  green rather than waiting to be told. What still needs asking is anything **hard to reverse** —
+  rewriting history, force-pushing, deleting a branch — and anything that changes what the project
+  *claims*, which is a decision rather than a save. Commit messages end with the org
+  `Co-Authored-By` trailer.
 
 ## Check `../crawler` first — it is the reservoir, not just the origin
 
@@ -266,8 +272,10 @@ A measurement cannot overturn any of these. They bound the design.
   been masking four of six cases (`X57`).
 - **The tripwire beats both a permanently red suite and a forgotten TODO.** `SURFACE_LANDED` sat
   `false` from S4 to `G2`, printing PENDING, and fired on exactly the step it was aimed at (`X62`).
-  Use it for the next requirement that outruns its machinery — ⚠ and note **none is armed right
-  now**, with the body about to start.
+  Use it for the next requirement that outruns its machinery. **One is armed now**:
+  `tests/joint.loft` states `SPEC` **I6** and is held red by the runner's `run_red` until `G1`
+  lands — it fails if it prints `JOINT OK`, fails if it is red for any other reason, and flips to
+  `JOINT BLOCKED` the moment a body verb is declared in `src/`.
 
 ### Rules a specific defect paid for
 

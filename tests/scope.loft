@@ -46,7 +46,7 @@ fn content_words() -> vector<text> {
 }
 
 fn src_names() -> vector<text> {
-  names = list_dir(src_dir());
+  names: vector<text> = list_dir(src_dir()) ?? [];
   out: vector<text> = [];
   for ni in 0..len(names) {
     nm = names[ni] ?? "";

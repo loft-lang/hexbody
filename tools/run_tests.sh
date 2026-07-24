@@ -76,4 +76,11 @@ tests/scale.loft|SCALE OK|/tmp/hexbody_scale.log|the scale ladder|[22/23] SPEC L
 tests/trip.loft|TRIP OK|/tmp/hexbody_trip.log|round trip|[23/23] rt_trip: write(rebuild(draw(read(T)))) == T over corpus a1+a2+a3, 119 entries ...
 EOF
 
+# THE FORWARD GATE. Written before its subject (SPEC I6, the body's pose-from-joints law) and held
+# red here until G1 lands. run_red asserts the redness both ways: printing JOINT OK is a failure,
+# and so is being red for any reason other than the stated one. It is NOT one of the 23 above --
+# a gate that asserts nothing is not coverage, and the count must not pretend otherwise.
+run_red tests/joint.loft "JOINT RED" "JOINT OK" /tmp/hexbody_joint.log \
+  "[fwd] SPEC I6: pose is a pure function of the joints -- written before the body (G1 unbuilt) ..."
+
 echo "  PASS"
