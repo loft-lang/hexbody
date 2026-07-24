@@ -324,7 +324,7 @@ than a body falling through the world.
 | constant | domain | produced by | status |
 |---|---|---|---|
 | `Cyc` | A | the stencil census, grown by level (§8) | **OPEN** |
-| `period` | B | the linework census | **OPEN — probably the wrong instrument**; `X3` says representability was never the question, only cost |
+| `period` | B | the linework census | **MEASURED** ✅ — a **three-class** table: 6 directions at `√3` wu, 6 at `1` wu (both exact in angle), 12 at `√21` wu = **3.969 m** and `4.1066°` off nominal. `X3` was right that the question was **cost**, not representability (`X56`, `tests/censusb.loft`) |
 | `Sep` | B | the arc sweep | **OPEN** — and aimed at a different objective than `X7`'s collision-match |
 | `D` | B | — | **CLOSED** — all 24 representable (`X3`) |
 | `ε_seam` | frames | measured at the chokepoint | **MEASURED** ✅ — the pose round-trip residual is **≈ 7.1e-15 (machine ε)**; a routed query agrees with an exact integer oracle on all 1681 grid points (`X53`, `tests/seam.loft`) |
@@ -480,7 +480,7 @@ already see safe; only a real scene converts an axis nobody imagined into one yo
 | `rt_total` | E₁ | `σ(rebuild(f)) = rebuild(f)` for arbitrary `f` | hand-corrupt an `EdgeSet` → still lands in `𝕄*` |
 | `rt_ruin` | E₂,E₃ | `ρ = 0` on `im(draw)`; reported off it | crumble a wall → `ρ > 0` surfaced, not swallowed |
 | `rt_census_a` | F | grown by level; **reports the frontier** | remove a corner's turn from the match key → collisions at level 1 |
-| `rt_census_b` | F | the domain-B cost table | — |
+| `rt_census_b` ✅ | F | the domain-B cost table — **landed as `tests/censusb.loft` (`X56`)**: three period classes (6/6/12), the even/odd angle split, and the `X31` ladder anchored to the gated direction 1 | *(it had none — now it has two)* a genuine **trade** must exist among the candidates, or "dominated" is empty; and the measured period must not match `√N/3`, or §10.10's `3.969 m` would be the wrong number |
 | `rt_close` | J | `Σ lenᵢ·e(hᵢ) = 0` ∧ `Σ turnᵢ = 12` | drop one turn → non-zero sum |
 | `rt_seam` ✅ | K₁ | error `≡ 0` in interiors; `≤ ε_seam` on `Σ` — **landed as `tests/seam.loft` §1–§2 (`X53`)**: `ε_seam ≈ 7.1e-15`, 0 disagreements vs an exact oracle | "fix" a crack by snapping a body wall → interior error ≠ 0 (**fires**: 12 cells) |
 | `rt_contend` ✅ | K₂ | `κ` histogram over the `G★` pile — **landed as `tests/seam.loft` §3–§4 (`X53`)**: κ≥3 rare at a point, worse on a sweep; arbitration order-free + fail-safe | tie-break on iteration order → replay diverges (**fires**: 2 vs 5); a world-blind counter undercounts |
@@ -1112,12 +1112,19 @@ approach 15° as closely as wanted:
 
 | vector | `N` | period | angle | error vs 15° | vs today |
 |---|---|---|---|---|---|
-| `(5,−1)` | **21** | 1.528 wu | 19.107° | **+4.1066°** | ***current*** |
-| `(3,−1)` | 7 | 0.882 wu | 10.893° | −4.1066° | same error, **43% shorter period** |
-| `(4,−1)` | **13** | **1.202 wu** | 16.102° | **+1.1021°** | **3.7× better, 21% shorter** |
-| `(11,−3)` | 97 | 3.283 wu | 14.705° | −0.2953° | 13.9× |
-| `(15,−4)` | 181 | 4.485 wu | 15.079° | +0.0791° | 51.9× |
-| `(56,−15)` | 2521 | 16.737 wu | 15.006° | +0.0057° | 722.8× |
+| `(5,−1)` | **21** | 4.583 wu | 19.107° | **+4.1066°** | ***current*** |
+| `(3,−1)` | 7 | 2.646 wu | 10.893° | −4.1066° | same error, **43% shorter period** |
+| `(4,−1)` | **13** | **3.606 wu** | 16.102° | **+1.1021°** | **3.7× better, 21% shorter** |
+| `(11,−3)` | 97 | 9.849 wu | 14.705° | −0.2953° | 13.9× |
+| `(15,−4)` | 181 | 13.454 wu | 15.079° | +0.0791° | 51.9× |
+| `(56,−15)` | 2521 | 50.209 wu | 15.006° | +0.0057° | 722.8× |
+
+> **The period column was wrong by exactly 3× until `tests/censusb.loft` measured it** (`X56`). It
+> read `√N/3`; the period is `√N` world units, which is what the gated `wall_run_len` returns and
+> what §10.10's `3.969 m` for the in-between 12 has always said. The *ratios* — and therefore every
+> conclusion below — are unaffected, since all six rows were scaled alike. Recorded rather than
+> quietly corrected, because a clean factor between two numbers is the signature of a counter bug,
+> and here the bug was in this table.
 
 Note the second row: the current vector is **not even the shortest at its own accuracy**. Summing
 the two adjacent headings lands on `(5,−1)`, `N = 21`; the mirror `(3,−1)`, `N = 7`, has the *same*
@@ -1125,9 +1132,10 @@ the two adjacent headings lands on `(5,−1)`, `N = 21`; the mirror `(3,−1)`, 
 
 **The recommendation is `N = 13`, the vector `(4,−1)`.** It is 3.7× more accurate than today *and*
 21% shorter in period, so it is strictly better on both axes — there is no trade to make. Period is
-what matters for short runs: a house wall of 7.5 m is 8.66 wu, so `N = 13` gives ~7 repeats
-of the wobble while `N = 181` gives fewer than two — at which point the run no longer *reads* as that
-direction at all. The long vectors are only usable for roads and cliffs, where runs are long.
+what matters for short runs: a house wall of 7.5 m is 8.66 wu, so `N = 13` gives **~2.4 repeats** of
+the wobble while `N = 181` gives **fewer than one** — at which point the run no longer *reads* as
+that direction at all. The long vectors are only usable for roads and cliffs, where runs are long.
+*(These counts are on the corrected periods above; the pre-`X56` table made them 3× too generous.)*
 
 This is a **live proposal, not a decision** — changing the in-between vector changes every stored
 in-between wall, so it belongs to the extension contract (`I-EXTEND`) and wants deciding before the

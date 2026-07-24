@@ -123,9 +123,15 @@ survives `read → draw → rebuild → write` byte-identically* — holds over 
   line **recovers exactly straight** — its edge midpoints share one `y`, so **eave_spread = 0**, the
   phase-B verify (`X55`). Control: the same ruler reads 6.75 over the curved rim.
 
+- **Domain B's census (`rt_census_b`).** `D` was closed by `X3`, so the open constant was **cost**,
+  not representability: a **three-class** period table — 6 directions at `√3` wu and 6 at `1` wu
+  (both angle-exact), 12 at `√21` wu = **3.969 m** and `4.1066°` off (`X56`). It **corrected
+  §10.9's ladder**, whose period column was 3× too small; the ratios were unaffected, so `X31`'s
+  conclusion stands and is now T1 — today's in-between vector is **dominated**.
+
 **Rungs A1–A7 and S0–S8 + S4b are closed; A8's adjacency, frame-seam, nearest-surface and linework
-axes with them.** Still open on A8: stencil on **terrain** (`OD-4`) and **level** separation — plus
-the full domain-B **census** (`rt_census_b`, the `period` cost table).
+axes with them, and phase B's census.** Still open on A8: stencil on **terrain** (`OD-4`) and
+**level** separation.
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"
@@ -207,7 +213,7 @@ crawler `plans/8-landform-morphogenesis/`).
 | Phase | Effort | Verify | Status |
 |---|---|---|---|
 | **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A7 ✅; A8 adjacency ✅ (`X52`), frame seam ✅ (`X53`), nearest-surface ✅ (`X54`), linework ✅ (`X55`) — terrain/levels open** |
-| **B** — linework census: `period`, `D`, `Sep`; the straight/arc recovery | M | `rt_census_b`; `eave_spread == 0` on the recovered line | Blocked on A |
+| **B** — linework census: `period`, `D`, `Sep`; the straight/arc recovery | M | `rt_census_b`; `eave_spread == 0` on the recovered line | **✅ CLOSED** — `D` by `X3`, `Sep` by `X49`, recovery by `X47`/`X49`, `eave_spread 0` by `X55`, `period` by **`X56`** |
 | **C** — `write` / `read`, canonical text frozen | S | `rt_canon`, `rt_project`, `rt_fits`, `rt_close` | Blocked on A, B, **OD-2** |
 | **D** — `rt_trip` written **empty** (red), before `rebuild` exists | XS | needs no ground truth — only `write`/`read`/`draw`/`rebuild` + `diff` | Blocked on C |
 | **E** — `rebuild` | MH | `rt_trip` green over **every** primitive kind | Blocked on D |

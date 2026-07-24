@@ -1,0 +1,36 @@
+// censusb — PLOT THE ANSWER FOR THE DOMAIN-B CENSUS (`rt_census_b`, the `period` cost table).
+//
+// `D` is CLOSED — all 24 directions are representable (`X3`) — so domain B's open constant was never
+// representability but COST: what does each direction cost in PERIOD (how long a run must be before
+// it lands back on a hex vertex) and in ANGLE ERROR (how far it sits from its nominal 15°·d)?
+//
+// Two doc numbers disagree by exactly 3 and must be resolved by measurement, not by picking one:
+//   DESIGN §10.9's ladder calls the N=21 period  1.528 wu   (= √21 / 3)
+//   DESIGN §10.10 / CLAUDE call the in-between quantisation 3.969 m = 4.583 wu (= √21)
+// A clean factor between two numbers is the signature of a counter bug, so this probe measures the
+// period with the GATED primitives (`wall_run_len`, `wall_min_p`) and lets those decide.
+use hexwall;
+
+fn main() {
+  println("=== domain-B cost table probe ===");
+  println("");
+  println("  d  nominal  actual   error   1 period   min_p(V1) snap(V1)  min_p(V2) snap(V2)");
+  for d in 0..24 {
+    nom = wall_angle_nominal(d);
+    act = wall_angle_actual(d);
+    err = act - nom;
+    one = wall_run_len(d, 1);
+    // V1 = (3,0) is a class-1 vertex, V2 = (0,3) is class 2 (wall.loft §8's classes)
+    p1 = wall_min_p(d, 3, 0);
+    p2 = wall_min_p(d, 0, 3);
+    s1 = 0.0;
+    if p1 > 0 { s1 = wall_run_len(d, p1); }
+    s2 = 0.0;
+    if p2 > 0 { s2 = wall_run_len(d, p2); }
+    println("  {d:>2} {nom:>8.3} {act:>8.3} {err:>7.3} {one:>10.4} {p1:>10} {s1:>8.4} "
+            + "{p2:>10} {s2:>8.4}");
+  }
+  println("");
+  println("1 wu = 1 hex edge = 0.866 m.  V1 = (3,0), V2 = (0,3); min_p = -1 means the direction");
+  println("never returns to a vertex of that class within 3 periods.");
+}

@@ -888,10 +888,44 @@ strands **84** edges more than 1 u from their surface — the linework the cross
 
 ### What of linework remains
 
-The full domain-B **census** (`rt_census_b` — the `period` cost table over all 24 directions) is
-still open. What is already gated elsewhere and should not be re-derived: the 24 directions and the
-wall's exactness (`X26`–`X32`), the averaged surface (`X47`), and the line **doorstep** — endpoints
-on hex vertices a whole number of periods apart (`tests/wall.loft` §8).
+The full domain-B **census** (`rt_census_b`) — closed next, below.
+
+## Domain B · the census — **DONE** *(`rt_census_b`, the period cost table — `X56`)*
+
+`D` is **closed** — all 24 directions are representable (`X3`) — so domain B's open constant was
+never representability but **cost**: what does each direction cost in **period** (how far a run must
+go before landing back on a hex vertex) and in **angle error**? A census *reports* a table; the
+assertions pin its shape.
+
+### The cost table has three classes
+
+| class | count | period | angle |
+|---|---|---|---|
+| edge | **6** | `√3` wu = 1.5 m | **exact** |
+| vertex | **6** | `1` wu = 0.866 m *(one start-class in three needs 2 periods)* | **exact** |
+| in-between | **12** | `√21` wu = **3.969 m** | **4.1066° off** nominal |
+
+12 exact + 12 off by `4.1066°`, 0 neither — `X29` re-confirmed from the other side.
+
+### It corrected a design doc, and the factor was the tell
+
+Two docs disagreed on the in-between period by **exactly 3** — §10.9's ladder said `√N/3 = 1.528 wu`,
+§10.10 said `3.969 m`. A clean factor between two numbers is the signature of a counter bug, so the
+gate measured with the **gated primitive** (`wall_run_len`) rather than picking a side. The period is
+**`√N`**; §10.9's column was 3× too small and is now fixed.
+
+**The ratios were unaffected** — all six rows were scaled alike — so **`X31`'s ladder conclusion
+stands, and is now T1**: today's `(5,3)`/`N=21` is **dominated**. `(3,1)`/`N=7` matches its
+`4.1066°` error at a **42% shorter** period; `(4,2)`/`N=13` beats it on **both** axes. Changing it
+stays a **live proposal**, not a decision (`I-EXTEND`) — it would re-spell every stored in-between
+wall.
+
+### The gate had no control in the plan; it has two now
+
+`DESIGN.md` §9 listed `rt_census_b`'s control as "—". A census that only prints a table can never go
+red, so two were written: **a genuine trade must exist** among the candidates (`(15,7)` — better
+angle, *longer* period), or "dominated" is a word with no content; and **the measured period must not
+equal `√N/3`**, or §10.10's `3.969 m` would be the wrong number instead.
 
 ## Order, and where it can go wrong
 
