@@ -30,7 +30,6 @@
 use hex_field;
 use hex_grid;
 use hexform;
-use housedraw;
 
 pub const BOX_ROT = 12;
 

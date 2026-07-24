@@ -216,6 +216,25 @@ cycle** — so it is a member of `𝕄*`, and it is living inside the `draw` map
 and its accessors (`side_edges`, `side_run_len`, `plan_to_local`) into `hex_form` removes the only
 awkward edge in the whole graph and makes layers 2 and 3 independent of each other.
 
+### 6.1 What the move actually found — three things, and I had two of them wrong
+
+**(a) The token counts in the table above were COMMENTS, not calls.** Stripping comments before
+counting gives the real picture: `hexbox` used `HEX_LEN`, `cell_x`, `cell_y`; `hexsurf` used `Plan`,
+`SideRun`, `side_run_len`, `side_edges`. Neither called a single `draw_*` function. So the edges
+were **entirely removable**, not merely reducible — better than this section first claimed.
+
+**(b) `housedraw` was holding five things that are not drawing.** Not just `Plan`: the lattice→world
+map (`cell_x`, `cell_y`, `HEX_LEN`) and the Plan↔field query (`SideRun`, `side_edges`,
+`side_run_len`) too. All moved to `hexform`; `housedraw` went 368 → 187 lines and now holds exactly
+the four functions that WRITE the field — `draw_floor`, `draw_walls`, `place_opening`, `draw_roof`.
+
+**(c) ⚠ `HEX_LEN` was a PRIVATE DUPLICATE of `hex_grid::HEX_LEN`, byte-identical.** The compiler
+refused it the moment it landed in a module that imports `hex_grid` — which `housedraw` never did,
+which is why the duplicate survived. That is `SPEC` **L11** verbatim (*the library owns the shared
+table; two tables that agree today diverge silently later*) and it is `X26`'s class of defect.
+**Found by a move, not by a gate** — worth noting, because no gate we have would have caught it:
+the values agreed, so every measurement was right.
+
 **[J] This is the same class of finding as `X26`** — a table living in the wrong module, invisible
 while everything is one compilation unit, and structural the moment a seam runs through it. It is
 also the argument for doing this analysis *before* publishing rather than after.

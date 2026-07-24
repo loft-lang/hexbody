@@ -20,7 +20,6 @@
 use hex_field;
 use hex_grid;
 use hexform;
-use housedraw;
 
 // ── the exact band constants (`ROUNDTRIP` §6.2), in world units ────────────
 //

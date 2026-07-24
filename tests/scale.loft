@@ -53,6 +53,13 @@ fn fabs(x: float) -> float { if x < 0.0 { 0.0 - x } else { x } }
 
 fn src_dir() -> text { "{source_dir()}/../src" }
 
+// ⚠ `HEX_LEN` IS NOT HEXBODY'S — it is `hex_grid`'s, and hexbody consulting it rather than
+// copying it is `SPEC` **L11**.  The ladder is anchored on that constant, so the gate reads the
+// library's own source for it: measuring a copy would measure the wrong thing, which is exactly
+// the failure L11 names.  (`housedraw` DID carry a private copy of the identical value until
+// 2026-07-24; the duplicate was invisible until a module that imports `hex_grid` inherited it.)
+fn lattice_src() -> text { "{source_dir()}/../../loft-libs-world/hex_grid/src/hex_grid.loft" }
+
 fn src_names() -> vector<text> {
   names: vector<text> = list_dir(src_dir()) ?? [];
   out: vector<text> = [];
@@ -143,6 +150,10 @@ fn main() {
     nm1 = files[fi] ?? "";
     all += float_consts(file("{src_dir()}/{nm1}").content() ?? "", nm1);
   }
+  // The register below is about HEXBODY's constants; the ladder additionally consults the
+  // lattice library, because `HEX_LEN` lives there and a gate must measure the authority.
+  ladder = all;
+  ladder += float_consts(file(lattice_src()).content() ?? "", "hex_grid");
   nmod = len(files);
   nfound = len(all);
   println("");
@@ -158,7 +169,7 @@ fn main() {
   for ki in 0..3 {
     nm2 = lnames[ki] ?? "";
     tgt = ltgt[ki] ?? 0.0;
-    wu = val_of(all, nm2);
+    wu = val_of(ladder, nm2);
     got = wu * M_PER_WU;
     d = fabs(got - tgt);
     u = d / ULP_MAX;
@@ -177,7 +188,7 @@ fn main() {
 
   // CONTROL — the ROUNDED value the spec PRINTS must NOT reproduce the ladder.  Without this the
   // ulp bound would be indistinguishable from a loose tolerance that accepts anything.
-  rough = 0.866 * val_of(all, "HEX_LEN");
+  rough = 0.866 * val_of(ladder, "HEX_LEN");
   rd = fabs(rough - 1.5);
   rulps = rd / ULP_MAX;
   println("   CONTROL SPEC L8's printed 0.866 gives {rough} m, off by {rd} = {rulps} ulps");
@@ -203,7 +214,7 @@ fn main() {
   println("   the LENGTHS, and what each one is in metres:");
   for mi in 0..len(lengths) {
     nm3 = lengths[mi] ?? "";
-    wv = val_of(all, nm3);
+    wv = val_of(ladder, nm3);
     mv = wv * M_PER_WU;
     println("     {nm3}  {wv} wu = {mv} m");
   }
