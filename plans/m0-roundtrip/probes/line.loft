@@ -1,0 +1,137 @@
+// line — PLOT THE ANSWER FOR "STENCIL AGAINST LINEWORK" (A8's linework axis).
+//
+// Domain A is a STENCIL (authored in a local frame, placed at one of 12 orientations); domain B is
+// WORLD LINEWORK (a road, town wall or cliff, drawn where it runs, quantised to d ∈ D).  A8 asks
+// what happens when they MEET.  The mechanism should be the same cut as everywhere else — "mark
+// all, THEN cut once", each boundary edge to its nearest analytic surface (X54) — but now the
+// surface set spans BOTH domains: a straight world line AND a stencil's arc.
+//
+// The scene: a flat-topped ground/wall run (the linework) with a round tower (the stencil) standing
+// on it.  Two things to read off it:
+//   1  the cut spans A and B: the flat top → the LINE, the tower rim → the ARC, order-free
+//   2  a world line recovers EXACTLY straight — every top edge shares one y, so eave_spread = 0
+use hex_field;
+use hexform;
+use hexarc;
+use hexedge;
+use hexway;
+
+const W = 61;
+const H = 41;
+const Q0 = -30;
+const R0 = -20;
+const NT = 108;          // tower: disk of shell 108, R = √108/2 ≈ 5.196
+const TQ = 0;            // tower centre cell (0,2) → world (0, 3)
+const TR = 2;
+const TOPY = 0.75;       // the flat top: north-edge midpoints of the r=0 row all sit at y = 0.75
+
+fn main() {
+  println("=== line probe: stencil against linework ===");
+
+  // ── the scene: a flat-topped ground run, with a tower standing on it ──────
+  cells = hexset_chunk(Q0, R0, W, H);
+  for gr in -3..1 { for gq in -10..11 { hexset_set(cells, gq, gr, true); } }
+  arc_fill(TQ, TR, NT, cells);
+
+  // surfaces: id 1 = the WORLD LINE (domain B), id 2 = the TOWER ARC (domain A)
+  rt = sqrt((NT as float)) / 2.0;
+  sf = surfaces_new();
+  iline = surf_straight(sf, 0.0, 1.0, TOPY);          // horizontal, normal (0,1): direction E ∈ D
+  ibot  = surf_straight(sf, 0.0, 1.0, 0.0 - 5.25);    // the run's underside, so it has its own home
+  iarc  = surf_arc(sf, 0.0, 3.0, rt);
+  println("surface {iline} = world line y = {TOPY} (normal (0,1), direction E ∈ D)");
+  println("surface {ibot} = the run's underside y = -5.25");
+  println("surface {iarc} = tower arc centre (0,3) r {rt}");
+
+  e = edgeset_new(Q0, R0, W, H);
+  cut_arb(cells, e, sf, sf.sf_n, 1);
+
+  // ── measure ──────────────────────────────────────────────────────────────
+  // The flat top is identified GEOMETRICALLY — the run's north-facing boundary edges.  Both the NE
+  // and the NW edge of a top-row cell have midpoint y = 0.75, so a horizontal world line is exactly
+  // collinear on the lattice: that is the linework recovering with zero spread.
+  nedge = 0; nline = 0; narc = 0; argmin_ok = 0;
+  ntop = 0; top_to_line = 0;
+  ymin = 1000.0; ymax = -1000.0;      // spread over the FLAT-TOP edges
+  nrim = 0; rim_to_arc = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      if hexset_get(cells, q, r) {
+        for d in 0..6 {
+          nq = nb_q(q, r, d);
+          nr = nb_r(q, r, d);
+          if !hexset_get(cells, nq, nr) {
+            nedge = nedge + 1;
+            (ex, ey) = edge_point(q, r, nq, nr);
+            asg = edge_surf(e, q, r, nq, nr);
+            best = -1; bd = 1000000.0;
+            for si in 1..sf.sf_n {
+              dd = surf_distance(sf, si, ex, ey);
+              if dd < bd - 0.000000001 { bd = dd; best = si; }
+            }
+            if asg == best { argmin_ok = argmin_ok + 1; }
+            if asg == iarc { narc = narc + 1; }
+            if asg == iline { nline = nline + 1; }
+            // a FLAT-TOP edge: exactly on the world line
+            if surf_distance(sf, iline, ex, ey) < 0.0000001 {
+              ntop = ntop + 1;
+              if ey < ymin { ymin = ey; }
+              if ey > ymax { ymax = ey; }
+              if asg == iline { top_to_line = top_to_line + 1; }
+            }
+            // a TOWER-RIM edge: exactly on the arc's shell, and above the line
+            if ey > TOPY + 0.01 {
+              nrim = nrim + 1;
+              if asg == iarc { rim_to_arc = rim_to_arc + 1; }
+            }
+          }
+        }
+      }
+    }
+  }
+  println("");
+  println("boundary edges {nedge}: → line {nline}, → arc {narc}, argmin match {argmin_ok}");
+  println("FLAT-TOP edges {ntop}: y from {ymin} to {ymax} => eave_spread {ymax - ymin} (want 0);"
+          + " assigned to the LINE: {top_to_line} (want all)");
+  println("TOWER-RIM edges (above the line) {nrim}: assigned to the ARC {rim_to_arc} (want all)");
+
+  // ── CONTROL: a fixed 'always the arc' rule ────────────────────────────────
+  fixed_far = 0;
+  for r2 in R0..R0 + H {
+    for q2 in Q0..Q0 + W {
+      if hexset_get(cells, q2, r2) {
+        for d2 in 0..6 {
+          nq2 = nb_q(q2, r2, d2);
+          nr2 = nb_r(q2, r2, d2);
+          if !hexset_get(cells, nq2, nr2) {
+            (fx, fy) = edge_point(q2, r2, nq2, nr2);
+            if surf_distance(sf, iarc, fx, fy) > 1.0 { fixed_far = fixed_far + 1; }
+          }
+        }
+      }
+    }
+  }
+  println("CONTROL fixed 'always the arc': {fixed_far} edges land >1.0 from it (the linework the"
+          + " cross-domain cut gets right)");
+
+  // ── order-free: build the scene in the other order ────────────────────────
+  cells2 = hexset_chunk(Q0, R0, W, H);
+  arc_fill(TQ, TR, NT, cells2);                                    // tower first
+  for hr in -3..1 { for hq in -10..11 { hexset_set(cells2, hq, hr, true); } }   // then the run
+  e2 = edgeset_new(Q0, R0, W, H);
+  cut_arb(cells2, e2, sf, sf.sf_n, 1);
+  diff = 0;
+  for r3 in R0..R0 + H {
+    for q3 in Q0..Q0 + W {
+      for d3 in 0..6 {
+        nq3 = nb_q(q3, r3, d3);
+        nr3 = nb_r(q3, r3, d3);
+        if edge_surf(e, q3, r3, nq3, nr3) != edge_surf(e2, q3, r3, nq3, nr3) { diff = diff + 1; }
+      }
+    }
+  }
+  println("order-free: run-then-tower vs tower-then-run -> {diff / 2} tag diffs (want 0)");
+
+  println("");
+  println("=== probe done ===");
+}

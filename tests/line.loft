@@ -1,0 +1,193 @@
+// line — THE GATE FOR "STENCIL AGAINST LINEWORK" (rung A8, the linework axis).
+// Every check has a control that must fire.
+//
+// Domain A is a STENCIL (authored in a local frame, placed at one of 12 orientations); domain B is
+// WORLD LINEWORK (a road, town wall or cliff, drawn where it runs, quantised to `d ∈ D`).  A8 asks
+// what happens where they MEET.  The answer: the same cut as everywhere else — "mark all, THEN cut
+// once", each boundary edge to its nearest analytic surface (`X54`) — except the surface set now
+// spans BOTH domains.
+//
+//   1  the cut spans A and B — the flat top → the world LINE, the tower rim → the stencil's ARC
+//   2  a world line in a direction `d ∈ D` recovers EXACTLY straight — eave_spread = 0
+//   3  order-free — the two build orders give byte-identical tags
+//
+// Why the top is exactly collinear: both the NE and the NW boundary edge of a top-row cell have
+// midpoint `y = 0.75`.  The strip zigzags in x, but its edge midpoints share one y — so an E–W
+// world line is exactly straight on the lattice, and this is the "eave_spread == 0 on the recovered
+// line" that phase B asks for.
+//
+// NOT covered, and named so it is not mistaken for covered: the full domain-B linework CENSUS
+// (`rt_census_b` — the `period` cost table over all 24 directions) is still open.  What is already
+// gated elsewhere: the 24 directions and the wall's exactness (`X26`–`X32`), the averaged surface
+// (`X47`), and the line doorstep — endpoints on hex vertices a whole number of periods apart
+// (`tests/wall.loft` §8).
+use hex_field;
+use hexform;
+use hexarc;
+use hexedge;
+use hexway;
+
+const W = 61;
+const H = 41;
+const Q0 = -30;
+const R0 = -20;
+const NT = 108;          // tower: disk of shell 108, R = √108/2 ≈ 5.196
+const TQ = 0;            // tower centre cell (0,2) → world (0, 3)
+const TR = 2;
+const TOPY = 0.75;       // the flat top: north-edge midpoints of the r=0 row all sit here
+const BOTY = 5.25;       // the run's underside sits at y = −5.25
+
+fn build(c: HexSet, tower_first: boolean) {
+  if tower_first { arc_fill(TQ, TR, NT, c); }
+  for br in -3..1 { for bq in -10..11 { hexset_set(c, bq, br, true); } }
+  if !tower_first { arc_fill(TQ, TR, NT, c); }
+}
+
+fn main() {
+  ok = true;
+  println("=== stencil against linework — the cut spans domains A and B (A8) ===");
+
+  cells = hexset_chunk(Q0, R0, W, H);
+  build(cells, false);
+
+  rt = sqrt((NT as float)) / 2.0;
+  sf = surfaces_new();
+  iline = surf_straight(sf, 0.0, 1.0, TOPY);            // domain B: horizontal world line, dir E ∈ D
+  surf_straight(sf, 0.0, 1.0, 0.0 - BOTY);              // the run's underside, so it has its own home
+  iarc = surf_arc(sf, 0.0, 3.0, rt);                    // domain A: the stencil's arc
+  e = edgeset_new(Q0, R0, W, H);
+  cut_arb(cells, e, sf, sf.sf_n, 1);
+
+  // ── 1. THE CUT SPANS A AND B ──────────────────────────────────────────────
+  println("");
+  println("1. THE CUT SPANS DOMAINS — the world line and the stencil arc are cut as ONE");
+  nedge = 0; nline = 0; narc = 0; argmin_ok = 0;
+  ntop = 0; top_to_line = 0; ymin = 1000.0; ymax = 0.0 - 1000.0;
+  nrim = 0; rim_to_arc = 0; rymin = 1000.0; rymax = 0.0 - 1000.0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      if hexset_get(cells, q, r) {
+        for d in 0..6 {
+          nq = nb_q(q, r, d);
+          nr = nb_r(q, r, d);
+          if !hexset_get(cells, nq, nr) {
+            nedge = nedge + 1;
+            (ex, ey) = edge_point(q, r, nq, nr);
+            asg = edge_surf(e, q, r, nq, nr);
+            best = -1; bd = 1000000.0;
+            for si in 1..sf.sf_n {
+              dd = surf_distance(sf, si, ex, ey);
+              if dd < bd - 0.000000001 { bd = dd; best = si; }
+            }
+            if asg == best { argmin_ok = argmin_ok + 1; }
+            if asg == iline { nline = nline + 1; }
+            if asg == iarc { narc = narc + 1; }
+            if surf_distance(sf, iline, ex, ey) < 0.0000001 {
+              ntop = ntop + 1;
+              if ey < ymin { ymin = ey; }
+              if ey > ymax { ymax = ey; }
+              if asg == iline { top_to_line = top_to_line + 1; }
+            }
+            if ey > TOPY + 0.01 {
+              nrim = nrim + 1;
+              if asg == iarc { rim_to_arc = rim_to_arc + 1; }
+              if ey < rymin { rymin = ey; }
+              if ey > rymax { rymax = ey; }
+            }
+          }
+        }
+      }
+    }
+  }
+  println("   {nedge} boundary edges: → line {nline}, → arc {narc}, argmin match {argmin_ok}");
+  if argmin_ok != nedge {
+    println("  FAIL: an edge was not tagged with the nearest surface across the two domains");
+    ok = false;
+  }
+  if nline <= 0 || narc <= 0 {
+    println("  FAIL: one domain won no edges — the scene does not exercise the cross-domain cut");
+    ok = false;
+  }
+  println("   the stencil's rim ({nrim} edges above the line) went to the ARC: {rim_to_arc}");
+  if nrim <= 0 || rim_to_arc != nrim {
+    println("  FAIL: a stencil rim edge was taken by the world line — the domains bled into"
+            + " each other"); ok = false;
+  }
+
+  // ── 2. THE WORLD LINE RECOVERS EXACTLY STRAIGHT ───────────────────────────
+  println("");
+  println("2. LINEWORK RECOVERY — an E–W world line is exactly collinear: eave_spread = 0");
+  println("   flat-top edges {ntop}: y from {ymin} to {ymax} => eave_spread {ymax - ymin} (want 0)");
+  println("   all of them assigned to the world line: {top_to_line} of {ntop}");
+  if ntop <= 0 {
+    println("  FAIL: no flat-top edges — the linework is not in the scene, nothing was measured");
+    ok = false;
+  }
+  if ymax - ymin != 0.0 {
+    println("  FAIL: the world line's edges are not collinear — linework does not recover exactly");
+    ok = false;
+  }
+  if top_to_line != ntop {
+    println("  FAIL: a flat-top edge went to the stencil's arc rather than the world line");
+    ok = false;
+  }
+  // CONTROL: the spread instrument must be able to see non-flatness — the ARC's rim curves, so the
+  // same measurement over it is large.  Without this, "spread 0" could just mean the ruler is dead.
+  println("   CONTROL the same spread over the CURVED rim: {rymax - rymin} (want > 0 — the ruler"
+          + " can see non-flatness, so 0 on the line is a result)");
+  if rymax - rymin <= 0.0 {
+    println("  FAIL: control did not fire — the spread measurement cannot detect a curve, so"
+            + " eave_spread 0 proves nothing"); ok = false;
+  }
+
+  // ── 3. ORDER-FREE, AND A FIXED RULE IS NOT ENOUGH ─────────────────────────
+  println("");
+  println("3. ORDER-FREE — and a fixed rule cannot do this cut");
+  cells2 = hexset_chunk(Q0, R0, W, H);
+  build(cells2, true);
+  e2 = edgeset_new(Q0, R0, W, H);
+  cut_arb(cells2, e2, sf, sf.sf_n, 1);
+  diff = 0;
+  for r3 in R0..R0 + H {
+    for q3 in Q0..Q0 + W {
+      for d3 in 0..6 {
+        nq3 = nb_q(q3, r3, d3);
+        nr3 = nb_r(q3, r3, d3);
+        if edge_surf(e, q3, r3, nq3, nr3) != edge_surf(e2, q3, r3, nq3, nr3) { diff = diff + 1; }
+      }
+    }
+  }
+  println("   run-then-tower vs tower-then-run: {diff / 2} tag differences (want 0)");
+  if diff != 0 {
+    println("  FAIL: the cross-domain tags depended on build order"); ok = false;
+  }
+  fixed_far = 0;
+  for r4 in R0..R0 + H {
+    for q4 in Q0..Q0 + W {
+      if hexset_get(cells, q4, r4) {
+        for d4 in 0..6 {
+          nq4 = nb_q(q4, r4, d4);
+          nr4 = nb_r(q4, r4, d4);
+          if !hexset_get(cells, nq4, nr4) {
+            (fx, fy) = edge_point(q4, r4, nq4, nr4);
+            if surf_distance(sf, iarc, fx, fy) > 1.0 { fixed_far = fixed_far + 1; }
+          }
+        }
+      }
+    }
+  }
+  println("   CONTROL a fixed 'always the stencil's arc' rule: {fixed_far} edges land >1.0 from it"
+          + " — the linework the cross-domain cut gets right");
+  if fixed_far <= 0 {
+    println("  FAIL: control did not fire — a fixed rule was as good as nearest here"); ok = false;
+  }
+
+  println("");
+  println("   X55: a stencil and world linework are cut as ONE by nearest surface — the cut spans");
+  println("   the A/B domain boundary, order-free, and an E–W world line recovers exactly straight");
+  println("   (eave_spread 0). The full domain-B census (rt_census_b, the period cost table) is open.");
+
+  println("");
+  if ok { println("=== LINE OK ==="); }
+  else { println("=== line test FAILED ==="); }
+}

@@ -132,6 +132,7 @@ items marked ⚠ below depend on one.
    | `combine.loft` | **I-ARBIT**, **I-CLOSED-OPS** — two stencils adjacent: "mark all, then cut once" is order-free, the shared edge fuses, only a behavioural difference is field-distinct (`X52`) |
    | `seam.loft` | **I-FSEAM**, **I-ARBIT** — the frame seam: `ε_seam` ≈ machine ε and confined (the forbidden fix moves it inside), κ counted, arbitration order-free + fail-safe (`X53`) |
    | `arb.loft` | **I-ARBIT**, **K-PROXY** — overlap arbitration by nearest surface (`cut_arb`): each boundary edge → its nearest analytic surface, order-free, ties to lower id (`X54`) |
+   | `line.loft` | **I-DOMAIN**, **I-ARBIT** — stencil against linework: the cut spans domains A/B, and an E–W world line recovers exactly straight, eave_spread 0 (`X55`) |
    | `text.loft` | **I-EXACT** — `write(read(T)) = T` as a byte diff, no ε (`X39`); **C1–C5** |
    | `trip.loft` | **I-RT**, **I-EXACT**, **I-TOTAL** — `write(rebuild(draw(read(T)))) = T` byte-for-byte over the **committed** corpus (`X41`); control: a non-grammar footprint → R2 with `ρ > 0` |
    | `wall.loft` §1, §2, §5 | **I-DOMAIN** *(`D`; the even/odd split, measured)* |

@@ -38,7 +38,7 @@ crawler's prototypes and design docs are **design tries** — input, not authori
 | **T3 · designed** | a doc argues a construction | **input to design, never truth** |
 | **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
 
-**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X54`** — eight of them re-measured *here*, and
+**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X55`** — eight of them re-measured *here*, and
 `X26`–`X31` **discovered here**. Everything else the design leans on is still a try or a schema
 (notably the whole foxel schema, `X11`–`X15`), and the census is where it gets re-measured. Citing a T2 number as settled is
 the specific mistake to avoid — in either direction: re-deriving what is genuinely gated wastes
@@ -73,7 +73,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X54` **with trust tiers** | **authoritative** on any object or map |
+| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X55` **with trust tiers** | **authoritative** on any object or map |
 | **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
@@ -138,9 +138,9 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 
 ## State (2026-07-24)
 
-- **Twelve gates, all green** — `make test` runs `tools/run_tests.sh`.
+- **Thirteen gates, all green** — `make test` runs `tools/run_tests.sh`.
   Form, wall (~3 min), box, census, text, house, surface, arc (A6 + A7), combine (A8), seam
-  (A8 frame seam), arb (A8 nearest surface), trip.
+  (A8 frame seam), arb (A8 nearest surface), line (A8 linework), trip.
 - **Green:** `G0` / law **I** — `tests/house.loft`, 12/12 equivariant in cells *and* edges, `eave_spread
   0.0000`, every control fires. `make shot` reproduces the committed baseline byte-identically.
 - **Green:** `tests/form.loft` (**S0**/**S1**) — the 12 headings; **`X1`**/**`X2`** re-measured to **T1**
@@ -323,7 +323,7 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   collision is all single-frame; a **posed body against the world** (two frames, a continuous pose)
   was a T3 design, never built. hexbody's first measurement closes the two constants `DESIGN.md` §7
   left OPEN. The **pose transform is the sole float step** (`src/hexframe.loft`); everything else is
-  integer (`X1`–`X54`), so `ε_seam` is the whole error budget.
+  integer (`X1`–`X55`), so `ε_seam` is the whole error budget.
 - **The instrument is a Pythagorean pose** (cos 4/5, sin 3/5): the transform maps rationals to
   rationals, so an **exact integer oracle** exists and the float pipeline's disagreement with it IS
   the seam band. `ε_seam ≈ 7.1e-15` (machine ε); a routed query agrees with the oracle on all 1681
@@ -343,9 +343,21 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   half of the union cut, where X52 gave material-by-source. Two overlapping towers: **66/66** edges
   get the true nearest, a fixed "always lower id" rule mis-tags **31** (the far rim), both stamp
   orders agree, duplicate surfaces all take the lower id. `tests/arb.loft`.
-- **A8 still open:** stencil against **linework** (domain B, blocked on the linework census), stencil
-  on **terrain** (`OD-4`, no terrain production yet), **level** separation (crawler's bridge
-  guarantee — different levels never contend, needs the layer axis).
+- **A8's linework axis is done, `X55` — and it needed NOTHING NEW.** The cut already **spans domains
+  A and B**: a tower (stencil) on a flat-topped world run (linework, `d ∈ D`) is one `cut_arb` pass —
+  112/112 edges take the nearest, the top → the world line (30/30), the rim → the arc (26/26), both
+  build orders agree. "Nearest analytic surface" never asked which domain a surface came from, so
+  A/B mixing was free. The domains do not bleed into each other.
+- **A world line recovers EXACTLY straight.** Both the NE and NW boundary edge of a top-row cell have
+  midpoint `y = 0.75` — the strip zigzags in *x* but its edge midpoints share one `y`, so an E–W
+  world line is exactly collinear: **eave_spread = 0**, the phase-B verify. **The control matters
+  here**: the same ruler over the curved rim reads **6.75**, so 0 is a result and not a dead
+  instrument.
+- **A8 still open:** stencil on **terrain** (`OD-4`, no terrain production yet), **level** separation
+  (crawler's bridge guarantee — different levels never contend, needs the layer axis), and the full
+  domain-B **census** (`rt_census_b`, the `period` cost table over all 24). Already gated and not to
+  be re-derived: the 24 directions (`X26`–`X32`), the averaged surface (`X47`), the line doorstep
+  (`tests/wall.loft` §8).
 - **The foxel schema is the limit** (`ROUNDTRIP.md` §2.4): `layer* × point → (height, material,
   wall1, wall2, wall3, item)`. A model is admissible **iff it draws into that exactly**, which
   makes `fits?` syntactic and finite. It closed OD-2/3/4/6/7/8 — roofs and terrain are `height`,
@@ -354,8 +366,8 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   unnecessary" by free poses) · **OD-5** is the flip exact (`X2` says yes) · **OD-9** does a door
   survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
   relocated into the schema, and rung A5's real question.
-- **Constraints are in `ROUNDTRIP.md` §7 (X1–X54) with trust tiers.** T1 now holds `X1`, `X2`,
-  `X19`–`X22`, `X24`–`X54`; do not re-derive those. Everything else is still a try or a schema.
+- **Constraints are in `ROUNDTRIP.md` §7 (X1–X55) with trust tiers.** T1 now holds `X1`, `X2`,
+  `X19`–`X22`, `X24`–`X55`; do not re-derive those. Everything else is still a try or a schema.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their

@@ -853,6 +853,46 @@ the fixed rule gets wrong), it is order-free, and its tie-break is deterministic
 (the strict-`<` in `cut_arb`, exercised by duplicate surfaces — a "higher wins" or non-strict rule
 would take all 42). This is the collision-proxy half of the union cut, complementing `X52`.
 
+## A8 · stencil against linework — **DONE** *(the cut spans domains A and B — `X55`)*
+
+Domain **A** is a stencil (authored in a local frame, placed at one of 12 orientations); domain **B**
+is world linework (a road, town wall or cliff, drawn where it runs, quantised to `d ∈ D`). They are
+*"not interchangeable"* (`ROUNDTRIP` §2.2) — so A8's linework axis asks what happens where they meet.
+
+### The answer: the same cut, with a surface set that spans both domains
+
+A round tower (domain A, an arc) standing on a flat-topped world run (domain B, an E–W line in a
+direction `d ∈ D`), cut by one `cut_arb` pass:
+
+| measured | value |
+|---|---|
+| boundary edges taking the nearest surface | **112 / 112** |
+| the run's flat top → the **world line** | **30 / 30** |
+| the stencil's rim → its **arc** | **26 / 26** |
+| both build orders (run-first vs tower-first) | **0** tag differences |
+
+The domains do not bleed into each other: no flat-top edge is taken by the stencil's arc, and no rim
+edge by the world line. **Nothing new was needed** — the cut that handles two adjacent stencils
+(`X52`) and two overlapping ones (`X54`) already spans A and B, because "nearest analytic surface"
+never asked which domain a surface came from.
+
+### Linework recovers exactly straight — the phase-B verify
+
+Both the NE **and** the NW boundary edge of a top-row cell have midpoint `y = 0.75`. The strip
+zigzags in *x*, but its edge midpoints share **one** `y` — so an E–W world line is exactly collinear
+on the lattice: **eave_spread = 0**, which is what phase B asks for on a recovered line.
+
+**Control, and it matters here:** the same spread ruler over the *curved* rim reads **6.75**. Without
+it, "spread 0" could equally mean the instrument is dead. A fixed "always the stencil's arc" rule
+strands **84** edges more than 1 u from their surface — the linework the cross-domain cut gets right.
+
+### What of linework remains
+
+The full domain-B **census** (`rt_census_b` — the `period` cost table over all 24 directions) is
+still open. What is already gated elsewhere and should not be re-derived: the 24 directions and the
+wall's exactness (`X26`–`X32`), the averaged surface (`X47`), and the line **doorstep** — endpoints
+on hex vertices a whole number of periods apart (`tests/wall.loft` §8).
+
 ## Order, and where it can go wrong
 
 ```
