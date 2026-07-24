@@ -34,6 +34,7 @@ use formfit;
 use housedraw;
 use hex_grid;
 use hexwall;
+use hexdraft;
 
 const W = 41;
 const H = 41;
@@ -269,12 +270,78 @@ fn main() {
     ok = false;
   }
 
+  // ── 5. THE ROUND TRIP, WITH THE RUN — the silent-drop hole, closed ────────
+  //
+  // The site the design flagged as the dangerous one: `rebuild` did not READ the embedded run, so
+  // it was dropped and `rt_trip` did not notice.  `draft_rebuild_text` now reads it, so the trip
+  // FAILS when the run goes missing instead of passing.
+  println("");
+  println("5. THE ROUND TRIP with an embedded run — write(rebuild(draw(read(T)))) == T");
+  println("      d    write(read(T))==T   full trip==T   dropping the run fails the trip");
+  ntrip = 0; badtrip = 0; baddrop = 0;
+  for dt in [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23] {
+    at = 0; bt = 0; ft = false;
+    for tq in -14..15 {
+      for tr in -14..15 {
+        if !ft && wall_run_ok(dt, tq, tr, 1) {
+          etv = edgeset_new(Q0, R0, W, H);
+          wtv = wall_from_run(dt, tq, tr, 1, EMBED);
+          ntv = wall_write(wtv, etv, Q0, R0, W, H);
+          if ntv > 0 && interior_count(cells, etv) == ntv { at = tq; bt = tr; ft = true; }
+        }
+      }
+    }
+    if ft {
+      // the run as the READER canonicalises it — the canonical spelling, like X39's start corner
+      eck = edgeset_new(Q0, R0, W, H);
+      wck = wall_from_run(dt, at, bt, 1, EMBED);
+      wall_write(wck, eck, Q0, R0, W, H);
+      (cd, ca, cb, cp, cok) = wall_read_run(eck, Q0, R0, W, H);
+      tt = src + "\nwall d {cd} a {ca} b {cb} p {cp}";
+      dft = draft_read(tt);
+      wr = draft_write(dft, "h4") == tt;
+      ct = hexset_chunk(Q0, R0, W, H);
+      et = edgeset_new(Q0, R0, W, H);
+      draft_draw(dft, 0, 0, ct, et, 1, EMBED);
+      trip = draft_rebuild_text(ct, et, "h4", EMBED) == tt;
+      // CONTROL: draw the SAME stencil without its run — the trip must now fail
+      dnorun = draft_read(src);
+      c2 = hexset_chunk(Q0, R0, W, H);
+      e2 = edgeset_new(Q0, R0, W, H);
+      draft_draw(dnorun, 0, 0, c2, e2, 1, EMBED);
+      dropped = draft_rebuild_text(c2, e2, "h4", EMBED) != tt;
+      ntrip = ntrip + 1;
+      if !wr || !trip { badtrip = badtrip + 1; }
+      if !dropped { baddrop = baddrop + 1; }
+      println("      {dt:>2}     {wr}              {trip}          {dropped}");
+    }
+  }
+  println("   {ntrip} runs round-tripped, {badtrip} trip failures, {baddrop} that did NOT fail"
+          + " when the run was dropped");
+  if ntrip != 12 {
+    println("  FAIL: {ntrip} of 12 directions round-tripped"); ok = false;
+  }
+  if badtrip != 0 {
+    println("  FAIL: write(rebuild(draw(read(T)))) != T with an embedded run"); ok = false;
+  }
+  if baddrop != 0 {
+    println("  FAIL: dropping the embedded run still passed the trip — the SILENT-DROP hole is"
+            + " open, and a round trip that cannot see a missing wall reports success on a model"
+            + " missing its content"); ok = false;
+  }
+  // CONTROL: a malformed record is refused, not repaired (X39)
+  bad2 = draft_read(src + "\nwall d 3 a -6 b 9 p 1\nwall d 5 a 0 b 0 p 1");
+  println("   CONTROL two wall lines -> refused: {!draft_has_run(bad2)} (must be true)");
+  if draft_has_run(bad2) {
+    println("  FAIL: a malformed record was repaired rather than refused"); ok = false;
+  }
+
   println("");
   println("   The load-bearing half of OD-13 holds: a stencil CAN carry a wall in any in-between");
   println("   direction as interior-edge material, with the footprint and the round trip untouched,");
   println("   and the chain a reader would consume is well-formed (2 ends, 0 branches — X32).");
-  println("   The READER now exists and is exact (section 4). OD-13 is still not closed: `rebuild`");
-  println("   does not yet CALL it, so an embedded wall is dropped and rt_trip does not notice.");
+  println("   The reader is exact (4), and the ROUND TRIP now carries the run (5): rebuild READS");
+  println("   it, so dropping it FAILS the trip. The silent-drop hole OD-13 named is closed.");
 
   println("");
   if ok { println("=== EMBED OK ==="); }

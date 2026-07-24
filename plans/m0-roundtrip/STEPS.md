@@ -1123,7 +1123,22 @@ Measured on a 127-cell hexagon, for every in-between direction that fits: footpr
 (the gated `X32` measure). **Control:** the same wall drawn as a *gap* (5 cells removed) **breaks**
 the round trip — so orthogonality is a result, not a restatement.
 
-### What this does NOT establish — and the dangerous site
+### The round trip now carries the run — the silent-drop hole is closed
+
+`Draft` = form + embedded run. `write(rebuild(draw(read(T)))) = T` **byte-for-byte over all 12
+in-between directions**, and **dropping the run fails the trip in 12 of 12**. `rebuild` was the one
+site the design flagged as silent on omission; it now reads the run, so a missing wall is a text
+diff rather than a quiet success. Controls: a wall drawn as a *gap* breaks the trip; a fragmented
+marking is refused; a two-`wall`-line record is refused rather than repaired.
+
+**`Draft` is the DESCRIPTION side**; `hex_field::Stencil` is the FIELD side. Those are `OD-6`'s two
+halves, they both exist, and they must not share a name.
+
+**Still open on `OD-13`:** `fits?` does not yet refuse an off-grid anchor at the doorstep (`X56`),
+and only **one** run per stencil is supported — several need the interior edges split into connected
+components first.
+
+### The dangerous site, as it was
 
 `rebuild` still does **not read** that chain. An embedded wall is therefore **silently dropped, and
 `rt_trip` does not notice** — precisely the site the design flagged as the one whose omission is

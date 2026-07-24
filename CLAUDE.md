@@ -405,7 +405,16 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 - **The fix SHARPENED the control rather than breaking it**: the naive mirror rule now fails on the
   whole chiral `N=1` family (6 of 6, no other family), where float noise had masked four of six. A
   control's failure set moving after a fix is worth re-deriving, not re-baselining.
-- **`OD-13`'s load-bearing half is gated, `X60` — but OD-13 is NOT closed.** An embedded wall is a
+- **`OD-13`'s CORE IS CLOSED, `X60`.** `Draft` = form + embedded run (`src/hexdraft.loft`):
+  `write(rebuild(draw(read(T)))) = T` **byte-for-byte over all 12 in-between directions**, and —
+  the point — **dropping the run FAILS the trip in 12 of 12**. The design named `rebuild` as the one
+  site whose omission is *silent*; it now reads the run, so a missing wall is a text diff instead of
+  a quiet success. Remaining: `fits?` refusing off-grid anchors (`X56`), and **one** run per stencil
+  (several need the interior edges split into components first).
+- ⚠ **`Draft` (description) vs `hex_field::Stencil` (field) are `OD-6`'s two halves** — *"is a stencil
+  a field or a generative description?"* Both exist and must not share a name; that is why this one
+  is `Draft`.
+- **superseded — the load-bearing half alone:** An embedded wall is a
   **material on INTERIOR edges** (both cells in the footprint), so the footprint and `rebuild` are
   untouched — 127 cells, authored text back, chain well-formed (2 ends, 0 branches), control fires
   (the same wall as a *gap* breaks the trip). **`rebuild` still does not READ that chain**, so an
