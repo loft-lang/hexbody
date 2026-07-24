@@ -59,6 +59,20 @@
 //      What survives from this section is the load-bearing half, and it is §1: forward kinematics
 //      must be a **pure function**, or `I9`'s byte-identical replay is unreachable.
 //
+//   ⚠  FLEX IS JOINTS, NOT DEFORMATION — the design constraint most likely to be missed when `G1`
+//      is written, because the reflex is to reach for skinning. User, 2026-07-24, on the aeroplane
+//      case: *"in any realistic scenario the wings have to be different defined objects — they are
+//      attached but not rigid, otherwise they would fail immediately. They can bend quite a bit
+//      upwards."* A part that bends is **more bones**, not a soft bone. So hexbody needs **no
+//      vertex deformation, no skinning weights, no soft body**, and §1 survives a flexing wing
+//      unchanged: a bent wing is still a pure function of its joint values. See `SPEC` **I-POSE**.
+//
+//   ⚠  AND `L15` BOUNDS WHAT MAY BE BUILT HERE AT ALL. A train, a robot, an aeroplane and a
+//      terminal dock have different underlying logic, and no honest abstraction covers all of
+//      them — so hexbody supplies bones, limits and the pose NOW, and never the domain's
+//      behaviour. Domain simulations are legitimate work, as **consumers in their own projects**.
+//      `tests/scope.loft` enforces the naming half of that boundary on `src/`.
+//
 // ─────────────────────────────────────────────────────────────────────────────
 // HOW TO TURN IT GREEN. Land `G1`, write §1 and §2 as real checks against the real API, flip
 // `BODY_LANDED`, and MOVE this row out of `run_red` into the runner's table. The runner enforces

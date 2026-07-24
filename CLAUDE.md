@@ -222,6 +222,19 @@ A measurement cannot overturn any of these. They bound the design.
   **container and routines over it** — keyed by world location, blind to the payload — and may
   never name the payload. ⚠ **The seam is the NAME**: a structure that could hold anything is ours;
   one called `npc_*` is the crossing, and `tests/scope.loft` already refuses it.
+- **OPT-IN IS A HARD BOUNDARY, AND "NOW" IS THE ONLY TENSE** (2026-07-24 → `SPEC` **L15**).
+  *"The game has freedom to do what is required for gameplay. That part of geometry can be a train,
+  part of a robot, or an airplane, or an airplane terminal dock. We do not know and do not care as
+  an engine. All these examples have different underlying logic and it would be impossible to
+  create an abstraction that can implement all of them. **So we reject it.** We can know how a part
+  of the world is rotated NOW, we do not care about their future state."*
+  **The rejection IS the design** — there is no vehicle/articulation/behaviour abstraction, because
+  writing one means guessing the domain. And the tense is the other half: hexbody answers **where a
+  thing is**, never **what it will do**. No velocity, no trajectory, no next-tick, no intent in any
+  hexbody structure. ⚠ This is why **`I6`'s purity is the boundary itself**, not a testability
+  nicety: a pose that is a pure function of *current* joint values cannot smuggle in a future.
+  ⚠ **It also puts `G4` (the train) and `G★` (the derailment) in question** as *hexbody* goals —
+  see `ASSESSMENT.md` §5.
 - **A BODY IS A RIG, AND A POSE IS NEVER AUTHORED** (2026-07-24 → `SPEC` **I-POSE**, **K-JOINT**).
   *"I want to treat bodies we compose like meshes, so we define the bones and the limitations in
   the joints between the bones, never the actual pose."* So the authored body is

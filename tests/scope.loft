@@ -34,15 +34,31 @@ fn src_dir() -> text { "{source_dir()}/../src" }
 // library owns the shared table), never applications.
 fn shared_libs() -> vector<text> { ["hex_field", "hex_grid", "graphics"] }
 
-// The content/placement vocabulary L6 keeps out.  Whole `_`-separated segments, singular and
-// plural.  Note what is NOT here: `place`, `site`, `combine`, `seat` — hexbody legitimately owns
-// `place_opening` and `seat`, because those are MECHANISM.  The line is between "how to put a
-// thing somewhere" (ours) and "which thing goes where, and why" (the consumer's).
+// The vocabulary the seam keeps out, in two families.  Whole `_`-separated segments, singular and
+// plural.
+//
+// FAMILY 1 — CONTENT (`L6`): what is in the world and where it goes.  Note what is NOT here:
+// `place`, `site`, `combine`, `seat` — hexbody legitimately owns `place_opening` and `seat`,
+// because those are MECHANISM.  The line is between "how to put a thing somewhere" (ours) and
+// "which thing goes where, and why" (the consumer's).
+//
+// FAMILY 2 — DOMAIN (`L15`): what a piece of geometry *is to the game*.  Added 2026-07-24 from the
+// user's own examples: *"that part of geometry can be a train, part of a robot or an airplane or
+// airplane terminal dock. We do not know and do not care as an engine. All these examples have
+// different underlying logic and it would be impossible to create an abstraction that can
+// implement all of them. So we reject it."*  The rejection is the point — the engine does not get
+// a vehicle abstraction, because there is no honest one.
+//
+// ⚠ `plane` is NOT in this list and must not be: `roof_plane_fit` is a geometric plane.  `airplane`
+// is a domain, `plane` is geometry — the second time this gate has had to separate a real word
+// from a domain word that contains it (the first was `city` inside `mat_opacity`).
 fn content_words() -> vector<text> {
   ["village", "villages", "town", "towns", "city", "cities", "settlement", "settlements",
    "hamlet", "hamlets", "district", "districts", "population", "inhabitant", "inhabitants",
    "spawn", "biome", "biomes", "climate", "quest", "quests", "faction", "factions", "npc",
-   "economy", "zoning", "citizen", "citizens"]
+   "economy", "zoning", "citizen", "citizens",
+   "train", "trains", "robot", "robots", "airplane", "airplanes", "aircraft", "locomotive",
+   "wagon", "wagons", "vehicle", "vehicles", "terminal", "terminals", "dock", "docks"]
 }
 
 fn src_names() -> vector<text> {
@@ -216,9 +232,12 @@ fn main() {
   }
   // CONTROL C — and it must NOT fire on the innocent name that broke the first attempt.  A gate
   // that renames honest code is worse than no gate (the `X66` rule, in a different domain).
-  c3 = !names_content("mat_opacity") && !names_content("place_opening") && !names_content("seat");
-  println("   CONTROL `mat_opacity`, `place_opening`, `seat` are NOT flagged: {c3}"
-          + "   (substring matching reports mat_opacity as a city)");
+  c3 = !names_content("mat_opacity") && !names_content("place_opening") && !names_content("seat")
+       && !names_content("roof_plane_fit") && names_content("airplane_dock");
+  println("   CONTROL `mat_opacity`, `place_opening`, `seat`, `roof_plane_fit` are NOT flagged,"
+          + " and `airplane_dock` IS: {c3}");
+  println("      (substring matching reads mat_opacity as a city and roof_plane_fit as an"
+          + " airplane — `plane` is geometry, `airplane` is a domain)");
   if !c3 {
     println("  FAIL: the vocabulary check has false positives — it is matching substrings rather"
             + " than whole segments, and would demand innocent code be renamed"); ok = false;

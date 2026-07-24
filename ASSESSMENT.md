@@ -270,6 +270,20 @@ is ungated. The gap is entirely "not built yet", which is a schedule, not a debt
   `L15`'s violation condition. hexbody may offer the container; naming the payload is the crossing.
   ⚠ The **opt-in** half is *not* yet checkable — it needs an offered structure to exist before
   "nothing on the geometry path depends on it" can be measured.
+- ⚠ **NEW AND UNRESOLVED — `G4` and `G★` may no longer be hexbody's goals.** `L15`'s hard boundary
+  (*"that part of geometry can be a train, part of a robot or an airplane… we do not know and do
+  not care as an engine… we can know how a part of the world is rotated NOW, we do not care about
+  their future state"*) is difficult to reconcile with two `SPEC` goals that name a domain and a
+  time evolution: **`G4`** *"the train: a coupled car+wagon follows a curve… detaches on decouple"*
+  and **`G★`** *"a coupled train off the rails tumbles, piles, settles to a deterministic rest"*.
+  Both are behaviour over time, in a named domain. `I10`/`I11` (coupling coincidence, trailer-follow
+  stability) are the same. **[J]** The likely reading is that these stay as *demos built on* hexbody
+  — the harness thesis is *"live-test a game system before art exists"*, and a demo is a consumer —
+  but `SPEC` currently lists them as hexbody's own goals with hexbody gates, and `L1` even names
+  `G★` as the one place full rigid-body dynamics is *earned*. **This is a decision, not a
+  measurement**: it changes what the project claims, so it wants an explicit answer rather than my
+  inference. Until then `tests/scope.loft` refuses `train`/`vehicle`/`wagon` as declared names in
+  `src/`, which encodes the strict reading.
 - **OD-1** the morph — narrowed to *probably unnecessary* by free poses.
 - **OD-5** is the flip exact — `X2` and `X57` both say yes at T1. **[J] closeable by inspection
   rather than new work.**
