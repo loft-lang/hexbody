@@ -25,10 +25,8 @@
 //  17  S4: corner 2 and 4   written now as a tripwire, enforced when the surface lands (S8)
 use hex_field;
 use hex_grid;
-use hexform;
-use housedraw;
-use hexsurf;
-use housedraw;
+use hex_form;
+use hex_draw;
 
 // The doubled-coordinate delta from (q,r) to its neighbour in direction d.
 fn iabs2(v: integer) -> integer { if v < 0 { -v } else { v } }

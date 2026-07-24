@@ -15,8 +15,8 @@
 //   9   an arbitrary plane point snapped to a legal line, checked against brute force
 use hex_field;
 use hex_grid;
-use hexform;
-use hexwall;
+use hex_form;
+use hex_shape;
 
 // The field is sized TO THE WALL, not guessed large.  A run of half-length `HALF` reaches
 // `HALF + 1` world units from the origin (one circumradius past the ends), and a cell step is

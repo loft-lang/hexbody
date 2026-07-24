@@ -16,11 +16,10 @@
 // §4 is what makes §1 a result rather than a tautology: terrain *could* have changed the footprint,
 // and if it does, `rebuild` stops recovering the stencil.
 use hex_field;
-use hexform;
-use formtext;
-use formfit;
-use housedraw;
-use hexseat;
+use hex_form;
+use hex_recover;
+use hex_draw;
+use hex_place;
 
 const W = 31;
 const H = 31;

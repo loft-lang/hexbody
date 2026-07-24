@@ -14,10 +14,9 @@
 // use 1e-12 only to compare two floats that are algebraically identical, not to admit a range.
 use hex_field;
 use hex_grid;
-use hexform;
-use housedraw;
-use hexsurf;
-use hexwall;
+use hex_form;
+use hex_draw;
+use hex_shape;
 
 const W = 61;
 const H = 61;

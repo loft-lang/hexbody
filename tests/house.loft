@@ -13,7 +13,7 @@
 use hex_field;
 use hex_way;
 use hex_roof;
-use housedraw;
+use hex_draw;
 
 const Q0 = -20;
 const R0 = -20;

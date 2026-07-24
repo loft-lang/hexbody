@@ -20,8 +20,8 @@
 //   5  `wd_thickness` IS PALETTE-SIDE — and that is `L13` load-bearing
 //   6  ROOFS ARE MATERIALS (`X13`) — and hexbody writes only the height
 use hex_field;
-use housedraw;
-use hexfit;
+use hex_draw;
+use hex_fit;
 
 const W  = 41;
 const H  = 41;

@@ -9,9 +9,8 @@
 //      carries; that closes the loop with S5
 //   4  controls: reorder a field, emit a default, or feed a non-canonical spelling -> diff
 use hex_field;
-use hexform;
-use formcensus;
-use formtext;
+use hex_form;
+use hex_recover;
 
 const W = 61;
 const H = 61;

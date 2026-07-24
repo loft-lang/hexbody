@@ -23,12 +23,10 @@
 //   5  TERRAIN — the voxel's integer grid, now that the fork is closed
 //   6  MATERIAL IDS — hexbody's wall slot is narrower than moros's, and overflow ERASES a wall
 use hex_field;
-use housedraw;
-use hexarc;
-use hexdraft;
-use hexfit;
-use hexseat;
-use hexcombine;
+use hex_draw;
+use hex_shape;
+use hex_fit;
+use hex_place;
 
 const W  = 41;
 const H  = 41;

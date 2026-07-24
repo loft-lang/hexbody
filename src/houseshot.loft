@@ -20,8 +20,7 @@ use graphics;
 use hex_field;
 use hex_way;
 use hex_roof;
-use housedraw;
-use hexsurf;
+use hex_draw;
 
 const Q0 = -16;
 const R0 = -16;

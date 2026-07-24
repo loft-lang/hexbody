@@ -19,10 +19,8 @@
 //   3  law F over the corpus: no two entries share a field
 //   4  the full trip — needs `rebuild`, so RED until S8
 use hex_field;
-use hexform;
-use formcensus;
-use formtext;
-use formfit;
+use hex_form;
+use hex_recover;
 
 const W = 61;
 const H = 61;

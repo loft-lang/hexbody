@@ -23,9 +23,8 @@
 //     loft --interpret --path ../loft/ --lib ../loft/lib/ --lib ../loft-libs-world/ --lib src/ \
 //          src/corpusgen.loft
 use hex_field;
-use hexform;
-use formcensus;
-use formtext;
+use hex_form;
+use hex_recover;
 
 const W = 61;
 const H = 61;

@@ -20,9 +20,9 @@
 // (domain B), stencil on TERRAIN (`OD-4`), overlapping (not adjacent) stencils, and LEVEL
 // separation — wait on machinery this rung does not build.
 use hex_field;
-use hexform;
-use housedraw;
-use hexcombine;
+use hex_form;
+use hex_draw;
+use hex_place;
 
 const W = 20;
 const H = 20;

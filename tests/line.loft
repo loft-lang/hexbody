@@ -24,8 +24,8 @@
 // (`X47`), and the line doorstep — endpoints on hex vertices a whole number of periods apart
 // (`tests/wall.loft` §8).
 use hex_field;
-use hexform;
-use hexarc;
+use hex_form;
+use hex_shape;
 use hex_edge;
 use hex_way;
 

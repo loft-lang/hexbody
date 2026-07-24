@@ -18,9 +18,9 @@
 //   3  level 0 costs nothing: the level-aware path is byte-identical to the level-blind one
 //   4  CONTROL — flattening the levels restores fusion and contention
 use hex_field;
-use hexform;
-use housedraw;
-use hexcombine;
+use hex_form;
+use hex_draw;
+use hex_place;
 
 const W = 20;
 const H = 20;

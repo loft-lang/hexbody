@@ -32,6 +32,18 @@
 
 fn src_dir() -> text { "{source_dir()}/../src" }
 
+// ⚠ THE CODE HEXBODY OWNS NO LONGER LIVES ONLY IN `src/` (2026-07-24).  The six libraries moved
+// to `loft-libs-world` when hexbody became the WORKSHOP rather than the shop (`SPEC` **G-LIB**);
+// `src/` now holds only the two tools.  The seam rule follows the CODE, not the directory — a
+// settlement verb is just as wrong inside `hex_draw` as it was inside `src/housedraw.loft` — so
+// this gate scans both.  Scanning only `src/` would have quietly become a check over 21
+// declarations instead of ~450, which is exactly the failure its own floor caught.
+fn lib_root() -> text { "{source_dir()}/../../loft-libs-world" }
+fn owned_libs() -> vector<text> {
+  ["hex_form", "hex_shape", "hex_draw", "hex_recover", "hex_fit", "hex_place",
+   "hex_edge", "hex_way", "hex_roof"]
+}
+
 // The lattice libraries hexbody is allowed to consume.  These are LIBRARIES (`SPEC` L11 — the
 // library owns the shared table), never applications.
 fn shared_libs() -> vector<text> {
@@ -70,12 +82,22 @@ fn content_words() -> vector<text> {
    "wagon", "wagons", "vehicle", "vehicles", "terminal", "terminals", "dock", "docks"]
 }
 
+// Every owned source file, as a FULL PATH: hexbody's tools plus the nine libraries it produced.
 fn src_names() -> vector<text> {
-  names: vector<text> = list_dir(src_dir()) ?? [];
   out: vector<text> = [];
+  names: vector<text> = list_dir(src_dir()) ?? [];
   for ni in 0..len(names) {
     nm = names[ni] ?? "";
-    if nm.ends_with(".loft") { out += [nm]; }
+    if nm.ends_with(".loft") { out += ["{src_dir()}/{nm}"]; }
+  }
+  libs = owned_libs();
+  for li in 0..len(libs) {
+    lb = libs[li] ?? "";
+    lns: vector<text> = list_dir("{lib_root()}/{lb}/src") ?? [];
+    for lj in 0..len(lns) {
+      ln2 = lns[lj] ?? "";
+      if ln2.ends_with(".loft") { out += ["{lib_root()}/{lb}/src/{ln2}"]; }
+    }
   }
   out
 }
@@ -145,8 +167,11 @@ fn main() {
   files = src_names();
   own: vector<text> = [];
   for oi in 0..len(files) {
-    own += [(files[oi] ?? "").replace(".loft", "")];
+    fp = files[oi] ?? "";
+    parts = fp.split('/');
+    own += [(parts[len(parts) - 1] ?? "").replace(".loft", "")];
   }
+  own += owned_libs();
   nmod = len(own);
   println("");
   println("   {nmod} modules in src/, read as the allowance (never hardcoded)");
@@ -163,7 +188,7 @@ fn main() {
   nforeign = 0;
   for fi in 0..len(files) {
     nm1 = files[fi] ?? "";
-    ims = imports_of(file("{src_dir()}/{nm1}").content() ?? "");
+    ims = imports_of(file(nm1).content() ?? "");
     for ui in 0..len(ims) {
       im = ims[ui] ?? "";
       nuse = nuse + 1;
@@ -208,7 +233,7 @@ fn main() {
   nbad = 0;
   for gi in 0..len(files) {
     nm2 = files[gi] ?? "";
-    ds = declared_names(file("{src_dir()}/{nm2}").content() ?? "");
+    ds = declared_names(file(nm2).content() ?? "");
     for di in 0..len(ds) {
       dn = ds[di] ?? "";
       ndecl = ndecl + 1;
@@ -258,7 +283,7 @@ fn main() {
   nreach = 0;
   for hi in 0..len(files) {
     nm3 = files[hi] ?? "";
-    body3 = file("{src_dir()}/{nm3}").content() ?? "";
+    body3 = file(nm3).content() ?? "";
     lines3 = body3.split('\n');
     for lm in 0..len(lines3) {
       lv = lines3[lm] ?? "";

@@ -12,8 +12,8 @@
 // The instrument for §1–§2 is a PYTHAGOREAN pose (cos = 4/5, sin = 3/5): the transform then maps
 // rationals to rationals, so an EXACT INTEGER oracle exists and the float pipeline's disagreement
 // with it IS the seam band.  A general θ has no oracle; this one is chosen so the truth is knowable.
-use hexform;
-use hexframe;
+use hex_form;
+use hex_place;
 
 const CS = 0.8;   // cos θ  (the 3-4-5 angle)
 const SN = 0.6;   // sin θ

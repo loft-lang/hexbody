@@ -16,8 +16,8 @@
 //
 // The scene: two overlapping tower disks (A6 arcs), their rims splitting the union boundary.
 use hex_field;
-use hexform;
-use hexarc;
+use hex_form;
+use hex_shape;
 use hex_edge;
 use hex_way;
 

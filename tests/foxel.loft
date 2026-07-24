@@ -29,12 +29,11 @@
 // format; that is the FORMAT's gate and it is upstream.  This asks whether the MODEL crosses —
 // every slot, and whether `rebuild` still returns the authored text afterwards.
 use hex_field;
-use hexform;
-use formtext;
-use formfit;
-use housedraw;
-use hexwall;
-use hexdraft;
+use hex_form;
+use hex_recover;
+use hex_draw;
+use hex_shape;
+use hex_fit;
 
 const W  = 41;
 const H  = 41;

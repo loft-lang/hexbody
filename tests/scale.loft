@@ -62,12 +62,33 @@ fn src_dir() -> text { "{source_dir()}/../src" }
 // 2026-07-24; the duplicate was invisible until a module that imports `hex_grid` inherited it.)
 fn lattice_src() -> text { "{source_dir()}/../../loft-libs-world/hex_grid/src/hex_grid.loft" }
 
+// ⚠ THE CODE HEXBODY OWNS NO LONGER LIVES ONLY IN `src/` (2026-07-24) — the libraries moved to
+// `loft-libs-world` when hexbody became the WORKSHOP (`SPEC` **G-LIB**), and `src/` now holds two
+// tools.  `L8` is a claim about hexbody's lengths, so the register must follow the LENGTHS, not
+// the directory: `WALL_W` is `hex_shape`'s now and `BAND_SIDES` is `hex_draw`'s, and a gate that
+// kept scanning `src/` would have reported an empty register as a clean one.
+fn lib_root() -> text { "{source_dir()}/../../loft-libs-world" }
+fn owned_libs() -> vector<text> {
+  ["hex_form", "hex_shape", "hex_draw", "hex_recover", "hex_fit", "hex_place",
+   "hex_edge", "hex_way", "hex_roof"]
+}
+
+// Every owned source file, as a full path.
 fn src_names() -> vector<text> {
-  names: vector<text> = list_dir(src_dir()) ?? [];
   out: vector<text> = [];
+  names: vector<text> = list_dir(src_dir()) ?? [];
   for ni in 0..len(names) {
     nm = names[ni] ?? "";
-    if nm.ends_with(".loft") { out += [nm]; }
+    if nm.ends_with(".loft") { out += ["{src_dir()}/{nm}"]; }
+  }
+  libs = owned_libs();
+  for li in 0..len(libs) {
+    lb = libs[li] ?? "";
+    lns: vector<text> = list_dir("{lib_root()}/{lb}/src") ?? [];
+    for lj in 0..len(lns) {
+      ln2 = lns[lj] ?? "";
+      if ln2.ends_with(".loft") { out += ["{lib_root()}/{lb}/src/{ln2}"]; }
+    }
   }
   out
 }
@@ -150,7 +171,7 @@ fn main() {
   all: vector<FConst> = [];
   for fi in 0..len(files) {
     nm1 = files[fi] ?? "";
-    all += float_consts(file("{src_dir()}/{nm1}").content() ?? "", nm1);
+    all += float_consts(file(nm1).content() ?? "", nm1);
   }
   // The register below is about HEXBODY's constants; the ladder additionally consults the
   // lattice library, because `HEX_LEN` lives there and a gate must measure the authority.
@@ -267,7 +288,7 @@ fn main() {
   bad = 0;
   for gi in 0..len(files) {
     nm4 = files[gi] ?? "";
-    body = file("{src_dir()}/{nm4}").content() ?? "";
+    body = file(nm4).content() ?? "";
     bad = bad + bad_spellings(body, CANON_S32, "0.866");
     bad = bad + bad_spellings(body, CANON_S3, "1.732");
     lines2 = body.split('\n');

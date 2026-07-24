@@ -21,10 +21,8 @@
 // quotients by orientation, so "every collision is an orientation-image" is a tautology.  The
 // non-vacuous law F question is whether `draw` is INJECTIVE, and that is `field_norm` — section 2.
 use hex_field;
-use hexform;
-use formcensus;
-use formtext;
-use formfit;
+use hex_form;
+use hex_recover;
 
 const W = 61;
 const H = 61;

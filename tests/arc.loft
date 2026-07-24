@@ -14,11 +14,10 @@
 // A7 then composes that arc with a feature (A5): a door is a material on the wall's boundary edges,
 // which arc recovery (cell-based) is blind to, so it round-trips as one arc at no cost.
 use hex_field;
-use hexform;
-use formcensus;
-use hexarc;
-use hexwall;
-use housedraw;
+use hex_form;
+use hex_recover;
+use hex_shape;
+use hex_draw;
 
 const W = 41;
 const H = 41;
