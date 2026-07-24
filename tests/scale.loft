@@ -70,7 +70,7 @@ fn lattice_src() -> text { "{source_dir()}/../../loft-libs-world/hex_grid/src/he
 fn lib_root() -> text { "{source_dir()}/../../loft-libs-world" }
 fn owned_libs() -> vector<text> {
   ["hex_form", "hex_shape", "hex_draw", "hex_recover", "hex_fit", "hex_place",
-   "hex_edge", "hex_way", "hex_roof"]
+   "hex_edge", "hex_way", "hex_roof", "body"]
 }
 
 // Every owned source file, as a full path.
