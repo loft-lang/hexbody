@@ -1,4 +1,5 @@
-// hexarc — THE ROUND TOWER, AND WHAT OF AN ARC COMES BACK (rung A6, `OD-10`).
+// hexarc — THE ROUND TOWER, AND WHAT OF AN ARC COMES BACK (rung A6, `OD-10`), plus the DOOR on it
+// (rung A7 — the doored tower; the A7 section is at the foot of the file).
 //
 // `OD-10` asks: from a run of slots marked ROUNDED, are the CENTRE and RADIUS recoverable exactly
 // (R1), or is that a fit (R2)?  Measured, the answer is split:
@@ -116,4 +117,83 @@ pub fn arc_shells_upto(n24: integer) -> vector<integer> {
     }
   }
   out
+}
+
+// ── A7 — A DOOR ON THE TOWER WALL ──────────────────────────────────────────
+//
+// The tower is a filled disk (above); its wall is the boundary edge loop (`draw_walls`).  A door
+// is a MATERIAL OVERRIDE on a contiguous span of those boundary edges — it re-materials them, it
+// NEVER deletes a cell or an edge.  This is the whole of A7, and it composes the arc (A6) with the
+// feature (A5) at no cost, because:
+//
+//   arc recovery (`arc_recover_centre`, `arc_shell_max`) consumes only the CELL set, and a door
+//   touches only edge MATERIALS — so the doored tower's cells are byte-identical to the plain
+//   tower's, and its centre and shell come back unchanged.  The doored tower is ONE arc.
+//
+// The door reads straight back off storage: a boundary edge carrying the door material IS a door
+// (ROUNDTRIP §2.4.1), so recovery is R1, not a fit.  Deleting the edges instead would fragment the
+// wall into k arcs — the doored-tower defect (design/FEATURES.md §3).  `arc_door_wedge` cannot
+// express that: it only writes a material, so the defect is unreachable through the door API and a
+// gate has to reach around it to reproduce the fault.
+//
+// The door's angular span is the wedge between two integer rays from the centre.  A positive-
+// diagonal map (k -> k·√3/2, m -> m/2) preserves the CCW cyclic order of directions, so the wedge
+// test is an exact integer cross product in lattice coords — `hexarc` stays float-free.
+
+// Cross product of two lattice-coordinate vectors — exact integer; its sign is the turn direction.
+fn arc_xprod(ak: integer, am: integer, bk: integer, bm: integer) -> integer { ak * bm - am * bk }
+
+// Is cell (q,r) inside the angular wedge running CCW from ray `lo` up to ray `hi`, about centre
+// (cq,cr)?  The wedge must span less than 180°, so `lo` and `hi` bound one contiguous arc.
+pub fn arc_wedge_has(cq: integer, cr: integer, q: integer, r: integer,
+                     lok: integer, lom: integer, hik: integer, him: integer) -> boolean {
+  ok = lattice_k(q, r) - lattice_k(cq, cr);
+  om = lattice_m(q, r) - lattice_m(cq, cr);
+  arc_xprod(lok, lom, ok, om) >= 0 && arc_xprod(ok, om, hik, him) > 0
+}
+
+// Place a door on the wall: re-material every boundary edge whose inside cell lies in the wedge to
+// `mat`.  Annotation only — no cell or edge is removed — so the disk, and therefore the recovered
+// centre and shell, are untouched.  Returns the number of edges marked.  The arc analog of
+// `place_opening`.
+pub fn arc_door_wedge(cells: HexSet, edges: EdgeSet, cq: integer, cr: integer,
+                      lok: integer, lom: integer, hik: integer, him: integer,
+                      mat: integer) -> integer {
+  n = 0;
+  for dr in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for dq in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if hexset_get(cells, dq, dr) && arc_wedge_has(cq, cr, dq, dr, lok, lom, hik, him) {
+        for dd in 0..6 {
+          nq = nb_q(dq, dr, dd);
+          nr = nb_r(dq, dr, dd);
+          if !hexset_get(cells, nq, nr) {
+            edge_set_mat(edges, dq, dr, nq, nr, mat);
+            n = n + 1;
+          }
+        }
+      }
+    }
+  }
+  n
+}
+
+// Recover the door: count the boundary edges carrying `mat`, each exactly once (only the inside
+// cell of a boundary edge is in the set, so iterating inside cells visits every boundary edge
+// once).  This is the R1 read of the feature straight off storage.
+pub fn arc_door_edges(cells: HexSet, edges: EdgeSet, mat: integer) -> integer {
+  n = 0;
+  for er in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for eq in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if hexset_get(cells, eq, er) {
+        for ed in 0..6 {
+          nq = nb_q(eq, er, ed);
+          nr = nb_r(eq, er, ed);
+          if !hexset_get(cells, nq, nr) && edge_mat(edges, eq, er, nq, nr) == mat {
+            n = n + 1;
+          }
+        }
+      }
+    }
+  }
+  n
 }

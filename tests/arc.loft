@@ -1,17 +1,22 @@
-// arc — THE GATE FOR hexarc, RUNG A6 (`OD-10`).  Every check has a control that must fire.
+// arc — THE GATE FOR hexarc, RUNGS A6 (`OD-10`) and A7 (the doored tower).  Every check has a
+// control that must fire.
 //
 //   1  the shell grid is exact INTEGERS — `Sep` made concrete, no float anywhere
 //   2  the CENTRE is recoverable exactly; a non-disk is refused
 //   3  the RADIUS is NOT: a continuous sweep collapses onto the shells
 //   4  law F over the arcs: distinct shells never share a field
+//   5  A7: a DOOR on the tower is a material annotation — the doored tower is ONE arc (`X51`)
 //
-// `OD-10`'s answer is therefore split — centre exact, radius quantised — which makes an arc **R1
-// on a quantised parameter grid**, the same answer line endpoints (§10.10) and feature `t` (`X48`)
-// already gave. Three parameters, one rule.
+// `OD-10`'s answer is split — centre exact, radius quantised — which makes an arc **R1 on a
+// quantised parameter grid**, the same answer line endpoints (§10.10) and feature `t` (`X48`) gave.
+// A7 then composes that arc with a feature (A5): a door is a material on the wall's boundary edges,
+// which arc recovery (cell-based) is blind to, so it round-trips as one arc at no cost.
 use hex_field;
 use hexform;
 use formcensus;
 use hexarc;
+use hexwall;
+use housedraw;
 
 const W = 41;
 const H = 41;
@@ -139,6 +144,92 @@ fn main() {
   println("   OD-10 ANSWERED: centre EXACT, radius QUANTISED to a shell. An arc is R1 on a");
   println("   quantised parameter grid — the third parameter to land that way, after line");
   println("   endpoints (10.10) and feature t (X48).");
+
+  // ── 5. A7 — THE DOORED TOWER ──────────────────────────────────────────────
+  //
+  // A door on a tower is a MATERIAL OVERRIDE on a span of the wall's boundary edges — never a
+  // deletion.  Arc recovery consumes only the CELLS, so the doored tower's centre and shell come
+  // back byte-identical to the plain tower: it is ONE arc, plus a door read straight off storage.
+  // Deleting the edges instead fragments the wall into k arcs — the doored-tower defect, which the
+  // door API cannot express and the controls must reach around to reproduce.
+  println("");
+  println("5. A7 — the doored tower: a door is a material annotation, so the arc stays ONE arc");
+
+  dt = hexset_chunk(Q0, R0, W, H);
+  ndt = arc_fill(0, 0, 108, dt);
+  (pq, pr, pfound) = arc_recover_centre(dt);
+  pshell = arc_shell_max(dt, 0, 0);
+  ploops = boundary_loops(dt);
+  wall = edgeset_new(Q0, R0, W, H);
+  nwall = draw_walls(dt, wall, 1);
+  pends = wall_chain_ends(wall, Q0, R0, W, H);
+  println("   plain tower shell 108: {ndt} cells, centre ({pq},{pr}) found={pfound}, shell {pshell}");
+  println("   wall {nwall} edges: boundary loops {ploops}, chain ends {pends}"
+          + "  (one closed loop => 1, 0)");
+  if !pfound || pq != 0 || pr != 0 || pshell != 108 {
+    println("  FAIL: the plain tower did not recover as its own centre and shell"); ok = false;
+  }
+  if ploops != 1 || pends != 0 {
+    println("  FAIL: the tower wall is not a single closed loop"); ok = false;
+  }
+
+  // three doors, ~120 deg apart, each a contiguous span of boundary edges, annotated to material 9
+  a0 = arc_door_wedge(dt, wall, 0, 0,  5, -2,  5,  2, 9);
+  a1 = arc_door_wedge(dt, wall, 0, 0, -1,  5, -5,  2, 9);
+  a2 = arc_door_wedge(dt, wall, 0, 0, -5, -2, -1, -5, 9);
+  (aq, ar, afound) = arc_recover_centre(dt);
+  ashell = arc_shell_max(dt, 0, 0);
+  aends = wall_chain_ends(wall, Q0, R0, W, H);
+  arec = arc_door_edges(dt, wall, 9);
+  println("   3 doors annotated: {a0}+{a1}+{a2} = {a0 + a1 + a2} edges, recovered {arec}"
+          + " (exact, no fit)");
+  println("   after annotate: centre ({aq},{ar}) found={afound}, shell {ashell}, chain ends {aends}");
+  if aq != pq || ar != pr || ashell != pshell || afound != pfound {
+    println("  FAIL: a door changed the recovered arc — the annotation is not blind to the cells");
+    ok = false;
+  }
+  if aends != 0 {
+    println("  FAIL: annotating a door opened the wall — it must stay one closed loop"); ok = false;
+  }
+  if a0 <= 0 || a1 <= 0 || a2 <= 0 {
+    println("  FAIL: a door wedge captured no edges — the fixture is degenerate"); ok = false;
+  }
+  if arec != a0 + a1 + a2 {
+    println("  FAIL: the door did not read back exactly off storage (R1)"); ok = false;
+  }
+
+  // CONTROL A: delete the three door spans instead of annotating — the named doored-tower defect
+  cdel = edgeset_new(Q0, R0, W, H);
+  draw_walls(dt, cdel, 1);
+  arc_door_wedge(dt, cdel, 0, 0,  5, -2,  5,  2, 0);
+  arc_door_wedge(dt, cdel, 0, 0, -1,  5, -5,  2, 0);
+  arc_door_wedge(dt, cdel, 0, 0, -5, -2, -1, -5, 0);
+  dends = wall_chain_ends(cdel, Q0, R0, W, H);
+  println("   CONTROL A delete the three spans: chain ends {dends} => {dends / 2} arcs (want 3)");
+  if dends != 6 {
+    println("  FAIL: control did not fire — deleting the doors did not fragment the wall into"
+            + " 3 arcs"); ok = false;
+  }
+
+  // CONTROL B: notch the disk — delete the east door's CELLS, so the arc itself is lost
+  cnotch = hexset_chunk(Q0, R0, W, H);
+  arc_fill(0, 0, 108, cnotch);
+  nrem = 0;
+  for znr in R0..R0 + H {
+    for znq in Q0..Q0 + W {
+      if hexset_get(cnotch, znq, znr) && arc_wedge_has(0, 0, znq, znr, 5, -2, 5, 2) {
+        hexset_set(cnotch, znq, znr, false); nrem = nrem + 1;
+      }
+    }
+  }
+  (nbq, nbr, nbf) = arc_recover_centre(cnotch);
+  println("   CONTROL B notch the disk ({nrem} cells removed): centre found={nbf} (want false),"
+          + " at ({nbq},{nbr})");
+  if nbf {
+    println("  FAIL: control did not fire — a notched disk was still read as an arc"); ok = false;
+  }
+  println("   => a feature is a MATERIAL, never a hole (X51): the doored tower is R1 as ONE arc,");
+  println("      and the defect is only reachable by reaching around the door API.");
 
   println("");
   if ok { println("=== ARC OK ==="); }

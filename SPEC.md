@@ -53,7 +53,7 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 
 | ID | invariant | control that must fire |
 |---|---|---|
-| **I1** | a door/window is an interval on the **analytic surface**, and is **stored as a material on the wall slot** — the edge is never removed, so a run is never fragmented. **Its `t` is admissible only at an edge centre `(2i+1)/2n`** — any other value snaps and cannot be recovered (`ROUNDTRIP.md` **X48**), so the doorstep refuses it ([`ROUNDTRIP.md`](ROUNDTRIP.md) §2.4.1). The 2/3-direction edge strip is storage the feature never indexes | select edges by strip order → clear width wobbles between the zigzag and staircase sides · delete an edge instead of re-materialling it → the run fragments (the doored-tower defect) |
+| **I1** | a door/window is an interval on the **analytic surface**, and is **stored as a material on the wall slot** — the edge is never removed, so a run is never fragmented, on a **straight** wall (`X48`) or a **curved** one (`X51`, the doored tower: it round-trips as one arc). **Its `t` is admissible only at an edge centre `(2i+1)/2n`** — any other value snaps and cannot be recovered (`ROUNDTRIP.md` **X48**), so the doorstep refuses it ([`ROUNDTRIP.md`](ROUNDTRIP.md) §2.4.1). The 2/3-direction edge strip is storage the feature never indexes | select edges by strip order → clear width wobbles between the zigzag and staircase sides · delete an edge instead of re-materialling it → the run fragments into 3 arcs (the doored-tower defect) |
 | **I2** | placement is `(side, t)`, which is **affine-invariant** → a feature survives orientation-morph exactly | store the raw opened edges → the morphed house's feature moves |
 | **I3** | a wall is the **boundary of a filled region**, closed by construction *(gap-fill)*, stored in the **three wall slots a point owns** (foxel schema, [`ROUNDTRIP.md`](ROUNDTRIP.md) §2.4). *(OD-7 resolved: `WALLS.md`'s triangle-subdivision band needs sub-cell resolution the schema has no slot for — it may still serve render/collision, but it cannot be stored.)* | the buffer-band rule → 2 components, 0 enclosed (a wall with a hole), yet still "12/12 equivariant" |
 | **I4** | a proxy **⊇** its shape (never misses an overlap) **and** overshoot `≤ ε` metres | shrink the proxy below the footprint → a real overlap is missed |
@@ -127,7 +127,8 @@ items marked ⚠ below depend on one.
    | `census.loft` §7 | **I-CLOSE**, **K-FIT** — non-convex forms break law F, so the doorstep refuses them (`X46`) |
    | `surface.loft` | **G2** (the analytic surface), **I-EXACT** — averaging, no tolerance (`X47`) |
    | `surface.loft` §6–§7 | **I1**, **I2**, **K-FIT** — a feature is a material at an edge centre; deleting an edge fragments the run (`X48`) |
-   | `arc.loft` | **I-QUANT**, **K-FIT** — centre exact, radius quantised to a shell (`X49`, `X50`) |
+   | `arc.loft` §1–§4 | **I-QUANT**, **K-FIT** — centre exact, radius quantised to a shell (`X49`, `X50`) |
+   | `arc.loft` §5 | **I1**, **I-RT** — the doored tower: a door is a material annotation, so it round-trips as **one** arc; deleting fragments it (`X51`) |
    | `text.loft` | **I-EXACT** — `write(read(T)) = T` as a byte diff, no ε (`X39`); **C1–C5** |
    | `trip.loft` | **I-RT**, **I-EXACT**, **I-TOTAL** — `write(rebuild(draw(read(T)))) = T` byte-for-byte over the **committed** corpus (`X41`); control: a non-grammar footprint → R2 with `ρ > 0` |
    | `wall.loft` §1, §2, §5 | **I-DOMAIN** *(`D`; the even/odd split, measured)* |

@@ -670,6 +670,52 @@ so `m` must be divisible by **three**. Two sections failed on it. Worth noting t
 that ledger, though: **every one of these was caught by a control before it became a recorded
 fact.** That is the discipline working, not failing.
 
+## A7 ✅ · the doored tower — **DONE** *(the named defect, refused by construction — `X51`)*
+
+A7 combines the arc (A6) with a feature (A5): a door on a round tower. The rung's question was
+*the named defect* — "a wall with a door fitting **3 arcs instead of 1**" (`design/FEATURES.md`
+§3), a law **D** failure with prior art. Like A5, the answer is **already fixed**, and A7 shows
+*why the two pieces compose at no cost*.
+
+### The arc's recovery is blind to the door — by its own type
+
+A tower is a filled disk (A6); its wall is the boundary edge loop. A door is a **material override
+on a contiguous span of those boundary edges** (`arc_door_wedge`) — it re-materials them and never
+removes a cell. The composition is free for a reason visible in the signatures:
+
+```
+arc_recover_centre(cells)   arc_shell_max(cells, …)     ← take only the CELL set
+arc_door_wedge(…, edges, …, mat)                        ← writes only edge MATERIALS
+```
+
+So the doored tower's cells are **byte-identical** to the plain tower's, and its centre and shell
+come back unchanged — not by discipline, but because the recovery **cannot see** the edges. `N`, the
+number of sites that must re-assert "a feature is a material, not a hole," is **1**: the door API is
+the only writer, and it can only re-material. The defect is **unreachable through it**.
+
+### Measured on a shell-108 tower (37 cells, wall 42 edges, one closed loop)
+
+| | centre | shell | wall | door edges |
+|---|---|---|---|---|
+| plain | `(0,0)` | `108` | 1 loop, 0 ends | — |
+| **3 doors annotated** | **`(0,0)`** | **`108`** | **1 loop, 0 ends** | 17 written, **17 recovered** (exact) |
+| CONTROL — delete the 3 spans | — | — | **6 ends → 3 arcs** | — |
+| CONTROL — notch the disk's cells | **not found** | — | — | — |
+
+The door reads straight off storage (a door-material edge *is* a door, `ROUNDTRIP` §2.4.1) — R1,
+no fit. **Deleting** the three spans instead fragments the one loop into **three arcs** — the named
+defect, reproduced exactly — and notching the disk's cells **loses the arc** (the centre no longer
+recovers). Both controls have to *reach around* the door API to touch cells or blank a material,
+which is the point: authoring cannot express the defect.
+
+### The check was almost vacuous — and a control fixed that
+
+"After annotating, the arc is unchanged" is true *by construction*, so on its own it is a check that
+cannot fail (`CLAUDE.md`: a check that cannot go red is not a check). It is made live by **CONTROL
+B**: notching the cells shows the recovery **is** sensitive to the disk, so "unchanged" is a real
+result, not a tautology — confirmed by a falsification probe (a door that deletes its cells flips
+`found` from true to false). The one-loop check is made live the same way by **CONTROL A**.
+
 ## Order, and where it can go wrong
 
 ```

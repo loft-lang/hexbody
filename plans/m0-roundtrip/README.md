@@ -92,9 +92,13 @@ survives `read → draw → rebuild → write` byte-identically* — holds over 
   `OD-10` resolved. And the third parameter to land that way, giving **`X50` / I-QUANT**: a
   continuous parameter must be quantised to what the field distinguishes.
 
-**Rungs A1–A6 and S0–S8 + S4b are closed.** Next is **A7** (arc + feature — the *doored tower*,
-the named defect with prior art), then **A8** (combination — where things that work alone stop
-working together).
+- **A7.** The doored tower: a door is a **material annotation on the wall's boundary edges**, and
+  arc recovery consumes only the cells, so the doored tower round-trips as **one** arc at no cost
+  (`X51`). The named defect — deleting fragments the wall into 3 arcs — is **unreachable through the
+  door API**, and the controls have to reach around it.
+
+**Rungs A1–A7 and S0–S8 + S4b are closed.** Next is **A8** (combination — two stencils adjacent,
+stencil against linework, stencil on terrain — where things that work alone stop working together).
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"
@@ -162,7 +166,7 @@ already moved arcs from the last rung to the middle, because the scene has a tow
 | **A4** ✅ | unequal sides, and non-convex — the L-shaped house | **houses** | **at every size** — non-convex forms violate law F, so the DOORSTEP refuses them (`X46`) |
 | **A5** ✅ | features (doors, windows) on straight sides | **houses** | **no — already fixed**; but `t` is exact only at edge centres (`X48`) |
 | **A6** ✅ | **arcs** — the round tower shell | **the tower** | centre **exact**, radius **quantised to a shell** (`X49`); the `Sep`/`X7` fork is a *policy*, not a blocker |
-| **A7** | **arc + feature — the doored tower** | **the tower** | the **named defect**: a wall with a door fitting **3 arcs instead of 1** (`design/FEATURES.md` §3) — a law **D** failure with prior art |
+| **A7** ✅ | **arc + feature — the doored tower** | **the tower** | **already fixed**: a door is a material annotation the cell-based arc recovery is blind to, so it round-trips as **one** arc (`X51`); deleting fragments it into 3 arcs — the named defect, unreachable through the door API |
 | **A8** | **combination** — two stencils adjacent (who owns the shared edge?), stencil against linework, stencil on terrain | **the landscape** | **where things that work alone stop working together** |
 
 A8 is the rung that matters most and the one a single-object enumeration cannot see. Do not stop
@@ -175,7 +179,7 @@ crawler `plans/8-landform-morphogenesis/`).
 
 | Phase | Effort | Verify | Status |
 |---|---|---|---|
-| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A6 ✅ closed — next A7 (the doored tower)** |
+| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A7 ✅ closed — next A8 (combination)** |
 | **B** — linework census: `period`, `D`, `Sep`; the straight/arc recovery | M | `rt_census_b`; `eave_spread == 0` on the recovered line | Blocked on A |
 | **C** — `write` / `read`, canonical text frozen | S | `rt_canon`, `rt_project`, `rt_fits`, `rt_close` | Blocked on A, B, **OD-2** |
 | **D** — `rt_trip` written **empty** (red), before `rebuild` exists | XS | needs no ground truth — only `write`/`read`/`draw`/`rebuild` + `diff` | Blocked on C |

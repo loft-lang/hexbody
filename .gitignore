@@ -1,6 +1,8 @@
 /target/
 .loft/
 /build/
+# loft native-backend compilation cache
+/native-auto/
 
 # PNGs are ephemeral render output — EXCEPT validation images committed under plans/,
 # which we keep for human review (see plans/README.md § Validation images).

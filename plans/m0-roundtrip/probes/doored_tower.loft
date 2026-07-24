@@ -1,0 +1,166 @@
+// doored_tower — PLOT THE ANSWER FOR RUNG A7 (the doored tower, the named defect).
+//
+// The claim to read off a worked instance: a door on a tower is a MATERIAL OVERRIDE on a
+// contiguous span of the arc's boundary edges — never a deletion.  So the disk of CELLS is
+// byte-identical to the plain tower, and A6's recovery (which consumes only cells) returns the
+// same centre and shell.  The doored tower is therefore ONE arc.  Deleting the door's edges
+// instead fragments the wall into k arcs — "3 arcs instead of 1" (design/FEATURES.md §3, §6).
+//
+// This probe is the constructive instrument: build the tower, place three doors three ways
+// (annotate / delete-edges / delete-cells), and MEASURE each, so the gate asserts numbers this
+// printed rather than numbers guessed at the desk.
+use hex_field;
+use hex_grid;
+use hexform;
+use hexarc;
+use hexwall;
+use housedraw;
+
+const W = 41;
+const H = 41;
+const Q0 = -20;
+const R0 = -20;
+const WALL = 1;
+const DOOR = 9;
+
+// cross product of two lattice-coordinate vectors — exact integer.  A positive-diagonal map
+// (k -> k*sqrt3/2, m -> m/2) preserves the CCW cyclic order of directions, so an angular wedge
+// tested in lattice coords selects the same contiguous arc it would in world coords, with no float.
+fn xprod(ak: integer, am: integer, bk: integer, bm: integer) -> integer { ak * bm - am * bk }
+
+// Re-material every boundary edge whose inside cell sits in the wedge [lo, hi) about the centre,
+// setting it to `mat`.  Never touches a cell — annotation only.  Returns how many edges it marked.
+fn door_annotate(cells: HexSet, edges: EdgeSet, cq: integer, cr: integer,
+                 lok: integer, lom: integer, hik: integer, him: integer, mat: integer) -> integer {
+  bk = lattice_k(cq, cr);
+  bm = lattice_m(cq, cr);
+  n = 0;
+  for dr in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for dq in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if hexset_get(cells, dq, dr) {
+        ok = lattice_k(dq, dr) - bk;
+        om = lattice_m(dq, dr) - bm;
+        // in the wedge iff CCW-after lo and CCW-before hi (wedge < 180 deg)
+        if xprod(lok, lom, ok, om) >= 0 && xprod(ok, om, hik, him) > 0 {
+          for dd in 0..6 {
+            (nq, nr) = hex_neighbor(dq, dr, dd);
+            if !hexset_get(cells, nq, nr) {
+              edge_set_mat(edges, dq, dr, nq, nr, mat);
+              n = n + 1;
+            }
+          }
+        }
+      }
+    }
+  }
+  n
+}
+
+// Delete the disk cells that fall in the wedge — the notch a "door as a hole" would punch.
+fn cells_notch(cells: HexSet, cq: integer, cr: integer,
+               lok: integer, lom: integer, hik: integer, him: integer) -> integer {
+  bk = lattice_k(cq, cr);
+  bm = lattice_m(cq, cr);
+  n = 0;
+  for cr2 in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for cq2 in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if hexset_get(cells, cq2, cr2) {
+        ok = lattice_k(cq2, cr2) - bk;
+        om = lattice_m(cq2, cr2) - bm;
+        if xprod(lok, lom, ok, om) >= 0 && xprod(ok, om, hik, him) > 0 {
+          hexset_set(cells, cq2, cr2, false);
+          n = n + 1;
+        }
+      }
+    }
+  }
+  n
+}
+
+// Count boundary edges carrying `mat`, each exactly once (iterate only inside cells).
+fn door_edges(cells: HexSet, edges: EdgeSet, mat: integer) -> integer {
+  n = 0;
+  for er in hexset_r0(cells)..hexset_r0(cells) + hexset_h(cells) {
+    for eq in hexset_q0(cells)..hexset_q0(cells) + hexset_w(cells) {
+      if hexset_get(cells, eq, er) {
+        for ed in 0..6 {
+          (nq, nr) = hex_neighbor(eq, er, ed);
+          if !hexset_get(cells, nq, nr) && edge_mat(edges, eq, er, nq, nr) == mat {
+            n = n + 1;
+          }
+        }
+      }
+    }
+  }
+  n
+}
+
+fn main() {
+  println("=== doored_tower probe (A7) ===");
+
+  // survey the shell sizes so the fixture is a ROUND tower, not a blob
+  for sh in [12, 36, 48, 108, 156] {
+    sc = hexset_chunk(Q0, R0, W, H);
+    scn = arc_fill(0, 0, sh, sc);
+    sw = edgeset_new(Q0, R0, W, H);
+    swn = draw_walls(sc, sw, WALL);
+    println("shell {sh}: {scn} cells, {swn} wall edges, "
+            + "ends {wall_chain_ends(sw, Q0, R0, W, H)}");
+  }
+  println("");
+
+  // ── the tower: a filled disk (A6) ────────────────────────────────────────
+  cells = hexset_chunk(Q0, R0, W, H);
+  ncells = arc_fill(0, 0, 108, cells);
+  (pcq, pcr, pfound) = arc_recover_centre(cells);
+  pshell = arc_shell_max(cells, 0, 0);
+  println("tower shell 108: {ncells} cells, centre ({pcq},{pcr}) found={pfound}, shell {pshell}");
+  println("boundary: loops {boundary_loops(cells)}, ends {boundary_ends(cells)}, "
+          + "branches {boundary_branches(cells)}");
+
+  // mark the whole wall, then measure the chain (one closed loop => 0 ends, 0 branches)
+  wall = edgeset_new(Q0, R0, W, H);
+  nwall = draw_walls(cells, wall, WALL);
+  println("wall edges {nwall}: chain ends {wall_chain_ends(wall, Q0, R0, W, H)}, "
+          + "branches {wall_chain_branches(wall, Q0, R0, W, H)}");
+
+  // three doors, ~120 deg apart, each a narrow wedge.  East (2,0); NW (-1,3); SW (-1,-3).
+  // narrow rays chosen ~+-15 deg either side of each axis, exact integers.
+  println("");
+  println("three door wedges (annotate to material {DOOR}):");
+  d0 = door_annotate(cells, wall, 0, 0,  5,-2,  5, 2, DOOR);   // east
+  d1 = door_annotate(cells, wall, 0, 0, -1, 5, -5, 2, DOOR);   // NW-ish
+  d2 = door_annotate(cells, wall, 0, 0, -5,-2, -1,-5, DOOR);   // SW-ish
+  println("  east {d0} edges, nw {d1} edges, sw {d2} edges");
+  (acq, acr, afound) = arc_recover_centre(cells);
+  ashell = arc_shell_max(cells, 0, 0);
+  println("  after annotate: centre ({acq},{acr}) found={afound}, shell {ashell} "
+          + "(must equal plain), chain ends {wall_chain_ends(wall, Q0, R0, W, H)} (must be 0)");
+  ndoor = door_edges(cells, wall, DOOR);
+  println("  door edges annotated {d0 + d1 + d2}, recovered from storage {ndoor} (must be equal)");
+
+  // ── control A: delete the door EDGES instead of annotating ────────────────
+  println("");
+  println("CONTROL A — delete the three door spans (material -> 0):");
+  del = edgeset_new(Q0, R0, W, H);
+  draw_walls(cells, del, WALL);
+  door_annotate(cells, del, 0, 0,  5,-2,  5, 2, 0);
+  door_annotate(cells, del, 0, 0, -1, 5, -5, 2, 0);
+  door_annotate(cells, del, 0, 0, -5,-2, -1,-5, 0);
+  ends_del = wall_chain_ends(del, Q0, R0, W, H);
+  br_del = wall_chain_branches(del, Q0, R0, W, H);
+  println("  chain ends {ends_del} => {ends_del / 2} arcs (three doors deleted => three arcs), "
+          + "branches {br_del}");
+
+  // ── control B: delete the door CELLS — notch the disk ─────────────────────
+  println("");
+  println("CONTROL B — notch the disk (delete the east door's cells):");
+  notched = hexset_chunk(Q0, R0, W, H);
+  arc_fill(0, 0, 108, notched);
+  nnotch = cells_notch(notched, 0, 0, 5, -2, 5, 2);
+  (bcq, bcr, bfound) = arc_recover_centre(notched);
+  println("  removed {nnotch} cells; centre found={bfound} (must be false — the arc is lost)");
+
+  println("");
+  println("=== probe done ===");
+}

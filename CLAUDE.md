@@ -38,7 +38,7 @@ crawler's prototypes and design docs are **design tries** — input, not authori
 | **T3 · designed** | a doc argues a construction | **input to design, never truth** |
 | **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
 
-**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X50`** — eight of them re-measured *here*, and
+**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X51`** — eight of them re-measured *here*, and
 `X26`–`X31` **discovered here**. Everything else the design leans on is still a try or a schema
 (notably the whole foxel schema, `X11`–`X15`), and the census is where it gets re-measured. Citing a T2 number as settled is
 the specific mistake to avoid — in either direction: re-deriving what is genuinely gated wastes
@@ -136,10 +136,10 @@ make shot    # contact sheet -> /tmp/house12.png
 Needs `../loft` and `../loft-libs-world` as siblings. **`--lib` reads the WORKING TREE**, so
 check that `loft-libs-world` is on branch `dev` before debugging anything strange.
 
-## State (2026-07-23)
+## State (2026-07-24)
 
 - **Nine gates, all green** — `make test` runs `tools/run_tests.sh`.
-  Form, wall (~3 min), box, census, text, house, surface, arc, trip.
+  Form, wall (~3 min), box, census, text, house, surface, arc (A6 + A7), trip.
 - **Green:** `G0` / law **I** — `tests/house.loft`, 12/12 equivariant in cells *and* edges, `eave_spread
   0.0000`, every control fires. `make shot` reproduces the committed baseline byte-identically.
 - **Green:** `tests/form.loft` (**S0**/**S1**) — the 12 headings; **`X1`**/**`X2`** re-measured to **T1**
@@ -294,8 +294,18 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   model parameter must be quantised to what the field distinguishes.* Endpoints → hex vertices;
   feature `t` → edge centres `(2i+1)/2n`; arc radius → shells. **Off the grid a value is silently
   snapped, not rejected**, so `fits?` must refuse it at the doorstep.
-- Next: **A7** (arc + feature — the doored tower, the named defect with prior art) or **A8**
-  (combination — where things that work alone stop working together) — see the rung table.
+- **A7 is done, `X51`.** The doored tower: a door is a **material annotation on the wall's boundary
+  edges** (`arc_door_wedge`), and arc recovery (`arc_recover_centre`/`arc_shell_max`) takes only the
+  **cells** — so the doored tower's centre and shell come back **byte-identical** and the door reads
+  straight off storage (17 annotated, 17 recovered). The named defect ("3 arcs instead of 1") is
+  **unreachable through the door API** — it can only re-material — so the controls have to reach
+  around it: deleting the 3 spans gives **3 arcs** (6 chain ends), notching the disk's cells **loses
+  the arc**. `N = 1`: the door API is the only writer, and the arc recovery *cannot see* the edges.
+- **The "arc unchanged after annotate" check is vacuous alone** — true by construction — so it is a
+  check that cannot go red. **CONTROL B (notch the cells) makes it live**: the recovery *is*
+  sensitive to the disk, so "unchanged" is a result, not a tautology.
+- Next: **A8** (combination — two stencils adjacent, stencil against linework, stencil on terrain —
+  where things that work alone stop working together) — see the rung table.
 - **The foxel schema is the limit** (`ROUNDTRIP.md` §2.4): `layer* × point → (height, material,
   wall1, wall2, wall3, item)`. A model is admissible **iff it draws into that exactly**, which
   makes `fits?` syntactic and finite. It closed OD-2/3/4/6/7/8 — roofs and terrain are `height`,
@@ -304,8 +314,8 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   unnecessary" by free poses) · **OD-5** is the flip exact (`X2` says yes) · **OD-9** does a door
   survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
   relocated into the schema, and rung A5's real question.
-- **Constraints are in `ROUNDTRIP.md` §7 (X1–X31) with trust tiers.** T1 now holds `X1`, `X2`,
-  `X19`–`X22`, `X24`–`X50`; do not re-derive those. Everything else is still a try or a schema.
+- **Constraints are in `ROUNDTRIP.md` §7 (X1–X51) with trust tiers.** T1 now holds `X1`, `X2`,
+  `X19`–`X22`, `X24`–`X51`; do not re-derive those. Everything else is still a try or a schema.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their
