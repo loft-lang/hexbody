@@ -486,7 +486,7 @@ already see safe; only a real scene converts an axis nobody imagined into one yo
 | `rt_contend` ✅ | K₂ | `κ` histogram over the `G★` pile — **landed as `tests/seam.loft` §3–§4 (`X53`)**: κ≥3 rare at a point, worse on a sweep; arbitration order-free + fail-safe | tie-break on iteration order → replay diverges (**fires**: 2 vs 5); a world-blind counter undercounts |
 | `rt_flip` ✅ | G | text diff — **landed as `tests/flip.loft` (`X57`)**, at the FIELD level rather than the text: linework is closed under the 12 orientations, and a wall segment's mirror **reverses traversal** (`d → −d` at the mirrored far end). 96/96 mirror cases exact, 48 of them in-between | the naive `d → 12−d` at the mirrored start must **fail**, on exactly the 2 directions the mirror fixes (90°/270°) — **fires**. ⚠ `N=1` rotation is an open anomaly, pinned at 18 cases |
 | `rt_drift` | H | text diff after `φ¹²` | inject a rounding step → drift |
-| `rt_orient` | I | field equality over `O × Λ` | — **GREEN** |
+| `rt_orient` | I | field equality over `O × Λ` | **GREEN over HOUSES ONLY** — `tests/house.loft`, 12/12 in cells and edges. A house is drawn by `draw_walls` (the exact combinatorial boundary of a filled region); **world linework goes through `wall_write` and is a different path**, gated separately by `rt_flip` (`X57`). Reading this row as covering linework is the mistake it caused once |
 
 `rt_trip` must be **enumeration-driven** over primitive kinds — a new primitive without
 `write`/`draw`/`rebuild` coverage fails the gate rather than going silently ungated.
@@ -614,15 +614,26 @@ The four below are **conflicts with settled prior art**, surfaced by inspecting 
 this design. Each has a position already argued somewhere. **OD-6 is the deepest and probably
 orders the rest.**
 
-**OD-5 · is the flip exact?** *(contradicts `X2`)*
+**OD-5 · is the flip exact?** *(contradicts `X2`)* — **ALL BUT CLOSED: yes, it is exact.**
 Laws **G**/**H** treat the flip as *mutating by approximation*, with `rt_drift` built to measure
 drift, and `SPEC` **L4** superseded on that basis. But `X2` says reflection is `k → −k`, **exact**
 — so `flip∘flip = id` by construction, `rt_drift` is trivially green, and **H** is a theorem.
 
-Three things are conflated under "the flip", and separating them likely dissolves this: the
-**lattice reflection** (exact, `X2`); the **morph** (genuinely approximate — OD-1); and the
-**handedness residual** (backwards text, hinges on the wrong side — a *content* problem, and the
-reason EDITOR wants no mirror at all).
+**`X57` now measures this rather than inferring it**, and on the harder object: a **wall segment**,
+through `wall_write`'s band rasteriser rather than the exact combinatorial boundary. 96/96 cases
+mirror exactly, in-between directions included, with no tolerance anywhere. So the *geometric* flip
+is settled.
+
+Three things are conflated under "the flip", and separating them dissolves this: the
+**lattice reflection** (exact — `X2`, and now `X57` at the field level); the **morph** (genuinely
+approximate — OD-1); and the **handedness residual** (backwards text, hinges on the wrong side — a
+*content* problem, and the reason EDITOR wants no mirror at all). Only the last two remain, and
+neither is "the flip".
+
+**One caveat, and it is a rule rather than an approximation:** a wall is an **undirected segment**,
+so its mirror **reverses traversal** — `mirror(wall(d,A,p)) = wall(−d, mirror(farend), p)`. Getting
+that wrong is not drift, it is a different wall; and only the two directions the mirror *fixes*
+(90°, 270°) expose the error.
 
 **OD-6 · is a stencil a *field* or a *generative description*?** *(the foundational one)*
 

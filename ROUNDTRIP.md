@@ -86,6 +86,27 @@ identification.
 **`D` is never an authoring palette.** A stencil is placed at one of the 12 `o ∈ O`, never at one
 of the 24. A road is never a stencil: it is drawn where it runs.
 
+> **⚠ Three claims are bundled above, and only one of them is settled. `OD-13` (`DESIGN.md` §10)
+> is a standing requirement to change the other two.**
+>
+> | claim | status |
+> |---|---|
+> | a stencil is **placed** at one of the 12 `o ∈ O`, never one of the 24 | **settled — and unaffected by `OD-13`** |
+> | **`D` is never an authoring palette** | **contested** — `OD-13` requires the in-between 12 be *first class*, because *"a city/castle needs more directions to be believable"* |
+> | **a road is never a stencil** | **contested, and untested** — `X57` measured *walls*; `hexway`'s `Track` is a float world-space curve with no lattice anchoring, so stencil-carried roads are unexamined |
+>
+> **The first claim is about PLACEMENT; `OD-13` is about CONTENTS, and they are separable.** `X57`
+> is what makes them safe together: **`D` is closed under `O`** — the 24 directions map onto each
+> other exactly under all 12 orientations (0/24 on rotation, reflection and six-rotations-identity;
+> a wall segment mirrors 96/96, in-between included). So a stencil *carrying* in-between linework
+> still has exactly **12 distinct placements**. Nothing about placement has to move.
+>
+> **What has to move is permission and round-trip, and it is not built yet** — the grammar (a
+> stencil is footprint-only today), `draw`, `rebuild` (it returns the turtle form alone, so embedded
+> linework would be silently dropped and `rt_trip` would not even notice), and `fits?`. Until then
+> this section states what **is**, not what is intended: the normative claim stands, and this note
+> exists so the conflict cannot be missed rather than to soften it.
+
 ### 2.3 Bodies carry a pose; they are not stamped at one
 
 A robot's limb in a pose and a derailed wagon at rest are the same problem: an exact original at
