@@ -90,6 +90,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 | file | role | authority |
 |---|---|---|
 | **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X70` **with trust tiers** | **authoritative** on any object or map |
+| **`plans/lib-split/`** | **`G-LIB`: how hexbody becomes consumable** — six libraries derived from `ROUNDTRIP`'s objects, strictly layered; two prerequisites (the crawler copies leave; `Plan` is un-misfiled) and two open decisions (the naming family, whether `formcensus` ships) | a proposal |
 | **`plans/<active>/DESIGN.md`** | the **in-flight half** of whichever plan is open — proposals, consequences being worked out, and the **open decisions with their costs**. Today that is **`plans/m1-moving-body/DESIGN.md`**; `plans/m0-roundtrip/DESIGN.md` is the same tier for a **closed** plan and is history | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |

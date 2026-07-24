@@ -278,9 +278,14 @@ is ungated. The gap is entirely "not built yet", which is a schedule, not a debt
     2026-07-24: `loft.toml` has **no `[library]` entry** (hexbody is packaged as the *application*
     kind; `hex_field` declares one), and **no consumer references hexbody** across `../crawler` or
     `../moros`. So the only way in is `--lib` at a working tree — the same unpinned-tree fragility
-    that broke this suite the same day. **[J] The library split is a design decision, not a
-    packaging chore**, and wants its own plan: a published seam is as hard to move as a published
-    text (`A₂`). DESIGN §3.1.
+    that broke this suite the same day. **[G] The split is now DESIGNED** — [`plans/lib-split/`](plans/lib-split/), six libraries
+    derived from `ROUNDTRIP`'s objects and maps rather than from a consumer survey, strictly
+    layered and acyclic, sized to the family's house style (300–1500 lines). It surfaced two
+    structural findings: **`Plan` is misfiled** (an object living inside the `draw` map — moving it
+    removes the graph's only awkward edge), and the three crawler copies must reach
+    `loft-libs-world` **first**, because `housedraw` imports two of them. Two decisions are left
+    open on purpose — the **naming family** (a one-way door under `I-EXTEND`) and whether
+    `formcensus` ships at all.
 
 ### What can no longer be re-derived cheaply — read these first
 
