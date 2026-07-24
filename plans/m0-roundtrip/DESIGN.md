@@ -2354,6 +2354,100 @@ means "almost what you asked for". A material id is **nominal**: 255 is not *"ne
 is made of. **For a nominal parameter the doorstep names its restriction and stops** — and `K-FIT`'s
 wording should be read that way everywhere, not just here.
 
+## 10.28 The palette — an open vocabulary, and the one place moros and hexbody disagree
+
+`X63` moved the foxel's *mechanism* to T1 and left the **palette** at T4. `L13` then made moros's
+`Hex` the **storage of record**, which changes what that T4 costs: hexbody's transcription of
+moros's schema *is* the limit on `𝕄*`. A limit transcribed once and never re-read drifts silently.
+
+**So `tests/palette.loft` reads moros's own source every run** and checks each structural claim
+`ROUNDTRIP` §2.4 makes (`X69`). That does not make moros's *behaviour* T1 — nothing here can — but
+it closes the specific way a T4 claim goes bad.
+
+### The vocabularies are OPEN, and that is the design
+
+`md_category`, `wd_body` and `id_kind` are all **`text`**. The value lists live only in comments,
+and `id_kind`'s ends in *"etc."*. So there is no closed enumeration to validate against — **`fits?`
+is finite only relative to a palette**, and the palette is precisely the extension point §4.1 named.
+A new wall body is a new string, not a schema change.
+
+### `wd_thickness` is palette-side by necessity, not by taste
+
+Under `L13` the cell is seven integers. A per-cell thickness would be an **eighth slot**. Measured:
+a uniform wall's 38 edges carry **one** distinct id and nothing else, so thickness *cannot* be
+stored per edge — it is reached through the id. `X12` holds, and it holds for a structural reason.
+
+### ⚠ THE DISAGREEMENT — an opening is never "no wall", and it is not a choice
+
+moros's `builtin_house_door` leaves the doorway edge at material **0**, and its own comment calls
+that *"crawler's convention: a door is a gap"*. hexbody gated the opposite (`X51`, `I1`): a door is
+a **material**, because deleting the edge fragments the run.
+
+**Measured here on the 5×4 house, a 2-edge opening:**
+
+| what is written | edges | chain ends | wall continues |
+|---|---|---|---|
+| nothing (plain solid wall) | 38 | 0 | yes |
+| `OPEN_DOOR` | 38 | 0 | yes |
+| `OPEN_WINDOW` | 38 | 0 | yes |
+| `OPEN_GAP` | 38 | 0 | yes |
+| **material 0** (moros's convention) | **36** | **2** | **NO** |
+
+**The taxonomy** (user, 2026-07-24): a door *"is not a gap in the wall, it is something that can be
+a collider or not"*; and a **real gap** — *"the door itself is missing completely, but the wall
+continues like normal"* — is a distinct fourth thing, now `OPEN_GAP`. Restated: *"a door/opening
+will never be (there is no wall here) but this is part of the continuing wall, but there is a
+hole/structure here."*
+
+**The rationale is what makes it structural rather than stylistic:**
+
+> *"a gap/door will never be rendered as a missing wall, there will be something like a door-frame
+> or ragged stone opening there."*
+
+**An opening has geometry of its own** — a frame, a lintel, a ragged jamb. Absence has none.
+Material 0 asks the renderer to draw nothing *and* the collision layer to find no wall; both are
+wrong, and neither is what *"there is a door here"* means.
+
+**Consequence:** `wd_body` needs an **opening body** — measured, it has none of `DOOR` / `OPENING` /
+`DOORWAY`. That is the extension point doing its job, not a schema change. hexbody cannot make it;
+moros owns the palette, and `L13` means hexbody consumes that schema rather than editing it.
+
+⚠ **A naming hazard in hexbody's own source, found by this rung:** `OPEN_NONE = 0` reads as *"no
+opening"* and means *"no wall"*. Writing it deletes the edge. Its comment now says so, and `OPEN_GAP`
+exists so an author never has to reach for 0 to express an opening.
+
+### Open — where a door's OPEN/CLOSED state lives
+
+A door *"can be a collider or not"*, so it has a state, and `L13` allows no eighth slot. Two ways
+fit the voxel:
+
+| option | cost |
+|---|---|
+| **(a) two wall ids** — `door_closed` and `door_open` are separate palette entries | free: the slot already holds a wall id, it round-trips today, and the collider is derived (layer 2, `L3`) from the id. **Recommended** |
+| **(b) an `L14` overlay** — the state lives in an area- and time-limited side table | needs a mechanism that does not exist, and a door left open is not obviously *mortal* |
+
+Not decided here — it is a modelling choice with no round-trip consequence either way, which is why
+it can wait. Recorded so it is not re-derived.
+
+### What hexbody produces, against the vocabulary
+
+| producer | body | exists |
+|---|---|---|
+| thin edge wall (`I3`) | `SOLID` | yes |
+| linework band (`D`, `X57`) | `ROAD_GUIDE` | yes |
+| thick ring of cells (`box`) | `THICK_FLAT` | yes |
+| round tower rim (`X49`) | `THICK_CURVED` | yes |
+| **door / window / real gap** | **—** | **no** |
+
+Unused so far: `HALF_HEIGHT`, `FENCE`, `BATTLEMENT` (crawler's curtain-wall ramparts).
+
+### A second known gap: roofs are materials, and hexbody writes only the height
+
+`X13` says roofs are materials, and `md_category` does have a `roof` value. But `draw_roof` writes
+**27 heights and 0 materials**, so a roof cell is **indistinguishable from terrain at that height**.
+Costs nothing today because nothing here reads `md_category` — recorded rather than fixed, because
+fixing it means deciding what a roof material *is*, which is palette work.
+
 ## 10.26 A6 — arcs: the centre is exact, the radius is a shell
 
 `OD-10` asked whether the **centre and radius** of a run of rounded slots are recoverable exactly

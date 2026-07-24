@@ -1393,6 +1393,70 @@ returned residual would be wrong by the truncation. Three options with their cos
 *mechanism* to T1 and left the *palette* at T4 — **is moros's `Hex` or hex_field's HXF the foxel of
 record?**
 
+## The palette — **DONE** *(the last T4 block, and one real disagreement — `X69`, `X70`)*
+
+`X63` moved the foxel's *mechanism* to T1 and left the **palette** at T4. `L13` then made moros's
+`Hex` the storage of record, which changed what that T4 costs: hexbody's transcription of moros's
+schema **is** the limit on `𝕄*`, and a limit transcribed once and never re-read drifts silently.
+
+### The move: check the schema every run
+
+`tests/palette.loft` reads **moros's own source** and verifies each structural claim `ROUNDTRIP`
+§2.4 makes — 14/14 cell fields, the cell carries **no `float`** (the premise `X67` quantised heights
+on), the palette **does** carry `wd_thickness: float`, `HEIGHT_SCALE = 0.25` still upstream.
+Control: a field that does not exist must read absent, or every check matches anything.
+
+That does not make moros's *behaviour* T1 — nothing here can — but it closes **the specific way a
+T4 claim goes bad**. `make test` now needs `../moros` as a sibling, and refuses rather than passing
+blind if it is missing.
+
+### Two structural findings
+
+- **The vocabularies are OPEN.** `md_category`, `wd_body`, `id_kind` are all **`text`**; the value
+  lists live only in comments and `id_kind`'s ends *"etc."*. So `fits?` is finite only **relative to
+  a palette**, and a new wall body is a new string rather than a schema change.
+- **`wd_thickness` is palette-side by NECESSITY.** A uniform wall's 38 edges carry **one** distinct
+  id and nothing else, so a per-edge thickness would be an **eighth slot**, which `L13` forbids.
+
+### ⚠ The disagreement — an opening is never "no wall", and it is not a choice
+
+moros's `builtin_house_door` leaves the doorway edge at material **0**, calling it *"crawler's
+convention: a door is a gap"*. hexbody gated the opposite (`X51`). Measured, 2-edge opening:
+
+| written at the opening | edges | chain ends | wall continues |
+|---|---|---|---|
+| nothing (plain solid wall) | 38 | 0 | yes |
+| `OPEN_DOOR` / `OPEN_WINDOW` / `OPEN_GAP` | 38 | 0 | yes |
+| **material 0** | **36** | **2** | **NO** |
+
+**The taxonomy** (user): a door *"is not a gap in the wall, it is something that can be a collider
+or not"*; a **real gap** — *"the door itself is missing completely, but the wall continues like
+normal"* — is a distinct fourth thing, now `OPEN_GAP`.
+
+**The rationale, which is what makes it structural rather than stylistic:**
+
+> *"a gap/door will never be rendered as a missing wall, there will be something like a door-frame
+> or ragged stone opening there."*
+
+**An opening has geometry of its own.** Absence has none. Material 0 asks the renderer to draw
+nothing *and* the collision layer to find no wall.
+
+⚠ **The rung found a naming hazard in hexbody's own source:** `OPEN_NONE = 0` reads as *"no
+opening"* and means *"no wall"*. `OPEN_GAP` now exists so nobody reaches for 0 to express one.
+
+**Consequence for the palette:** `wd_body` has no `DOOR`/`OPENING`/`DOORWAY` — measured. That is the
+extension point doing its job, and moros owns it; `L13` means hexbody consumes the schema rather
+than editing it.
+
+### Left open, deliberately
+
+- **Where a door's OPEN/CLOSED state lives.** Two wall ids (recommended — free, round-trips today,
+  collider derived at layer 2) vs an `L14` overlay. No round-trip consequence either way, so it can
+  wait. `DESIGN.md` §10.28.
+- **Roofs are materials (`X13`) and `draw_roof` writes 27 heights / 0 materials** — a roof cell is
+  indistinguishable from terrain at that height. Costs nothing today; fixing it means deciding what
+  a roof material *is*, which is palette work.
+
 ## Order, and where it can go wrong
 
 ```

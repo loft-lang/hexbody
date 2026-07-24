@@ -1,0 +1,315 @@
+// palette — THE VOCABULARY SEAM, and the last T4 block (`X12`, `X13`, `X14`'s range).
+//
+// `X63` moved the foxel's *mechanism* to T1 and deliberately left the **palette** at T4: the
+// vocabularies behind the cell's integer ids — `MaterialDef.md_category`, `WallDef.wd_body`,
+// `ItemDef.id_kind` — had never been checked against anything here.
+//
+// `L13` changed what that means.  moros's `Hex` is now the **storage of record**, so hexbody's
+// claims about moros's schema are no longer background reading: they are the **limit on `𝕄*`**.
+// A limit that is transcribed once and never re-read drifts silently.  So this gate READS MOROS'S
+// SOURCE every run and checks the claims `ROUNDTRIP` §2.4 makes about it.  That does not make
+// moros's *behaviour* T1 — it cannot — but it stops the *shape* from rotting, which is the specific
+// way a T4 claim goes bad.
+//
+//   1  SCHEMA CHECK — every structural claim, verified against moros's own source
+//   2  THE VOCABULARIES ARE OPEN — `text`, values only in comments, `id_kind`'s ends "etc."
+//   3  COVERAGE — what hexbody produces vs what `wd_body` names, and the gap
+//   4  THE DOOR — moros says a door is a GAP; measured, that breaks the wall. Not a choice.
+//   5  `wd_thickness` IS PALETTE-SIDE — and that is `L13` load-bearing
+//   6  ROOFS ARE MATERIALS (`X13`) — and hexbody writes only the height
+use hex_field;
+use housedraw;
+use hexfit;
+
+const W  = 41;
+const H  = 41;
+const Q0 = -20;
+const R0 = -20;
+const PLAINWALL = 7;      // a plain wall id, outside the opening vocabulary (1, 2, 3)
+
+fn moros_dir() -> text { "{source_dir()}/../../moros" }
+
+// Dangling ends of the marked wall chain: vertices touched by exactly one marked edge.  A closed
+// loop has NONE (`X35`); a broken run has two.  `hex_neighbor` with `hex_edge_corners`, never
+// `nb_q`/`nb_r` — `SPEC` L11, the root cause of four separate failures once.
+fn chain_ends(e: EdgeSet, mats: vector<integer>) -> integer {
+  va: vector<integer> = [];
+  vb: vector<integer> = [];
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      for d in 0..3 {
+        (nq, nr) = hex_neighbor(q, r, d);
+        m = edge_mat(e, q, r, nq, nr);
+        keep = false;
+        for mi in 0..len(mats) { if (mats[mi] ?? -1) == m { keep = true; } }
+        if keep {
+          (c1, c2) = hex_edge_corners(d);
+          va += [hex_corner_tri_a(q, r, c1)]; vb += [hex_corner_tri_b(q, r, c1)];
+          va += [hex_corner_tri_a(q, r, c2)]; vb += [hex_corner_tri_b(q, r, c2)];
+        }
+      }
+    }
+  }
+  ends = 0;
+  for i in 0..len(va) {
+    first = true;
+    for k in 0..i { if (va[k] ?? 0) == (va[i] ?? 0) && (vb[k] ?? 0) == (vb[i] ?? 0) { first = false; } }
+    if first {
+      deg = 0;
+      for j in 0..len(va) {
+        if (va[j] ?? 0) == (va[i] ?? 0) && (vb[j] ?? 0) == (vb[i] ?? 0) { deg = deg + 1; }
+      }
+      if deg == 1 { ends = ends + 1; }
+    }
+  }
+  ends
+}
+
+fn count_mats(e: EdgeSet, mats: vector<integer>) -> integer {
+  n = 0;
+  for r2 in R0..R0 + H {
+    for q2 in Q0..Q0 + W {
+      for d2 in 0..3 {
+        (nq2, nr2) = hex_neighbor(q2, r2, d2);
+        m2 = edge_mat(e, q2, r2, nq2, nr2);
+        for mj in 0..len(mats) { if (mats[mj] ?? -1) == m2 { n = n + 1; } }
+      }
+    }
+  }
+  n
+}
+
+fn main() {
+  ok = true;
+  println("=== palette — the vocabulary seam (X12, X13, X14) ===");
+
+  // ── 1. SCHEMA CHECK — against moros's own source, every run ───────────────
+  println("");
+  println("1. SCHEMA CHECK — ROUNDTRIP 2.4's claims, verified against moros's source");
+  types = file("{moros_dir()}/lib/moros_map/src/types.loft").content();
+  pal = file("{moros_dir()}/lib/moros_map/src/palette.loft").content();
+  rend = file("{moros_dir()}/lib/moros_render/src/moros_render.loft").content();
+  if types.len() <= 0 || pal.len() <= 0 {
+    println("  FAIL: moros is the STORAGE OF RECORD (SPEC L13) and its source could not be read."
+            + " Expected a sibling checkout at ../moros. Without it this gate cannot check the"
+            + " limit on M*, so it refuses rather than passing blind."); ok = false;
+    println("=== PALETTE BROKEN ===");
+    return;
+  }
+  println("   read types.loft {types.len()} bytes, palette.loft {pal.len()} bytes");
+
+  nfield = 0;
+  nmiss = 0;
+  for f in ["h_height:", "h_material:", "h_item:", "h_item_rotation:",
+            "h_wall_n:", "h_wall_ne:", "h_wall_se:",
+            "ha_q:", "ha_r:", "ha_cy:", "ck_cx:", "ck_cy:", "ck_cz:", "ck_hexes:"] {
+    if types.contains(f) { nfield = nfield + 1; } else { nmiss = nmiss + 1; println("   MISSING {f}"); }
+  }
+  println("   Hex/HexAddress/Chunk: {nfield} of 14 fields present, {nmiss} missing");
+  if nmiss != 0 {
+    println("  FAIL: moros's cell no longer has the shape ROUNDTRIP 2.4 records"); ok = false;
+  }
+  // THE LOAD-BEARING ONE (`L13`): the cell is INTEGERS ONLY. A float in it would mean the voxel
+  // carries a continuous quantity, and `X67`'s whole height argument rests on it not doing so.
+  cellfloat = types.contains("float");
+  println("   the cell carries NO float: {!cellfloat}   (L13 / X67 rest on this)");
+  if cellfloat {
+    println("  FAIL: moros's cell types now contain a float — X67 quantised heights on the"
+            + " premise that the voxel is integers only, and that premise has changed"); ok = false;
+  }
+  // and the CONTRAST: the palette is where the floats live (`X12`).
+  palfloat = pal.contains("wd_thickness: float");
+  println("   the palette DOES carry wd_thickness: float: {palfloat}   (X12)");
+  if !palfloat {
+    println("  FAIL: wd_thickness is not a palette float — X12 no longer describes moros"); ok = false;
+  }
+  hs = rend.contains("HEIGHT_SCALE = 0.25");
+  println("   moros_render HEIGHT_SCALE = 0.25: {hs}   (X67's constant, still T4)");
+  if !hs {
+    println("  FAIL: HEIGHT_SCALE changed upstream — hexfit's quantum is now wrong"); ok = false;
+  }
+  // CONTROL: `contains` must be able to say NO, or every check above is vacuous.
+  bogus = types.contains("h_temperature:");
+  println("   CONTROL a field that does not exist reads absent: {!bogus}");
+  if bogus {
+    println("  FAIL: control did not fire — the check matches anything"); ok = false;
+  }
+
+  // ── 2. THE VOCABULARIES ARE OPEN ──────────────────────────────────────────
+  //
+  // `md_category`, `wd_body` and `id_kind` are all `text`.  The value lists exist ONLY in comments,
+  // and `id_kind`'s ends in "etc." — so this is an OPEN vocabulary, not a closed enumeration.
+  println("");
+  println("2. THE VOCABULARIES ARE OPEN — text fields, values only in comments");
+  ntext = 0;
+  for tf in ["md_category:   text", "wd_body:      text", "id_kind:       text"] {
+    if pal.contains(tf) { ntext = ntext + 1; } else { println("   NOT text: {tf}"); }
+  }
+  println("   {ntext} of 3 vocabulary fields are `text`, with no constants behind them");
+  println("   id_kind's list is explicitly open (ends \"etc.\"): {pal.contains(\"etc.\")}");
+  if ntext != 3 {
+    println("  FAIL: a vocabulary field is no longer free text — then it IS a closed enumeration"
+            + " and `fits?` could check it directly"); ok = false;
+  }
+  println("   => `fits?` is finite only RELATIVE TO A PALETTE. The palette is the extension point");
+  println("      (ROUNDTRIP 2.4 / DESIGN 4.1), which is exactly why a new body can be added.");
+
+  // ── 3. COVERAGE — what hexbody produces vs what wd_body names ─────────────
+  println("");
+  println("3. COVERAGE — hexbody's wall producers against wd_body's vocabulary");
+  nhave = 0;
+  for body in ["SOLID", "HALF_HEIGHT", "FENCE", "BATTLEMENT",
+               "THICK_FLAT", "THICK_CURVED", "ROAD_GUIDE"] {
+    if pal.contains(body) { nhave = nhave + 1; } else { println("   MISSING body {body}"); }
+  }
+  println("   {nhave} of 7 documented bodies present in moros's source");
+  if nhave != 7 {
+    println("  FAIL: the wd_body vocabulary changed upstream"); ok = false;
+  }
+  println("");
+  println("   hexbody producer            -> body            exists?");
+  println("   thin edge wall (I3)            SOLID            {pal.contains(\"SOLID\")}");
+  println("   linework band (D, X57)         ROAD_GUIDE       {pal.contains(\"ROAD_GUIDE\")}");
+  println("   thick ring of cells (box)      THICK_FLAT       {pal.contains(\"THICK_FLAT\")}");
+  println("   round tower rim (X49)          THICK_CURVED     {pal.contains(\"THICK_CURVED\")}");
+  nopening = pal.contains("DOOR") || pal.contains("OPENING") || pal.contains("DOORWAY");
+  println("   door / window / real gap       ??               {nopening}   <== THE GAP");
+  if nopening {
+    println("  FAIL: moros now names an opening body, so section 4's conflict is stale and this"
+            + " gate is describing a problem that has been fixed"); ok = false;
+  }
+  println("   unused by hexbody so far: HALF_HEIGHT, FENCE, BATTLEMENT (curtain-wall ramparts)");
+
+  // ── 4. THE DOOR — NOT A CHOICE ────────────────────────────────────────────
+  //
+  // moros's `builtin_house_door` leaves the doorway edge at material 0 and its comment calls that
+  // *"crawler's convention: a door is a gap"*.  The user's model (2026-07-24): *"A door is not a gap
+  // in the wall, it is something that can be a collider or not. But we also allow real gaps — the
+  // door itself is missing completely, but the wall continues like normal."*
+  //
+  // Both halves say the same thing about STORAGE: **the wall continues**.  So this is not a choice
+  // between two conventions — one of them breaks the wall, and here is the measurement.
+  //
+  // AND THE RATIONALE (user, 2026-07-24): *"a gap/door will never be rendered as a missing wall,
+  // there will be something like a door-frame or ragged stone opening there."*  An opening HAS
+  // GEOMETRY OF ITS OWN — a frame, a lintel, a ragged jamb.  Absence has none.  Material 0 asks the
+  // renderer to draw nothing and the collision layer to find no wall; both are wrong, and neither
+  // is what "there is a door here" means.
+  println("");
+  println("4. THE DOOR — moros stores it as material 0; measured, that BREAKS the wall");
+  edsrc = file("{moros_dir()}/lib/moros_editor/src/moros_editor.loft").content();
+  saysgap = edsrc.contains("a door is a gap");
+  println("   moros's own source says so: {saysgap}");
+  if !saysgap {
+    println("  NOTE: moros no longer calls a door a gap — re-read builtin_house_door before"
+            + " trusting section 4's framing");
+  }
+  p = plan_new(0, 0, 5, 4, 0, false);
+  cells = hexset_chunk(Q0, R0, W, H);
+  draw_floor(p, cells, labels_new(Q0, R0, W, H), 9);
+
+  println("");
+  println("   what is written at the opening      edges  chain ends  wall continues");
+  base = edgeset_new(Q0, R0, W, H);
+  nsolid = draw_walls(cells, base, PLAINWALL);
+  e0 = chain_ends(base, [PLAINWALL]);
+  println("   nothing (a plain solid wall)        {nsolid:>5}  {e0:>10}  {e0 == 0}");
+  nbroken = 0;
+  for kind in [OPEN_DOOR, OPEN_WINDOW, OPEN_GAP] {
+    eg = edgeset_new(Q0, R0, W, H);
+    draw_walls(cells, eg, PLAINWALL);
+    place_opening(p, cells, eg, 0, 0.5, 2, kind);
+    ne = count_mats(eg, [PLAINWALL, OPEN_DOOR, OPEN_WINDOW, OPEN_GAP]);
+    en = chain_ends(eg, [PLAINWALL, OPEN_DOOR, OPEN_WINDOW, OPEN_GAP]);
+    nm = "OPEN_DOOR  ";
+    if kind == OPEN_WINDOW { nm = "OPEN_WINDOW"; }
+    if kind == OPEN_GAP { nm = "OPEN_GAP   "; }
+    println("   {nm} (a material, X51)      {ne:>5}  {en:>10}  {en == 0}");
+    if ne != nsolid || en != 0 { nbroken = nbroken + 1; }
+  }
+  // moros's convention: write 0, which is the ABSENCE of the wall
+  egap = edgeset_new(Q0, R0, W, H);
+  draw_walls(cells, egap, PLAINWALL);
+  place_opening(p, cells, egap, 0, 0.5, 2, OPEN_NONE);
+  ngap = count_mats(egap, [PLAINWALL, OPEN_DOOR, OPEN_WINDOW, OPEN_GAP]);
+  egaps = chain_ends(egap, [PLAINWALL, OPEN_DOOR, OPEN_WINDOW, OPEN_GAP]);
+  println("   OPEN_NONE = material 0 (moros)      {ngap:>5}  {egaps:>10}  {egaps == 0}"
+          + "   <== THE WALL IS BROKEN");
+  if nbroken != 0 {
+    println("  FAIL: an opening written as a MATERIAL did not keep the wall one run — X51 no"
+            + " longer holds and the taxonomy is wrong"); ok = false;
+  }
+  if egaps == 0 || ngap >= nsolid {
+    println("  FAIL: control did not fire — writing material 0 left the wall intact, so 'a door is"
+            + " a gap' costs nothing and there is no conflict to report"); ok = false;
+  }
+  println("");
+  println("   => NOT A CHOICE. A door and a REAL GAP are both openings on a wall that CONTINUES;");
+  println("      material 0 is the absence of the wall, which is a different thing and fragments");
+  println("      the run ({nsolid} edges / 0 ends  ->  {ngap} / {egaps}). A real gap needs its own");
+  println("      id (OPEN_GAP), and moros needs an opening BODY — the extension point, section 2.");
+
+  // ── 5. wd_thickness IS PALETTE-SIDE — L13 load-bearing ────────────────────
+  //
+  // A thickness stored per cell would be an EIGHTH slot, which `L13` forbids.  It is only safe
+  // because thickness is a property of the MATERIAL, looked up through the id the cell stores.
+  println("");
+  println("5. wd_thickness IS PALETTE-SIDE — a per-cell thickness would be an eighth slot (L13)");
+  te = edgeset_new(Q0, R0, W, H);
+  draw_walls(cells, te, PLAINWALL);
+  distinct = 0;
+  seen: vector<integer> = [];
+  for r3 in R0..R0 + H {
+    for q3 in Q0..Q0 + W {
+      for d3 in 0..3 {
+        (nq3, nr3) = hex_neighbor(q3, r3, d3);
+        m3 = edge_mat(te, q3, r3, nq3, nr3);
+        if m3 != 0 {
+          fresh = true;
+          for si in 0..len(seen) { if (seen[si] ?? -1) == m3 { fresh = false; } }
+          if fresh { seen += [m3]; distinct = distinct + 1; }
+        }
+      }
+    }
+  }
+  println("   {nsolid} wall edges carry {distinct} distinct id(s) and NOTHING else —");
+  println("   so a wall's thickness cannot be per-edge; it is reached through the id. X12 holds.");
+  if distinct != 1 {
+    println("  FAIL: a uniform wall stored more than one id, so the slot is carrying more than a"
+            + " material reference"); ok = false;
+  }
+
+  // ── 6. ROOFS ARE MATERIALS (X13) — hexbody writes only the height ─────────
+  println("");
+  println("6. ROOFS ARE MATERIALS (X13) — and hexbody writes only the HEIGHT");
+  rc = hexset_chunk(Q0, R0, W, H);
+  rl = labels_new(Q0, R0, W, H);
+  draw_floor(p, rc, rl, 9);
+  rh = heights_new(Q0, R0, W, H);
+  draw_roof(p, rc, rh, 2.54, 1.0, 0);
+  nz = 0;
+  nrm = 0;
+  for r4 in R0..R0 + H {
+    for q4 in Q0..Q0 + W {
+      if hexset_get(rc, q4, r4) {
+        if height_get(rh, q4, r4) != 0.0 { nz = nz + 1; }
+        if label_get(rl, q4, r4) != 9 { nrm = nrm + 1; }
+      }
+    }
+  }
+  println("   after draw_roof: {nz} cells carry a roof HEIGHT, {nrm} carry a roof MATERIAL");
+  println("   md_category has a \"roof\" value: {pal.contains(\"roof\")}");
+  if nz <= 0 {
+    println("  FAIL: the roof wrote no heights, so this measures nothing"); ok = false;
+  }
+  if nrm != 0 {
+    println("  NOTE: draw_roof now writes a material too — X13's gap is closed, update this gate");
+  }
+  println("   => A KNOWN GAP, not a defect: the roof's height is stored and its MATERIAL is not,");
+  println("      so a roof cell is indistinguishable from terrain at that height. Recorded in");
+  println("      DESIGN 10.28; it costs nothing today because nothing reads md_category here.");
+
+  println("");
+  if ok { println("=== PALETTE OK ==="); }
+  else { println("=== PALETTE BROKEN ==="); }
+}

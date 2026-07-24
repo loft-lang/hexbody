@@ -1,7 +1,7 @@
 # ASSESSMENT — the project measured against its goals
 
 *Written 2026-07-24, from the gated state at `dd38f26` (18 green gates, `X1`–`X62`).*
-*Updated the same day: §4's "biggest risk" was gated and §5's items 1–2 are done — 20 gates, `X1`–`X68`. The original wording
+*Updated the same day: §4's "biggest risk" was gated, §5's items 1–2 are done, and the palette is schema-checked — 21 gates, `X1`–`X70`. The original wording
 is kept visible rather than rewritten, because what it got right and wrong is the useful part.*
 
 **The question this answers**, asked by the user: *can we use this work in a friendly but powerful
@@ -162,6 +162,12 @@ are now `SPEC` **L12**.
 gate here, and `X14`'s *5-bit, 0–23* is still a claim about moros even though the rotation slot
 round-trips. **Cite the split, never "the foxel is gated".**
 
+**[G] UPDATE — the palette is now SCHEMA-CHECKED every run** (`X69`, `X70`). moros's *behaviour*
+is still T4 and always will be from here, but its *shape* is verified against moros's own source on
+every `make test`, which closes the way a transcribed claim rots. It also surfaced one real
+disagreement: moros stores a door as material 0 (*"a door is a gap"*), and measured that **breaks
+the wall** (38 edges/0 ends → 36/2). An opening is never absence — it carries its own geometry.
+
 **[J] The residual risk is much smaller and has moved.** What is unverified is now a *vocabulary*
 (which body shapes and categories exist), not a *mechanism* (whether the model survives storage).
 A wrong palette costs an enumeration value; a wrong storage layer would have cost the design.
@@ -170,23 +176,49 @@ A wrong palette costs an enumeration value; a wrong storage layer would have cos
 
 ## 5. Where to pick up
 
-The round trip is closed (`M0`). The next move is a genuine fork, and it is the user's:
+*Rewritten 2026-07-24 after items 1–2 and the palette landed. M0's round trip is closed; the whole
+storage/doorstep/vocabulary stack is now gated or schema-checked.*
 
-1. ~~**Gate the foxel schema**~~ — **DONE 2026-07-24** (`X63`, `X64`, `tests/foxel.loft`). See §4.
-   What is left of it is the **palette** (`X12`/`X13`), which is a vocabulary question and much
-   smaller than the mechanism was.
-2. ~~**Finish the doorstep**~~ — **DONE 2026-07-24** (`X65`, `X66`). It also **corrected `X48`**:
-   the feature grid is two families and `(2i+1)/2n` describes only one of them. It also **closed the `h_height` fork**: the
-   user settled the voxel as the ceiling on permanent world state (`L13`/`L14`), and moros's
-   `HEIGHT_SCALE = 0.25` already fixed the unit (`X67`, `X68`).
-3. **Start the body** (`G1`) — the first genuinely new subsystem, and the half of "hexbody" that
-   does not exist yet. Largest, and `crawler` should be read first (`bodytest`).
-4. **Mesh export** — small, unblocks the "assets in a game" question directly.
-5. **Multiple runs per stencil** — the recorded `OD-13` remainder; needs interior-edge components.
+### Done since this file was written
 
-**Still open** (`plans/m0-roundtrip/DESIGN.md` §10): **OD-1** the morph (narrowed to *probably
-unnecessary* by free poses) · **OD-5** is the flip exact (`X2` and `X57` both say yes, at T1 now —
-**[J]** this looks closeable by inspection rather than new work).
+| | |
+|---|---|
+| ~~gate the foxel schema~~ | **DONE** — `X63`, `X64`, `tests/foxel.loft`. See §4 |
+| ~~finish the doorstep~~ | **DONE** — `X65`, `X66`. Corrected `X48` (the feature grid is two families) |
+| ~~the `h_height` fork~~ | **CLOSED** — `L13`/`L14`, and moros's `HEIGHT_SCALE = 0.25` already fixed the unit (`X67`, `X68`) |
+| ~~the palette~~ | **DONE** — `X69`, `X70`. Schema-checked every run; found the door disagreement |
+
+### The frontier now
+
+1. **Start the body** (`G1`) — the first genuinely new subsystem, and the half of "hexbody" that
+   does not exist yet (`G1`/`G3`/`G4`/`G6` are all unbuilt). Largest by far. Read `crawler` first
+   (`bodytest`). **[J] this is the real next milestone**; everything before it was M0 finishing.
+2. **Mesh export** — still small, still the thing that most directly unblocks "assets in a game".
+   `G2` computes the quads; nothing emits a format.
+3. **An opening body in the palette** — `wd_body` has no `DOOR`/`OPENING`/`DOORWAY` (`X70`). moros
+   owns the palette and `L13` means hexbody consumes it, so this is **upstream work**, not hexbody's.
+   Until it exists, an opening has no geometry to render.
+4. **Multiple runs per stencil** — the recorded `OD-13` remainder; needs the interior edges split
+   into connected components first.
+5. **The roof material** — `draw_roof` writes 27 heights and 0 materials, so a roof cell is
+   indistinguishable from terrain at that height (`X69`). Costs nothing today; fixing it means
+   deciding what a roof material *is*.
+
+### Open decisions, all recorded rather than pending
+
+- **Where a door's OPEN/CLOSED state lives** (`DESIGN.md` §10.28) — two wall ids (**recommended**:
+  free, round-trips today, collider derived at layer 2) vs an `L14` overlay. No round-trip
+  consequence either way, which is why it can wait.
+- **OD-1** the morph — narrowed to *probably unnecessary* by free poses.
+- **OD-5** is the flip exact — `X2` and `X57` both say yes at T1. **[J] closeable by inspection
+  rather than new work.**
+
+### What can no longer be re-derived cheaply — read these first
+
+`SPEC` **L13** (the voxel is the ceiling on permanent world state) and **L14** (a side table is
+area-limited *and* time-limited) are **user decisions**, not findings. They bound `𝕄*` and they are
+why `h_height` quantises. `X70`'s taxonomy — an opening is never *"no wall"* — is likewise a
+decision with a measurement behind it, not a preference.
 
 ---
 

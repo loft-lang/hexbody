@@ -40,9 +40,35 @@ const EPS = 0.000000001;
 // Opening materials — values in the SAME vocabulary as the wall materials, because they
 // share the one slot.  A door overrides `solid`; a window does not (it overrides opacity,
 // which is an elevation property and never touches the footprint).
+//
+// ⚠ `OPEN_NONE` IS NOT "no opening" — it is the wall-material value **0, which means NO WALL**.
+// Writing it DELETES the edge and breaks the run in two (`X51`: 37 edges, 2 dangling ends, and on
+// a tower 3 arcs instead of 1).  It is kept because 0 is the slot's empty value, but it is never
+// what an author means by an opening.  moros makes exactly this mistake — `builtin_house_door`
+// leaves the doorway edge at material 0 and calls it *"crawler's convention: a door is a gap"*.
+//
+// THE TAXONOMY (user, 2026-07-24: *"A door is not a gap in the wall, it is something that can be a
+// collider or not. But we also allow real gaps — the door itself is missing completely, but the
+// wall continues like normal"*).  Three distinct things live on a wall edge, and **all three keep
+// the wall one continuous run**:
+//
+//   OPEN_DOOR    an opening fitted with a door leaf — a collider WHEN CLOSED, not when open
+//   OPEN_WINDOW  an opening at elevation — never a floor-level collider, wall continues
+//   OPEN_GAP     a real gap: the leaf is missing entirely, never a collider, wall continues
+//
+// The difference between `OPEN_GAP` and `OPEN_NONE` is the whole point: a gap is an **opening in a
+// wall that is still there**; `OPEN_NONE` is the **absence of the wall**.
+//
+// THE RATIONALE, and it is what makes this not a matter of taste (user, 2026-07-24): *"a gap/door
+// will never be rendered as a missing wall, there will be something like a door-frame or ragged
+// stone opening there."*  An opening **has geometry of its own** — a frame, a lintel, a ragged
+// jamb.  Absence has none.  So an opening must name a material that carries that geometry, which
+// is precisely a wall id into the palette; writing 0 would ask the renderer to draw nothing and the
+// collision layer to find no wall, both wrong.
 pub const OPEN_NONE   = 0;
 pub const OPEN_DOOR   = 1;
 pub const OPEN_WINDOW = 2;
+pub const OPEN_GAP    = 3;
 
 pub fn cell_x(q: integer, r: integer) -> float { (lattice_k(q, r) as float) * SQ3_2 }
 pub fn cell_y(q: integer, r: integer) -> float { (lattice_m(q, r) as float) * 0.5 }

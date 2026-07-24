@@ -38,7 +38,7 @@ crawler's prototypes and design docs are **design tries** — input, not authori
 | **T3 · designed** | a doc argues a construction | **input to design, never truth** |
 | **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
 
-**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X68`** — eight of them re-measured *here*, and
+**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X70`** — eight of them re-measured *here*, and
 `X26`–`X31` **discovered here**. Everything else the design leans on is still a try or a schema
 (the foxel **palette**, `X12`/`X13` — the schema's *storage* half is now T1 via `X63`), and the
 census is where the rest gets re-measured. Citing a T2 number as settled is
@@ -74,7 +74,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X68` **with trust tiers** | **authoritative** on any object or map |
+| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X70` **with trust tiers** | **authoritative** on any object or map |
 | **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
@@ -135,18 +135,50 @@ make test    # form, wall, box, census, text, house, surface, arc, trip
 make shot    # contact sheet -> /tmp/house12.png
 ```
 
-Needs `../loft` and `../loft-libs-world` as siblings. **`--lib` reads the WORKING TREE**, so
+Needs `../loft`, `../loft-libs-world` **and `../moros`** as siblings — `tests/palette.loft`
+reads moros's source because `L13` makes it the schema of record. **`--lib` reads the WORKING TREE**, so
 check that `loft-libs-world` is on branch `dev` before debugging anything strange.
 
 ## State (2026-07-24)
 
-> **`M0`'s round trip is CLOSED, `G2` is done, the foxel is gated and the doorstep is complete — 20 green gates.** For where
+> **`M0`'s round trip is CLOSED, `G2` is done, the foxel is gated, the doorstep is complete and the palette is schema-checked — 21 green gates.** For where
 > the project stands against its goals and what to do next, read **[`ASSESSMENT.md`](ASSESSMENT.md)**:
 > the editor foundation is largely built and the **body** half (`G1`/`G3`/`G4`/`G6`) is not built at
 > all. The risk that file named as largest — *the foxel schema is still T4* — **was gated the same
 > day** (`X63`, `X64`); what is left of it is the **palette** (`X12`/`X13`), a vocabulary question
 > rather than a mechanism.
 
+- **AN OPENING IS NEVER "NO WALL" — `X70`, and it is NOT a choice.** moros's `builtin_house_door`
+  leaves the doorway edge at material **0** (*"crawler's convention: a door is a gap"*). Measured on
+  the 5×4 house, a 2-edge opening: solid **38 edges / 0 chain ends**; `OPEN_DOOR` 38/0;
+  `OPEN_WINDOW` 38/0; `OPEN_GAP` 38/0; **material 0 → 36 / 2 — the wall is BROKEN**. That is `X51`'s
+  doored-tower defect in its simplest form.
+- **THE TAXONOMY (user, 2026-07-24).** A door *"is not a gap in the wall, it is something that can be
+  a collider or not"*; a **real gap** — *"the door itself is missing completely, but the wall
+  continues like normal"* — is a distinct fourth thing, now **`OPEN_GAP`**. *"A door/opening will
+  never be (there is no wall here) but this is part of the continuing wall, but there is a
+  hole/structure here."*
+- **THE RATIONALE, which makes it structural not stylistic:** *"a gap/door will never be rendered as
+  a missing wall, there will be something like a door-frame or ragged stone opening there."*
+  **An opening HAS GEOMETRY OF ITS OWN** — a frame, a lintel, a ragged jamb. Absence has none.
+  Material 0 asks the renderer to draw nothing *and* the collision layer to find no wall.
+- ⚠ **`OPEN_NONE = 0` is a naming hazard in hexbody's OWN source** — it reads as *"no opening"* and
+  means *"no wall"*. Its comment now says so; reach for `OPEN_GAP`, never 0.
+- **THE PALETTE IS SCHEMA-CHECKED EVERY RUN — `X69`.** `L13` made moros's `Hex` the storage of
+  record, so hexbody's transcription of it *is* the limit on `𝕄*`, and a limit read once drifts
+  silently. `tests/palette.loft` reads **moros's own source**: 14/14 cell fields, the cell carries
+  **no `float`** (`X67`'s premise), the palette **does** carry `wd_thickness: float`,
+  `HEIGHT_SCALE = 0.25` still upstream. Control: a non-existent field must read absent.
+  **`make test` now needs `../moros` as a sibling.**
+- **The vocabularies are OPEN** — `md_category`/`wd_body`/`id_kind` are **`text`**, values only in
+  comments, `id_kind`'s ends *"etc."*. So `fits?` is finite only **relative to a palette**, and a new
+  wall body is a new string, not a schema change. `wd_body` has **no opening body** — that is the
+  extension point's job, and moros owns it.
+- **`wd_thickness` is palette-side BY NECESSITY** — a uniform wall's 38 edges carry **1** distinct id
+  and nothing else, so a per-edge thickness would be an eighth slot, which `L13` forbids.
+- ⚠ **Known gap: roofs are materials (`X13`) and `draw_roof` writes 27 heights / 0 materials** — a
+  roof cell is indistinguishable from terrain at that height. Costs nothing today (nothing reads
+  `md_category`); recorded in `DESIGN.md` §10.28 rather than fixed.
 - **THE VOXEL IS THE CEILING — user decision, 2026-07-24 (`SPEC` L13/L14).** *"I will never want to
   add more world information than in the limited moros voxels. We can have other tables outside that
   for limited areas but those should also be time limited."* So **moros's `Hex` is the storage of
@@ -233,11 +265,11 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 - **`plans/m0-roundtrip/shots/house12.png` was regenerated** — a review image (`L9`), not a gated
   baseline; `make test` never checked it.
 
-- **Twenty gates, all green** — `make test` runs `tools/run_tests.sh`.
+- **Twenty-one gates, all green** — `make test` runs `tools/run_tests.sh`.
   Form, wall (~3 min), box, census, text, house, surface, arc (A6 + A7), combine (A8), seam
   (A8 frame seam), arb (A8 nearest surface), line (A8 linework), censusb (domain B),
   flip (law G, ~16 s), level (A8 bridge guarantee), terrain (A8, OD-4), embed (OD-13),
-  fit (the doorstep), foxel (the schema as storage), trip.
+  fit (the doorstep), palette (the vocabulary seam), foxel (the schema as storage), trip.
 - **Green:** `G0` / law **I** — `tests/house.loft`, 12/12 equivariant in cells *and* edges, `eave_spread
   0.0000`, every control fires. `make shot` reproduces the committed baseline byte-identically.
 - **Green:** `tests/form.loft` (**S0**/**S1**) — the 12 headings; **`X1`**/**`X2`** re-measured to **T1**
@@ -587,8 +619,8 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   unnecessary" by free poses) · **OD-5** is the flip exact (`X2` says yes) · **OD-9** does a door
   survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
   relocated into the schema, and rung A5's real question.
-- **Constraints are in `ROUNDTRIP.md` §7 (X1–X68) with trust tiers.** T1 now holds `X1`, `X2`,
-  `X19`–`X22`, `X24`–`X68`; do not re-derive those. Everything else is still a try or a schema.
+- **Constraints are in `ROUNDTRIP.md` §7 (X1–X70) with trust tiers.** T1 now holds `X1`, `X2`,
+  `X19`–`X22`, `X24`–`X70`; do not re-derive those. Everything else is still a try or a schema.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their
