@@ -12,6 +12,25 @@ bet rather than a settled capability.
 
 ---
 
+
+## hexbody's place — the base of a family
+
+**hexbody ships libraries; it does not ship a game, an editor, or a demo** (`SPEC` **G-LIB**).
+The user's framing: *"we are pretty much a programming language — it doesn't define who can use
+them. Many consumers are there, some known some unknown."* That posture is the design constraint:
+primitives are defined from their own semantics, for users we will never meet.
+The editor, `crawler` and `moros` build on it today, and the user expects the family to grow —
+*world creation, world simulation, weather, physics simulation* — each probably its own project,
+to prevent clutter, and almost all of them building on this work.
+
+That is why the train, the derailment and the colossus appear here and in `SPEC`'s **Use cases**
+rather than its Goals: they tell us **what to build and what to allow**, never what to ship. A use
+case is satisfied when a consumer *could* build it.
+
+And it is why the seam is guarded so hard. A sibling project named *weather* means `weather` is
+precisely the kind of word that may never be declared inside hexbody (`L15`, gated by
+`tests/scope.loft`) — the container is ours, the payload is theirs.
+
 ## The thesis
 
 Game systems — combat, traversal, vehicles, destructible environments, an enemy you can

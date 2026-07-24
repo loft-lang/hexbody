@@ -79,42 +79,57 @@ same result `X66` measured for levels.
 
 ---
 
-## 3. ⚠ OPEN — do `G4` and `G★` remain hexbody's goals?
+## 3. ✅ ANSWERED — `G4` and `G★` were never deliverables
 
-**This is the one live fork in this milestone, and it is a decision, not a measurement.**
+**Resolved 2026-07-24, by the user, and more broadly than the question asked:**
 
-`L15` says the engine does not know whether a piece of geometry is a train, and does not model
-future state. Two `SPEC` goals name exactly a domain and a time evolution:
+> *"The demo itself is not hexbody's goal. All these examples are for us to know what to build,
+> what to allow — not what to ship. Other projects — the editor, crawler, moros — will build on
+> our basis. Our goal is to provide libraries for them."*
 
-- **`G4`** — *"the train: a coupled car+wagon follows a curve, wheels `= travel/radius`, wagon in
-  line, detaches on decouple"*, checked by *"vehicle gates"*.
-- **`G★`** — *"a coupled train off the rails tumbles, piles, settles to a **deterministic** rest"*.
+So the fork was mis-framed. It was never *"do these stay hexbody's goals or become consumers"* —
+they were **requirement sources all along**, and reading them as deliverables is what made them look
+like a contradiction with `L15`.
 
-`I10` (a coupling point stays coincident) and `I11` (the forward trailer-follow is stable) are the
-same shape, and **`L1` names `G★` as the one place full rigid-body dynamics is *earned*.**
+**What that changes, concretely.** `G4`, `G★` and `G✦` moved out of `SPEC`'s Goals table into a
+**Use cases** section: each names the capability the libraries must *allow*, and is satisfied when a
+consumer *could* build it. `I10`/`I11` (coupling coincidence, trailer-follow stability) are the
+train's invariants and stay the **consumer's to satisfy** — hexbody's obligation is to make them
+**expressible**, not to implement them. And `L1`'s *earned set*, which named `G★` as the one place
+full rigid-body dynamics was earned, is now **empty here**: dynamics is a consumer's call in a
+consumer's project, and what hexbody owes is that its libraries do not *prevent* one.
 
-**The likely reading**, from the user's own clarification: *"we still can provide routines for any
-specific instance we listed — they cannot be part of the world… but we can add simulations and the
-like. Those will probably live eventually in different projects, to prevent clutter."* So `G4`/`G★`
-become **consumers** — demos built *on* hexbody, in their own repos — which is consistent with the
-harness thesis (*live-test a game system before art exists*; a demo is a consumer).
+**The recommendation I had made was right for the wrong reason.** I argued "consumers, because a
+harness proven by something outside itself is stronger evidence". True, but beside the point: the
+demos are not evidence hexbody owes at all. They are how we *learn the requirements*.
 
-**What it costs either way:**
+### 3.1 ⚠ And the real consequence, which is bigger than the fork
 
-| | if they stay hexbody's | if they become consumers |
-|---|---|---|
-| `SPEC` | `G4`, `G★`, `I10`, `I11` unchanged; `L15` needs an explicit carve-out for the earned set | `G4`, `G★`, `I10`, `I11` move out; `L1`'s *earned set* becomes empty and `L1` simplifies |
-| `tests/scope.loft` | must stop refusing `train`/`vehicle`/`wagon` in `src/` | unchanged — it already encodes the strict reading |
-| the demo | hexbody proves itself | hexbody is proven *by* a separate repo, which is a stronger claim about the seam |
+**`G-LIB`: a capability is not done when a hexbody gate is green — it is done when a consumer can
+depend on it.** Measured the same day:
 
-**Recommendation: consumers.** A harness demonstrated by something outside itself is better evidence
-than one that demonstrates itself, and it is the only reading under which `L15` needs no exception.
-But `SPEC` currently says otherwise in four places, so this wants an explicit answer.
+- `loft.toml` has **no `[library]` entry**. hexbody is packaged as the *application* kind, like
+  crawler; `hex_field` — a real library — declares `[library] entry = "src/hex_field.loft"`.
+- **No consumer references hexbody**, checked across `../crawler` and `../moros`.
+- So the only way in is `--lib ../hexbody/src/` at a working tree — **the exact unpinned-tree
+  fragility that broke this suite on 2026-07-24**, and it would break a consumer's the same way.
 
-Until it is answered, `tests/scope.loft` encodes the strict reading and would refuse a `train_*`
-declaration in `src/`.
+**Open, and it is a design decision rather than a packaging chore: what is the library split?**
+hexbody has 20 modules. One library, or several? The natural seams look like *form/text/census*
+(the grammar), *wall/surface/box/arc* (the geometry), *edge/way/roof* (already crawler's, and due to
+land in `loft-libs-world` anyway), *fit/draft* (the doorstep) and *frame/seat/combine* (placement).
+**Do not guess it** — and the reason got stronger the same day: *"there will be similar other projects in the future: world creation, world simulation, weather, physics simulation for that — probably their own project to prevent clutter, almost all of them building in some way on our work."* hexbody is **the base of a family**, so a published seam is as hard to move as a published text
+(`A₂`, and `I-EXTEND` says the same law governs the API one level up).
 
----
+⚠ **CORRECTION to how I first put this.** I wrote *"the split is what consumers depend on"*, which
+reads as *survey the consumers first*. The user's framing says otherwise: *"we are pretty much a
+programming language — it doesn't define who can use them. Many consumers are there, some known some
+unknown."* **A language does not wait to meet its users before defining its primitives.** So the
+split is decided from the **objects** — `ROUNDTRIP`'s objects and maps, which are already settled and
+already have natural seams — and *not* from what the editor, crawler and moros happen to need this
+month. Designing for the three known consumers is how you get a seam that breaks the fourth.
+
+This wants its own plan, and `loft-ship` is the skill for the cross-target parity half.
 
 ## 4. Open, smaller
 

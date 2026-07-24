@@ -267,15 +267,20 @@ is ungated. The gap is entirely "not built yet", which is a schedule, not a debt
     authored and the pose is derived, so nothing ever runs that recovery — it is inverse
     kinematics, non-unique by nature. **[J] Fifth instance of the slot pattern** (`X51`, `X58`,
     `X59`, `X60`): motion lands outside the authored model entirely.
-  - ⚠ **UNRESOLVED — do `G4` (the train) and `G★` (the derailment) remain hexbody's goals?**
-    `L15` says the engine does not know a train from a dock and does not model future state; those
-    two goals name both, as do `I10`/`I11`, and `L1` calls `G★` the one place dynamics is *earned*.
-    **[J] Likely they become consumers in their own projects** — a harness proven by something
-    outside itself is stronger evidence — but that changes what the project claims, so it wants an
-    explicit answer. Costs of each reading: DESIGN §3.
-- **OD-1** the morph — narrowed to *probably unnecessary* by free poses.
-- **OD-5** is the flip exact — `X2` and `X57` both say yes at T1. **[J] closeable by inspection
-  rather than new work.**
+  - ~~**Do `G4`/`G★` remain hexbody's goals?**~~ **ANSWERED, and the question was mis-framed**
+    (DESIGN §3): *"the demo itself is not hexbody's goal… all these examples are for us to know
+    what to build, what to allow — not what to ship. Other projects — the editor, crawler, moros
+    — will build on our basis. Our goal is to provide libraries for them."* `G4`/`G★`/`G✦` were
+    **requirement sources all along** and now sit in `SPEC`'s *Use cases* section; `L1`'s earned
+    set is empty here.
+  - ⚠ **[G] THE REAL FRONTIER MOVED, and it is bigger than the body.** `G-LIB` — *a capability is
+    not done when a hexbody gate is green, it is done when a consumer can depend on it*. Measured
+    2026-07-24: `loft.toml` has **no `[library]` entry** (hexbody is packaged as the *application*
+    kind; `hex_field` declares one), and **no consumer references hexbody** across `../crawler` or
+    `../moros`. So the only way in is `--lib` at a working tree — the same unpinned-tree fragility
+    that broke this suite the same day. **[J] The library split is a design decision, not a
+    packaging chore**, and wants its own plan: a published seam is as hard to move as a published
+    text (`A₂`). DESIGN §3.1.
 
 ### What can no longer be re-derived cheaply — read these first
 

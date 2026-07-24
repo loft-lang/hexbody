@@ -119,7 +119,10 @@ decided, and what is true of *this checkout*.
 
 ## Conventions — verified against `../crawler`, `../moros`, `loft-libs-*`
 
-**Two project kinds, two test conventions. hexbody is the *application* kind**, like crawler.
+**Two project kinds, two test conventions. hexbody takes the *application*'s GATE FORM**, like
+crawler — but ⚠ **it must SHIP as the library kind** (`G-LIB`), and does not yet: `loft.toml` has
+no `[library]` entry, so nothing can depend on hexbody except by pointing `--lib` at this working
+tree. The gate convention below is right; the *packaging* is the open gap.
 
 | | **library** (`gridmesh`, `hex_field`) | **application** (crawler) | **hexbody** |
 |---|---|---|---|
@@ -218,6 +221,31 @@ A measurement cannot overturn any of these. They bound the design.
   rationale is what makes it structural rather than stylistic: *"a gap/door will never be rendered
   as a missing wall, there will be something like a door-frame or ragged stone opening there."*
   **An opening has geometry of its own** — a frame, a lintel, a ragged jamb. Absence has none.
+- **hexbody SHIPS LIBRARIES — THE DEMO IS NOT THE GOAL** (2026-07-24 → `SPEC` **G-LIB**, and the
+  *Use cases* section). *"The demo itself is not hexbody's goal. All these examples are for us to
+  know what to build, what to allow — not what to ship. Other projects — the editor, crawler,
+  moros — will build on our basis. Our goal is to provide libraries for them."*
+  So the train, the derailment and the colossus are **requirement sources**, not deliverables: each
+  says what the libraries must *allow*, and is satisfied when a **consumer could build it**.
+  `G4`/`G★`/`G✦` are no longer goals; `L1`'s *earned set* is empty here, because dynamics is a
+  consumer's call. ⚠ **A capability is not done when a hexbody gate is green — it is done when a
+  consumer can depend on it**, and today none can: `loft.toml` has **no `[library]` entry** and no
+  consumer references hexbody, so the only way in is `--lib` at a working tree.
+  ⚠ **AND THE CONSUMER SET IS GROWING** (same day): *"there will be similar other projects in the
+  future: world creation, world simulation, weather, physics simulation for that — probably their
+  own project to prevent clutter, almost all of them building in some way on our work."* hexbody is
+  **the base of a family**, so the seam has to hold for consumers that do not exist yet. Two things
+  follow: the **library split is a decision, not a chore** (a published seam is as hard to move as a
+  published text — `A₂`), and `tests/scope.loft`'s vocabulary is confirmed again — `weather`,
+  `climate`, `biome` name **sibling projects**, which is exactly why they may never be declared in
+  hexbody's `src/`.
+  ⚠ **THE FRAMING THAT SETTLES HOW TO SPLIT IT** (user, restating an earlier point): *"we are pretty
+  much a programming language — it doesn't define who can use them. Many consumers are there, some
+  known some unknown."* `SPEC` **I-EXTEND** already said the *model* is built out like a language;
+  the same law governs the **API** one level up. So **design the seam from the OBJECTS, not from a
+  survey of the consumers we happen to know** — a language defines its primitives from its own
+  semantics and lets users come. Designing for the three known consumers is how you get a seam that
+  breaks the fourth.
 - **THE GAME'S STATE IS NOT THE WORLD'S** (2026-07-24 → `SPEC` **L15**). *"There is a separation
   here between the world and the game. The game will have a bigger state than the world alone:
   where are NPCs, how is the weather, what are the quests and goals of NPCs. We do not make that
