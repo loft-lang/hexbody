@@ -89,3 +89,128 @@ pub fn joint_offer(j: Joint, value: float) -> float {
 pub fn joint_residual(j: Joint, value: float) -> float {
   fabs(value - joint_offer(j, value))
 }
+
+// ── THE RIG, AND ITS CANONICAL TEXT (phase A of plans/m1-moving-body) ────────
+//
+// A body's `original` is a RIG — `⟨bones, joint limits⟩`, never a pose (`SPEC` **I-POSE**).  A
+// bone is a segment with a **joint at its base** connecting it to its PARENT bone; the root bone
+// has no parent.  This is the shape a **flexing wing** takes: not a soft bone but more bones on
+// more joints, so the rig is a tree and the flex is joint values along it (`I-POSE`).
+//
+// The rig is a DESCRIPTION, so it round-trips like a stencil's `Form`: `write(read(R)) = R`
+// **byte-for-byte**, and a malformed text is REFUSED rather than repaired.  A rig carries floats
+// (offsets, lengths, joint limits), and the float↔text round trip is byte-exact in loft, so the
+// text is exact with no tolerance (`I-EXACT`/`P4`: content we authored recovers exactly).
+//
+// INDEX ORDER IS THE CANONICAL LABELLING.  A tree can be relabelled and describe the same rig; the
+// canonical form fixes the labels by requiring **topological order** — the root is bone 0 and every
+// bone's parent is an EARLIER bone.  The parser enforces it (a bone out of order, or referring to a
+// forward/absent parent, is refused), the same way `form_read` fixes the start corner by index
+// order (`C2`).  Fuller canonicalisation — collapsing every relabelling — is the census-shaped
+// problem `S5`–`S8` solved for forms; phase A's contract is the byte round trip, which topological
+// order plus a strict parser delivers.
+
+pub struct Rig {
+  rg_parent: vector<integer>,   // parent bone index; -1 for the root
+  rg_ox:     vector<float>,     // joint offset in the parent's frame (x)
+  rg_oy:     vector<float>,     // joint offset in the parent's frame (y)
+  rg_len:    vector<float>,     // the bone's length from its joint
+  rg_lo:     vector<float>,     // the joint's limit low  (turns)
+  rg_hi:     vector<float>,     // the joint's limit high (turns)
+}
+
+pub fn rig_new() -> Rig {
+  Rig { rg_parent: [], rg_ox: [], rg_oy: [], rg_len: [], rg_lo: [], rg_hi: [] }
+}
+
+// Append one bone, growing the rig's parallel field vectors in place.
+pub fn rig_bone(r: Rig, parent: integer, ox: float, oy: float, len: float,
+                lo: float, hi: float) -> Rig {
+  r.rg_parent += [parent];
+  r.rg_ox += [ox]; r.rg_oy += [oy]; r.rg_len += [len];
+  r.rg_lo += [lo]; r.rg_hi += [hi];
+  r
+}
+
+pub fn rig_count(r: Rig) -> integer { len(r.rg_parent) }
+
+// The joint at bone `i`, as a `Joint` carrying its limits (value defaults to 0 — the neutral pose).
+pub fn rig_joint(r: Rig, i: integer) -> Joint {
+  joint_new(0.0, r.rg_lo[i] ?? 0.0, r.rg_hi[i] ?? 0.0)
+}
+
+// ADMISSIBLE — topological (root is bone 0 with parent -1, every other parent is earlier), and
+// every joint limit is ordered `lo <= hi`.  This is the rig's doorstep: `fits?` for a whole rig.
+pub fn rig_admissible(r: Rig) -> boolean {
+  n = len(r.rg_parent);
+  if n == 0 { return false; }
+  if (r.rg_parent[0] ?? 0) != -1 { return false; }
+  for i in 0..n {
+    p = r.rg_parent[i] ?? 0;
+    if i == 0 {
+      if p != -1 { return false; }
+    } else {
+      if p < 0 || p >= i { return false; }        // parent must be an EARLIER bone
+    }
+    if (r.rg_lo[i] ?? 0.0) > (r.rg_hi[i] ?? 0.0) { return false; }
+  }
+  true
+}
+
+pub fn rig_write(r: Rig, name: text) -> text {
+  n = len(r.rg_parent);
+  s = "rig {name} bones {n}";
+  for bi in 0..n {
+    s = s + "\nbone {bi} parent {r.rg_parent[bi] ?? 0} at {r.rg_ox[bi] ?? 0.0} {r.rg_oy[bi] ?? 0.0}"
+        + " len {r.rg_len[bi] ?? 0.0} lim {r.rg_lo[bi] ?? 0.0} {r.rg_hi[bi] ?? 0.0}";
+  }
+  s
+}
+
+fn rig_word(line: text, i: integer) -> text {
+  parts = line.split(' ');
+  parts[i] ?? ""
+}
+fn rig_word_int(line: text, i: integer) -> integer { rig_word(line, i) as integer ?? 0 }
+fn rig_word_float(line: text, i: integer) -> float { rig_word(line, i) as float ?? 0.0 }
+
+// STRICT PARSER — accepts exactly what `rig_write` emits, refuses anything else by returning an
+// empty rig (which `rig_admissible` then rejects).  A lenient reader would void the byte diff.
+pub fn rig_read(t: text) -> Rig {
+  lines = t.split('\n');
+  nl = len(lines);
+  if nl < 1 { return rig_new(); }
+  head = lines[0] ?? "";
+  if rig_word(head, 0) != "rig" { return rig_new(); }
+  if rig_word(head, 2) != "bones" { return rig_new(); }
+  nb = rig_word_int(head, 3);
+  if nl != nb + 1 { return rig_new(); }
+  out = rig_new();
+  for ri in 1..nl {
+    ln = lines[ri] ?? "";
+    if rig_word(ln, 0) != "bone" { return rig_new(); }
+    if rig_word_int(ln, 1) != ri - 1 { return rig_new(); }     // index order, like form C2
+    if rig_word(ln, 2) != "parent" { return rig_new(); }
+    if rig_word(ln, 4) != "at" { return rig_new(); }
+    if rig_word(ln, 7) != "len" { return rig_new(); }
+    if rig_word(ln, 9) != "lim" { return rig_new(); }
+    out = rig_bone(out, rig_word_int(ln, 3), rig_word_float(ln, 5), rig_word_float(ln, 6),
+                   rig_word_float(ln, 8), rig_word_float(ln, 10), rig_word_float(ln, 11));
+  }
+  out
+}
+
+// Byte-exact equality — floats compared with `==`, no tolerance (`I-EXACT`).
+pub fn rig_eq(a: Rig, b: Rig) -> boolean {
+  n = len(a.rg_parent);
+  if len(b.rg_parent) != n { return false; }
+  for ei in 0..n {
+    if (a.rg_parent[ei] ?? 0) != (b.rg_parent[ei] ?? 0) { return false; }
+    if (a.rg_ox[ei] ?? 0.0) != (b.rg_ox[ei] ?? 0.0) { return false; }
+    if (a.rg_oy[ei] ?? 0.0) != (b.rg_oy[ei] ?? 0.0) { return false; }
+    if (a.rg_len[ei] ?? 0.0) != (b.rg_len[ei] ?? 0.0) { return false; }
+    if (a.rg_lo[ei] ?? 0.0) != (b.rg_lo[ei] ?? 0.0) { return false; }
+    if (a.rg_hi[ei] ?? 0.0) != (b.rg_hi[ei] ?? 0.0) { return false; }
+  }
+  true
+}

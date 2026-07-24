@@ -191,9 +191,57 @@ fn main() {
     println("  FAIL: the offer is not itself admissible, or not the nearest limit"); ok = false;
   }
 
-  // ── 4. THE JOINT ROUND TRIP IS DISSOLVED, not asserted ────────────────────
+  // ── 4. THE RIG CANONICAL TEXT — a body's DESCRIPTION round-trips like a stencil ──
+  //
+  // A body's `original` is a RIG (`⟨bones, joint limits⟩`, `I-POSE`), and a description round-trips:
+  // `write(read(R)) = R` byte-for-byte, floats and all, with a malformed text REFUSED not repaired.
+  // This is phase A of `plans/m1-moving-body`, the other half of the doorstep.
   println("");
-  println("4. the joint ROUND TRIP is DISSOLVED (I-POSE), and this gate asserts nothing about it:");
+  println("4. THE RIG — a body's description round-trips byte-for-byte, and a bad one is refused");
+  arm = rig_new();
+  arm = rig_bone(arm, -1, 0.0, 0.0, 1.5, -0.5, 0.5);                       // root
+  arm = rig_bone(arm, 0, 0.8660254037844386, 0.25, 0.37, -0.125, 0.125);  // a hinge child
+  arm = rig_bone(arm, 1, -0.6, 0.1, 0.9, 0.0, 0.0);                        // a fixed tip (lo=hi)
+  txt = rig_write(arm, "arm");
+  back = rig_read(txt);
+  rt = rig_eq(arm, back) && rig_write(back, "arm") == txt;
+  println("   3-bone arm: write(read(R)) == R byte-for-byte: {rt}   admissible: {rig_admissible(arm)}");
+  if !rt {
+    println("  FAIL: the rig did not round-trip — a body's description is not recoverable, so it"
+            + " cannot be saved, diffed or undone"); ok = false;
+  }
+  if !rig_admissible(arm) {
+    println("  FAIL: a topological rig with ordered limits was judged inadmissible"); ok = false;
+  }
+
+  // CONTROL A — a mutated rig must DIFFER, or "byte-for-byte" is vacuous.
+  mut = rig_bone(rig_read(txt), 1, 9.9, 0.0, 0.1, 0.0, 0.0);   // one extra bone
+  println("   CONTROL a rig with one bone added differs: {!rig_eq(arm, mut)}");
+  if rig_eq(arm, mut) {
+    println("  FAIL: the comparison did not fire on a changed rig"); ok = false;
+  }
+
+  // CONTROL B — the parser REFUSES a malformed text (a reordered index) rather than repairing it,
+  // exactly as `form_read` refuses a reordered field. A lenient reader would void the byte diff.
+  bad = "rig arm bones 2\nbone 1 parent -1 at 0 0 len 1.0 lim 0 0\nbone 0 parent 0 at 0 0 len 1.0 lim 0 0";
+  refused = rig_count(rig_read(bad)) == 0;
+  println("   CONTROL a reordered bone index is refused (empty rig): {refused}");
+  if !refused {
+    println("  FAIL: the parser repaired a malformed rig instead of refusing it"); ok = false;
+  }
+
+  // CONTROL C — the doorstep refuses a NON-topological rig (a bone whose parent comes later).
+  fwd = rig_new();
+  fwd = rig_bone(fwd, 1, 0.0, 0.0, 1.0, 0.0, 0.0);    // bone 0 refers FORWARD to bone 1
+  fwd = rig_bone(fwd, -1, 0.0, 0.0, 1.0, 0.0, 0.0);
+  println("   CONTROL a forward-parent rig is inadmissible: {!rig_admissible(fwd)}");
+  if rig_admissible(fwd) {
+    println("  FAIL: the doorstep admitted a non-topological rig"); ok = false;
+  }
+
+  // ── 5. THE JOINT ROUND TRIP IS DISSOLVED, not asserted ────────────────────
+  println("");
+  println("5. the joint ROUND TRIP is DISSOLVED (I-POSE), and this gate asserts nothing about it:");
   println("   an authored body is a RIG (bones + joint limits) and never a pose, so nothing");
   println("   recovers joints FROM a pose -- that is inverse kinematics, and the design never");
   println("   asks for it. The trip is on the rig text, phase A of plans/m1-moving-body.");
