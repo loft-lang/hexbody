@@ -1,0 +1,165 @@
+// level — THE BRIDGE GUARANTEE: two things on different LEVELS never contend (rung A8).
+// Every check has a control that must fire.
+//
+// A **level** is the topological *sheet* a thing sits on — OSM's `layer` tag, and the `layer*` axis
+// the foxel carries at the top of its schema (`ROUNDTRIP` §2.4).  **It is not a height.**  crawler
+// settled what it buys (`bridgetest.loft`) and stated it as a contrast this gate reproduces:
+//
+//   > the SAME two ways, at the same level, are a level crossing; at different levels, a bridge.
+//   > Nothing about the ways changes — only the sheet.
+//
+// So the whole fixture is ONE pair of overlapping stencils, drawn twice, with **only the level
+// integer different**.  If the two results differ, the sheet is doing the work and nothing else is.
+//
+//   1  same level — they FUSE and CONTEND, exactly as `X52`/`X53` say they should
+//   2  different levels — no fusion, no contention, at either sheet
+//   3  level 0 costs nothing: the level-aware path is byte-identical to the level-blind one
+//   4  CONTROL — flattening the levels restores fusion and contention
+use hex_field;
+use hexform;
+use housedraw;
+use hexcombine;
+
+const W = 20;
+const H = 20;
+const Q0 = -2;
+const R0 = -2;
+const MA = 1;
+const MB = 7;
+
+// two OVERLAPPING blocks: A is columns 0..3, B is columns 2..5, so they share columns 2 and 3
+fn fill_a(s: HexSet) { for ra in 0..4 { for qa in 0..4 { hexset_set(s, qa, ra, true); } } }
+fn fill_b(s: HexSet) { for rb in 0..4 { for qb in 2..6 { hexset_set(s, qb, rb, true); } } }
+
+fn edge_diff(x: EdgeSet, y: EdgeSet) -> integer {
+  n = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      for d in 0..6 {
+        nq = nb_q(q, r, d);
+        nr = nb_r(q, r, d);
+        if edge_mat(x, q, r, nq, nr) != edge_mat(y, q, r, nq, nr) { n = n + 1; }
+      }
+    }
+  }
+  n / 2
+}
+
+// the highest kappa over the region, at one level
+fn max_kappa(a: HexSet, la: integer, b: HexSet, lb: integer, at: integer) -> integer {
+  m = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      k = kappa_at_level(a, la, b, lb, at, q, r);
+      if k > m { m = k; }
+    }
+  }
+  m
+}
+
+fn main() {
+  ok = true;
+  println("=== levels — the bridge guarantee: different sheets never contend (A8) ===");
+
+  a = hexset_chunk(Q0, R0, W, H); fill_a(a);
+  b = hexset_chunk(Q0, R0, W, H); fill_b(b);
+
+  // ── 1. SAME LEVEL — the level crossing ────────────────────────────────────
+  println("");
+  println("1. SAME LEVEL — they fuse and contend (the level crossing)");
+  same = edgeset_new(Q0, R0, W, H);
+  nsame = combine_cut_level(a, 0, MA, b, 0, MB, 0, same);
+  fuse_same = shared_marked(a, b, same);
+  k_same = max_kappa(a, 0, b, 0, 0);
+  println("   at level 0: {nsame} edges cut, shared edges marked {fuse_same} (0 = fused),"
+          + " max κ {k_same}");
+  if fuse_same != 0 {
+    println("  FAIL: same-level stencils did not fuse — X52 says the shared edge is interior");
+    ok = false;
+  }
+  if k_same != 2 {
+    println("  FAIL: same-level overlap did not reach κ=2 — then there is no contention to"
+            + " separate and the whole gate is vacuous"); ok = false;
+  }
+
+  // ── 2. DIFFERENT LEVELS — the bridge ──────────────────────────────────────
+  //
+  // The same two stencils.  Only the sheet changed.
+  println("");
+  println("2. DIFFERENT LEVELS — no fusion, no contention (the bridge)");
+  lv0 = edgeset_new(Q0, R0, W, H);
+  n0 = combine_cut_level(a, 0, MA, b, 1, MB, 0, lv0);
+  lv1 = edgeset_new(Q0, R0, W, H);
+  n1 = combine_cut_level(a, 0, MA, b, 1, MB, 1, lv1);
+  k0 = max_kappa(a, 0, b, 1, 0);
+  k1 = max_kappa(a, 0, b, 1, 1);
+  fuse0 = shared_marked(a, b, lv0);
+  println("   seen at level 0: {n0} edges (A alone), max κ {k0}");
+  println("   seen at level 1: {n1} edges (B alone), max κ {k1}");
+  println("   A's wall along the shared columns is now REAL, not fused: {fuse0} edges marked");
+  if k0 != 1 || k1 != 1 {
+    println("  FAIL: κ exceeded 1 on a sheet holding only one stencil — different levels contended");
+    ok = false;
+  }
+  if n0 <= 0 || n1 <= 0 {
+    println("  FAIL: a sheet came back empty — the level filter dropped a stencil that belongs");
+    ok = false;
+  }
+  if fuse0 <= 0 {
+    println("  FAIL: the shared boundary still fused across levels — the sheets are not separate");
+    ok = false;
+  }
+  // and neither sheet is the same field as the fused one
+  if edge_diff(lv0, same) == 0 {
+    println("  FAIL: the bridge drew the same field as the level crossing — the sheet changed"
+            + " nothing"); ok = false;
+  }
+  println("   => same stencils, same cells; only the sheet differs, and the field differs with it");
+
+  // ── 3. LEVEL 0 COSTS NOTHING ──────────────────────────────────────────────
+  //
+  // Most of a world exists only at level 0.  There, the level-aware path must be byte-identical to
+  // the level-blind `combine_cut` — otherwise levels are a tax on the common case.
+  println("");
+  println("3. LEVEL 0 IS FREE — the level-aware path equals the level-blind one");
+  blind = edgeset_new(Q0, R0, W, H);
+  combine_cut(a, MA, b, MB, blind);
+  dfree = edge_diff(same, blind);
+  println("   combine_cut_level(…at 0) vs combine_cut: {dfree} edge differences (want 0)");
+  if dfree != 0 {
+    println("  FAIL: levels changed the answer at level 0 — the common case pays for a feature"
+            + " it does not use"); ok = false;
+  }
+
+  // ── 4. CONTROL — FLATTENING RESTORES CONTENTION ───────────────────────────
+  //
+  // Put B back on A's sheet and everything returns: the fusion, the κ=2, the same field.  Without
+  // this the separation in §2 could be an artefact of the fixture rather than of the level.
+  println("");
+  println("4. CONTROL — flatten the levels and contention comes back");
+  flat = edgeset_new(Q0, R0, W, H);
+  combine_cut_level(a, 0, MA, b, 0, MB, 0, flat);
+  k_flat = max_kappa(a, 0, b, 0, 0);
+  fuse_flat = shared_marked(a, b, flat);
+  println("   flattened: max κ {k_flat} (was {k0} across sheets), shared edges marked {fuse_flat}"
+          + " (was {fuse0}), vs the level-crossing field: {edge_diff(flat, same)} diffs");
+  if k_flat <= k0 {
+    println("  FAIL: control did not fire — flattening did not raise κ, so the level was never"
+            + " what separated them"); ok = false;
+  }
+  if fuse_flat >= fuse0 {
+    println("  FAIL: control did not fire — flattening did not restore fusion"); ok = false;
+  }
+  if edge_diff(flat, same) != 0 {
+    println("  FAIL: flattening did not reproduce the level-crossing field exactly"); ok = false;
+  }
+
+  println("");
+  println("   The bridge guarantee holds: a level is a FILTER APPLIED BEFORE THE CUT, not an");
+  println("   arbitration rule after it, so different sheets never fuse, never arbitrate and never");
+  println("   contend — doing work κ would otherwise have to (X4). A level is NOT a height.");
+
+  println("");
+  if ok { println("=== LEVEL OK ==="); }
+  else { println("=== level test FAILED ==="); }
+}

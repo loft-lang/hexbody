@@ -132,9 +132,14 @@ survives `read → draw → rebuild → write` byte-identically* — holds over 
   accuracy as `N = 13`, but `N = 13` would have spent the linking. Also corrected §10.9's period
   column, which was 3× too small.
 
-**Rungs A1–A7 and S0–S8 + S4b are closed; A8's adjacency, frame-seam, nearest-surface and linework
-axes with them, and phase B's census.** Still open on A8: stencil on **terrain** (`OD-4`) and
-**level** separation.
+- **A8 (level separation).** The bridge guarantee, re-measured from crawler's `bridgetest`: a level
+  is the topological *sheet*, and it **filters before the cut** rather than arbitrating after it, so
+  different sheets never fuse, arbitrate or contend — doing work `κ` would otherwise have to
+  (`X58`). One pair of stencils drawn twice with only the level changed: fused with `κ=2` at one
+  sheet, two separate fields with `κ=1` across sheets. Level 0 is byte-identically free.
+
+**Rungs A1–A7 and S0–S8 + S4b are closed; A8's adjacency, frame-seam, nearest-surface, linework and
+level axes with them, and phase B's census.** Still open on A8: stencil on **terrain** (`OD-4`).
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"
@@ -203,7 +208,7 @@ already moved arcs from the last rung to the middle, because the scene has a tow
 | **A5** ✅ | features (doors, windows) on straight sides | **houses** | **no — already fixed**; but `t` is exact only at edge centres (`X48`) |
 | **A6** ✅ | **arcs** — the round tower shell | **the tower** | centre **exact**, radius **quantised to a shell** (`X49`); the `Sep`/`X7` fork is a *policy*, not a blocker |
 | **A7** ✅ | **arc + feature — the doored tower** | **the tower** | **already fixed**: a door is a material annotation the cell-based arc recovery is blind to, so it round-trips as **one** arc (`X51`); deleting fragments it into 3 arcs — the named defect, unreachable through the door API |
-| **A8** ◑ | **combination** — two stencils adjacent (who owns the shared edge?), stencil against linework, stencil on terrain | **the landscape** | **adjacency + frame seam + nearest-surface + linework DONE** (`X52`–`X55`): "mark all, then cut once" (order-free, the edge fuses); the posed-body seam (`ε_seam` machine-ε & confined, `κ` counted, arbitration order-free + fail-safe); overlap by nearest surface; and the cut spanning domains A/B, with a world line recovering eave_spread 0. **Terrain** (`OD-4`) and **levels** still open |
+| **A8** ◑ | **combination** — two stencils adjacent (who owns the shared edge?), stencil against linework, stencil on terrain | **the landscape** | **adjacency + frame seam + nearest-surface + linework + levels DONE** (`X52`–`X55`, `X58`): "mark all, then cut once" (order-free, the edge fuses); the posed-body seam (`ε_seam` machine-ε & confined, `κ` counted, arbitration order-free + fail-safe); overlap by nearest surface; and the cut spanning domains A/B, with a world line recovering eave_spread 0. Only **terrain** (`OD-4`) still open |
 
 A8 is the rung that matters most and the one a single-object enumeration cannot see. Do not stop
 at "one complex stencil works."
@@ -215,7 +220,7 @@ crawler `plans/8-landform-morphogenesis/`).
 
 | Phase | Effort | Verify | Status |
 |---|---|---|---|
-| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A7 ✅; A8 adjacency ✅ (`X52`), frame seam ✅ (`X53`), nearest-surface ✅ (`X54`), linework ✅ (`X55`) — terrain/levels open** |
+| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A7 ✅; A8 adjacency ✅ (`X52`), frame seam ✅ (`X53`), nearest-surface ✅ (`X54`), linework ✅ (`X55`), levels ✅ (`X58`) — only terrain open** |
 | **B** — linework census: `period`, `D`, `Sep`; the straight/arc recovery | M | `rt_census_b`; `eave_spread == 0` on the recovered line | **✅ CLOSED** — `D` by `X3`, `Sep` by `X49`, recovery by `X47`/`X49`, `eave_spread 0` by `X55`, `period` by **`X56`** |
 | **C** — `write` / `read`, canonical text frozen | S | `rt_canon`, `rt_project`, `rt_fits`, `rt_close` | Blocked on A, B, **OD-2** |
 | **D** — `rt_trip` written **empty** (red), before `rebuild` exists | XS | needs no ground truth — only `write`/`read`/`draw`/`rebuild` + `diff` | Blocked on C |

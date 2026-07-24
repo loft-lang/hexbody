@@ -1025,6 +1025,37 @@ side len turn`), and `rebuild` recovers the turtle form alone. So a stencil carr
 tested at all**: `hexway`'s `Track` is a float world-space curve with no lattice anchoring, which
 raises questions walls do not.
 
+## A8 · level separation — **DONE** *(the bridge guarantee — `X58`)*
+
+The last A8 axis besides terrain. crawler settled it (`bridgetest.loft`) and stated it as a contrast
+this gate reproduces exactly:
+
+> *the SAME two ways, at the same level, are a level crossing; at different levels, a bridge.
+> Nothing about the ways changes — only the sheet.*
+
+So the whole fixture is **one pair of overlapping stencils drawn twice, with only the level integer
+different**. If the results differ, the sheet is doing the work and nothing else is.
+
+| | shared edges | κ | edges cut |
+|---|---|---|---|
+| **same level** — the level crossing | **0** (fused, per `X52`) | **2** | 38 (one union) |
+| **different levels** — the bridge | **7** (a real wall on each sheet) | **1** at *both* levels | 30 + 30 (two fields) |
+
+### A level is a FILTER BEFORE the cut, not an arbitration rule after it
+
+That is the whole mechanism, and it is why different sheets *never* fuse, arbitrate or contend —
+at either level, one of the two simply is not there. It does work `κ` would otherwise have to
+(`X4`, §6.1). **A level is not a height:** the sheet is a discrete index; the actual `z` comes from
+the surface/feature interval.
+
+**Level 0 is free.** Most of a world exists only there, and the level-aware path is **byte-identical**
+to the level-blind `combine_cut` (0 diffs) — the common case pays nothing for a feature it does not
+use.
+
+**Control:** flattening the levels restores everything — fusion (`7 → 0`), contention (`κ 1 → 2`),
+and the level-crossing field reproduced exactly. Without it, §2's separation could be an artefact of
+the fixture rather than of the sheet.
+
 ## Order, and where it can go wrong
 
 ```
