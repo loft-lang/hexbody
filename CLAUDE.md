@@ -138,6 +138,29 @@ by topic without a `test` suffix (`tests/form.loft`, `tests/house.loft`), exactl
 names `tests/segmesh.loft`. This works because the `Makefile` passes **`--lib src/`**: without it
 a file in `tests/` cannot `use` a module in `src/` (*"Library 'hexform' not found"*).
 
+- **WE MAY MUTATE THE SIBLING LIBRARIES, WITH CARE** (user, 2026-07-24): *"for our work — a fully
+  functioning library for editors/games — we are allowed to mutate the current library, with
+  care."* So `hex_field` and the `loft-libs-world` chunk are **ours to change**, not another team's
+  to be asked. *"With care"* is `L11` (the lattice table has one owner) and `I-EXTEND` (a published
+  name never comes back). This unblocks `plans/lib-split/` phase 0.
+- **AND WE MUST OBEY THE SAME LIBRARY RULES AS EVERY OTHER `../loft` LIBRARY** (user, same day) —
+  inspected, not assumed (`plans/lib-split/DESIGN.md` §4b): `[library] entry` in `loft.toml`, a
+  per-library `README.md`, an **SPDX header on every source file**, a repo `LICENSE`
+  (LGPL-3.0-or-later), `tests/NN-*.loft` in the **library form** (`fn test_*` + `assert`, run by
+  `loft --interpret --tests tests`), **`LOFT_DENY_WARNINGS=1`**, and `loft test --deps`.
+  ⚠ **hexbody conforms to none of these today**, and the test form is the real gap — hexbody's 23
+  gates are the *application* form and will not run under `loft --tests`. The answer is **both**:
+  thin library-form tests for CI conformance, and the evidence-printing gates for measurement.
+  ⚠ This also **overturns** the old note that hexbody needs no `LICENSE`.
+- **LIBRARY names carry `hex_`, and it is a RULE** (user, 2026-07-24): *"the `hex_` prefix is
+  informative for our users. If we depend on hex code (the moros voxels) we adopt it."* So a
+  library that depends on hex code takes the prefix and **one that does not must not** — the prefix
+  tells a user *this brings the lattice with it*, and one that means nothing tells them nothing.
+  It joins a family that already advertises itself as one (`hex_terrain`: *"the OVERLAND terrain
+  layer of the `hex_*` family"*). Planned: `hex_form`/`hex_shape`/`hex_draw`/`hex_recover`/
+  `hex_fit`/`hex_place` (`plans/lib-split/`), all verified free in the registry. ⚠ Note the two
+  levels: **published libraries** are `hex_*` with an underscore; **internal modules** are `hex*`
+  without one.
 - **Module names**: `hex*` for geometry algorithms (`hexedge`, `hexway`, `hexroof`, `hexform`);
   `house*` for the building layer. A gate is `tests/<topic>.loft` — the module's name with any
   `hex`/`house` prefix dropped: `hexform` → `tests/form.loft`, `housedraw` → `tests/house.loft`.

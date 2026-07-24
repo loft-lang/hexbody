@@ -49,7 +49,9 @@ stable seam, without pointing `--lib` at a working tree.
 
 | Phase | Effort | Verify | Status |
 |---|---|---|---|
-| **0** — extract `hexedge`/`hexway`/`hexroof` to `loft-libs-world` | M | crawler and hexbody both consume one source; no byte drift | not started · **cross-repo, blocks 2+** |
+| **0a** — extract `hexedge`/`hexway`/`hexroof` to `loft-libs-world` | M | crawler and hexbody both consume one source; no byte drift | not started · **cross-repo, blocks 2+** |
+| **0b** — **clear `hex_field`'s warnings, add it to CI, publish it** | M | it passes `LOFT_DENY_WARNINGS=1`, enters `library-ci.yml`'s matrix, resolves from the registry | not started · **blocks 4**. `hex_field` emits **126 warning lines** per run, is the one package *missing* from the CI matrix, and is therefore unpublished — hexbody cannot publish above its own foundation ([`DESIGN.md`](DESIGN.md) §3.1, §4b.2). **We are allowed to mutate it, with care** (user) |
+| **0c** — conform to the library rules | M | `[library] entry`, per-library `README.md`, SPDX headers, repo `LICENSE`, `tests/NN-*.loft` in the **library form**, `LOFT_DENY_WARNINGS=1`, `loft test --deps` | not started. hexbody conforms to **none** of these today; the test-form gap is the one that costs thinking ([`DESIGN.md`](DESIGN.md) §4b) |
 | **1** — move `Plan` and its accessors out of `housedraw` into the model layer | S | the dependency graph loses the `shape → draw` edge; 23 gates unchanged | not started |
 | **2** — declare the libraries, one `[library]` entry each | M | each builds standalone; the layering check passes | not started |
 | **3** — hexbody's own gates consume the libraries, not `--lib src/` | S | 23/23 still green, byte-identical output | not started |
@@ -62,8 +64,7 @@ known-wrong shape, and `I-EXTEND` says a published seam cannot be taken back.
 
 - **⚠ Publishing early is the expensive mistake.** `𝕄*` grows and never shrinks; so does an API.
   Every phase before 2 is free to redo, and everything after 2 is not.
-- **⚠ The naming family is a one-way door** — [`DESIGN.md`](DESIGN.md) §3, and it is the one decision
-  in this plan I would not make alone.
+- ~~**The naming family is a one-way door**~~ **DECIDED** — `hex_*`, and the prefix is a *rule*: a library that depends on hex code carries it, one that does not must not ([`DESIGN.md`](DESIGN.md) §3). All six names verified free in the registry.
 - **`formcensus` may not belong in a shipped library at all** — [`DESIGN.md`](DESIGN.md) §4.
 
 ## See also

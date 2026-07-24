@@ -67,35 +67,128 @@ map with one operand.
 `K-FIT` *is*. Its position at the top of the layering is a property of the contract, not an
 accident of the code.
 
-## 3. ⚠ OPEN — the naming family, and it is a one-way door
+## 3. ✅ DECIDED — `hex_*`, and the prefix is a RULE, not a brand
 
-`I-EXTEND` says a published name cannot be taken back, so this is the decision I would not make
-alone.
+> *"The `hex_` prefix is informative for our users. If we depend on hex code (the moros voxels) we
+> adopt it."* — user, 2026-07-24
 
-- **(a) join the `hex_*` family** — `hex_form`, `hex_shape`, `hex_draw`, … beside `hex_grid`,
-  `hex_field`, `hex_terrain`, `hex_world`. **Recommended.** Consumers already import `hex_field`;
-  these are the same lattice family and read as continuous with it. It also survives the repo being
-  renamed, which `README.md` says is expected (*"working name — rename with one `mv`"*).
-- **(b) prefix with the repo** — `hexbody_form`, … , as moros does. Honest about provenance, but it
-  implies the libraries are about *bodies*, and five of the six are not. It also welds the seam to a
-  name the README already calls provisional.
-- **(c) one library, `hexbody`** — simplest to publish, and wrong: a consumer wanting only the
-  turtle form would take the arc recovery, the census and the pose machinery with it.
+So the answer is the `hex_*` family, and it comes with a **criterion** rather than a house style:
 
-⚠ **(a) has a collision risk worth checking before committing**: `hex_*` is a shared namespace in
-`loft-libs-world` and the registry, and these libraries would live in a *different repo*. Confirm
-with whoever owns that namespace that `hex_form` / `hex_shape` are free and welcome.
+> **A library that depends on hex code carries `hex_`. One that does not, does not.**
 
-## 4. ⚠ OPEN — does `formcensus` ship?
+That has teeth. All six proposed libraries depend on the lattice — directly on `hex_field`/`hex_grid`
+or transitively through `hex_form` — so all six take the prefix. But if hexbody ever produces
+something lattice-agnostic (a `L15` container keyed by an opaque location, say, or a pure-arithmetic
+helper), **it must not** take it: the prefix tells a user *"this is hex code, and it brings the
+lattice with it"*, and a prefix that means nothing tells them nothing.
 
-`formfit` imports it, so today it must. But the census is the machinery that *decided* law F at
-levels 1–3 (`X38`, `X42`, `X43`) — a **method**, not a runtime service — and `X45`'s constructive
-recovery is the one that reaches real houses without enumerating anything.
+**The family framing is already upstream's**, which is the strongest confirmation available:
+`hex_terrain`'s own registry description reads *"the OVERLAND terrain layer of the `hex_*` family"*.
+These libraries join a family that already exists and already advertises itself as one.
 
-If indexed recovery is a build-time/test-time tool rather than a consumer-facing one, `formcensus`
-belongs in `tests/` or a tool, and `hex_recover` sheds 378 lines and its heaviest code path.
-**Measure before deciding:** does any *consumer-shaped* call path reach `index_build`, or only the
-gates? That is a half-hour of grep and it changes a published surface.
+**Namespace checked, 2026-07-24** — `hex_form`, `hex_shape`, `hex_draw`, `hex_recover`, `hex_fit`,
+`hex_place` and `hex_ways` are **all free** in the 22-package registry.
+
+### 3.1 ⚠ But the check found a real blocker: `hex_field` is NOT PUBLISHED
+
+The registry carries `hex_grid`, `hex_terrain` and `hex_world` — **and not `hex_field`**, which is
+the one hexbody's entire geometry stands on. It exists in `loft-libs-world` with a `[library]` entry
+and is consumed by `--lib` at the working tree, exactly as hexbody is.
+
+**So hexbody cannot publish above its own foundation.** A consumer installing `hex_form` from the
+registry would need `hex_field`, which is not there. Three ways out, and it is `loft-libs-world`'s
+call, not ours:
+
+| | cost |
+|---|---|
+| **publish `hex_field`** *(recommended)* | it already has the shape; it is the smallest change and it fixes the same problem for `moros`, which depends on it too |
+| **path dependencies** | works for siblings in one workspace, and fails the moment a consumer is not a sibling — which is the whole point of `G-LIB` |
+| **vendor it** | violates `L11` outright: two copies of the lattice table that agree today and diverge silently later |
+
+**This moves in the phase order**: publishing `hex_field` is a *phase 0* item alongside extracting
+the crawler copies, and both are cross-repo.
+
+## 4. `formcensus` is TWO THINGS — measured, and the split follows the same rule
+
+The question *"does `formcensus` ship?"* was the wrong shape, and one grep showed why. Of its 20
+public functions:
+
+| | functions | verdict |
+|---|---|---|
+| **used by a library** (`formfit`) | `field_norm`, `field_norm_text`, `forms_upto` | must ship |
+| **gate-only** | `digest_text`, `form_key`, `form_key_noturn`, `count_digest`, `turns_cyclic_eq`, `turns_reverse_eq`, `forms_sides` | must not |
+| the enumerations themselves | `census_a`, `census_b` | **called only by `tests/`** |
+
+So `formcensus` holds a **digest/normalisation** half and an **exhaustive-enumeration** half, and
+they belong on opposite sides of the seam:
+
+- **The digests are library material.** `X40`'s *three digests, three questions* —
+  `field_digest` (how many shapes?), `field_exact` (is `draw` injective?), `field_norm` (which
+  stencil?) — are what `rebuild` is built on. They go to `hex_recover` with `formfit`.
+- **The enumeration is METHOD material.** `census_a`/`census_b` are how law **F** was *decided* at
+  levels 1–3 (`X38`, `X42`, `X43`). A consumer never re-decides law F; the corpus already did.
+  They belong beside the gates, not in a published surface.
+
+⚠ **The one entanglement, and it is decidable on the project's own evidence.** `formfit` uses
+`forms_upto` for **indexed recovery** (`index_build` draws each candidate once). But `X44` recorded
+that the index *"does NOT reach the house"* — it fixes per-lookup cost, not enumeration cost — and
+`X45`'s **constructive** recovery reaches strictly further, `O(cells)` and all-integer, with the miss
+asserted so the comparison is not vacuous. **So indexed recovery is a superseded path**, and
+shipping it drags the whole enumeration into the library with it.
+
+**Recommendation: `hex_recover` ships constructive recovery and the digests; indexed recovery and
+the censuses stay with the gates.** That sheds ~378 lines and the heaviest code path from a
+published surface, and it is `I-EXTEND`-safe in the only direction that matters — a name never
+published can still be published later, and one that ships can never be withdrawn.
+
+⚠ **Still a decision, not a measurement**: removing a working code path from what consumers get is a
+scope call. The evidence says the path is superseded; whether that is enough is the user's.
+
+## 4b. The library RULES — inspected, not assumed
+
+> *"We must adhere to the same library rules as all other libraries of `../loft`."* — user,
+> 2026-07-24
+
+Inspected `loft-libs-world`'s canonical `library-ci.yml` and its four packages. **hexbody conforms
+to none of it today**, and two of the gaps are load-bearing.
+
+| rule | what it is | hexbody today |
+|---|---|---|
+| **`[library] entry`** | `loft.toml` carries `[package] name/version/loft = ">=0.8"` and `[library] entry = "src/<name>.loft"` | ✗ no `[library]` at all |
+| **per-library `README.md`** | every package has one | ✗ |
+| **SPDX header on every source file** | `// Copyright (c) 2026 Jurjen Stellingwerff` + `// SPDX-License-Identifier: LGPL-3.0-or-later` | ✗ hexbody uses a purpose block and has **no `LICENSE`** — `CLAUDE.md` records that as the *application* convention, which `G-LIB` has now overturned |
+| **repo `LICENSE`** | LGPL-3.0-or-later, one per chunk repo | ✗ |
+| **⚠ the library TEST FORM** | `tests/NN-name.loft` with `fn main()` + `fn test_*()` and `assert(cond, "msg")`, run by `loft --interpret --tests tests` | ✗ **hexbody's 23 gates are the *application* form** — programs printing `=== NAME OK ===`, grepped by `tools/run_tests.sh`. They will not run under `loft --tests` |
+| **⚠ `LOFT_DENY_WARNINGS=1`** | CI sets it unless the package carries a `.allow_warnings` file | ✗ hexbody's own modules emit warnings today |
+| **`loft test --deps`** | transitive-dependency tests, to catch API drift in a dep | ✗ |
+
+### 4b.1 The test-form gap is the one that costs thinking
+
+hexbody's gate form is not a stylistic choice — it **is** the method: *a gate is a program that
+prints its evidence and ends in a marker*, with a control that must fire. Converting 23 gates to
+bare `assert()` would throw away the printed evidence that makes a red gate diagnosable.
+
+**Proposal: both, and they are not redundant.** Each published library gets `tests/NN-*.loft` in the
+library form — thin, asserting the *same* invariants — so CI runs green and a consumer can see the
+package is tested. The evidence-printing gates stay in hexbody's `tests/` and keep running under
+`make test`, because they are what actually finds defects (`X26`, `X28`, `X57` were all found by a
+gate printing a number nobody expected). The library test is the **conformance** statement; the gate
+is the **measurement**.
+
+### 4b.2 ⚠ And this explains why `hex_field` is unpublished
+
+`library-ci.yml`'s matrix is `[hex_world, hex_grid, hex_terrain]` — **`hex_field` is not in it**, and
+it carries no `.allow_warnings`. Measured from hexbody's own suite output: `hex_field` produces
+**126 warning lines** per run. So the chain is causal, not coincidental:
+
+> `hex_field` emits warnings → cannot pass `LOFT_DENY_WARNINGS=1` → left out of the CI matrix →
+> never published → **hexbody cannot publish above its own foundation** (§3.1).
+
+**And we are now allowed to fix it.** The user, same day: *"for our work — a fully functioning
+library for editors/games — we are allowed to mutate the current library, with care."* So publishing
+`hex_field` is not a request to another team; it is **our phase 0**, and the work is: clear its
+warnings, add it to the CI matrix, publish. *"With care"* is `L11` and `I-EXTEND` — the lattice table
+has one owner and a published name never comes back.
 
 ## 5. Prerequisite — three modules that are not ours
 
