@@ -1287,6 +1287,72 @@ still a claim about moros even though the rotation slot round-trips. What moved 
 **mechanism** (does the model survive storage), not the **vocabulary** (which shapes and categories
 exist). A wrong palette costs an enumeration value; a wrong storage layer would have cost the design.
 
+## The doorstep for features, arcs, levels and terrain — **DONE** *(`K-FIT` completed — `X65`, `X66`)*
+
+`ASSESSMENT.md` §5 item 2. `K-FIT` is the doorstep contract for *everything*, but `draft_fits`
+covered only the turtle form and one embedded run (`X60`). The other four had their quantisation
+**measured** (`X48`, `X49`, `X58`, `X59`) and nothing **refused** them — four silent-snap holes,
+where an off-grid value round-trips as a *different* value with `ρ = 0`.
+
+### The probe came first, and it changed the design
+
+The trap this rung existed to avoid is **inventing a restriction**: a doorstep that refuses more
+than the field distinguishes makes legal models unauthorable. So every grid was measured before any
+refusal was written — and one of them was not what the constraint said it was.
+
+| parameter | what the field actually distinguishes | doorstep |
+|---|---|---|
+| feature `t` | the stored `sr_t` set, **per side**, in **two families** | refuse + offer nearest |
+| arc radius | the realisable shells `3k²+m²` — `0, 12, 36, 48` out to 64 | refuse + offer nearest shell |
+| level | an integer index; identical at `±10⁶` | **nothing to refuse** |
+| terrain height | stored exactly (f64 in memory *and* through storage) | **nothing to refuse** |
+
+### ⚠ `X48`'s formula was half right
+
+It recorded the grid as the edge centres `(2i+1)/2n`. Measured over a 5×4 house:
+
+| side | edges | lo | hi | step | uniform | `= (2i+1)/2n` |
+|---|---|---|---|---|---|---|
+| 0 | 9 | 0.0669873 | 0.9330127 | 0.1082532 | yes | **no** |
+| 1 | 10 | 0.05 | 0.95 | 0.1 | yes | yes |
+| 2 | 9 | 0.0669873 | 0.9330127 | 0.1082532 | yes | **no** |
+| 3 | 10 | 0.05 | 0.95 | 0.1 | yes | yes |
+
+All four are uniformly spaced; only **two** match the formula. The other family is **INSET** — its
+edges span exactly **`√3/2`** of the side, spaced by `(√3/2)/(n−1)`. That is `X47`'s two families
+again, the row stagger. **Computing the grid would have refused every legal position on half the
+sides**; reading it off `side_edges` cannot. Same lesson as `SPEC` **L11**, one level up: consult
+the table that owns the answer, never keep a private copy.
+
+### The contract is `X60`'s, because it is the only one that cannot be gamed
+
+Measured against **what actually happens** — place the opening, read back which edge got it — not
+against the formula the doorstep uses, which would only prove the code agrees with itself.
+
+- **Features:** 202 authored positions over 4 sides → **0 false accepts, 0 disagreements**.
+  Control: 54 admitted, 148 refused, so neither zero is vacuous.
+- **Arcs:** radii 0..64 → 4 admitted, **0/0**. The offer is the *nearest* shell and its residual,
+  deliberately **not** the shell an unrefused value would silently have drawn (N=11 is offered 12,
+  not 0) — the author sees both candidates' cost instead of being quietly rounded down.
+
+### Where there is no grid, the doorstep says so
+
+`level_fits` and `seat_fits` accept everything, **as a measured result**. An always-true predicate
+can be kept honest exactly one way, and that is the control: the **same** doorstep must still refuse
+a bad `t` and a bad shell, so *"accepts every level"* is a statement about levels rather than about
+the checker. Making all four look symmetrical by inventing a restriction is the over-unification the
+design protocol warns about, and it was declined.
+
+### ⚠ The one fork the doorstep cannot close
+
+moros's `Hex.h_height` is an **integer**; hexbody's gated storage (`X63`) is f64. Priced rather than
+argued: **2 of the 3 seat policies produce fractional heights**, including `SEAT_MEAN` — the one
+with the *smallest* residual — so against an integral slot they truncate **silently** and `X59`'s
+returned residual would be wrong by the truncation. Three options with their costs are in
+`DESIGN.md` §10.27. Not decided here: it is the same question `X63` split when it moved the
+*mechanism* to T1 and left the *palette* at T4 — **is moros's `Hex` or hex_field's HXF the foxel of
+record?**
+
 ## Order, and where it can go wrong
 
 ```

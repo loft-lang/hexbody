@@ -2254,6 +2254,64 @@ consistent enough to state as a rule:
 > **A count that disagrees with an already-gated number by a clean factor is a bug in the counter,
 > not a discovery.** Check the new measurement against the established one before believing it.
 
+## 10.27 The doorstep completed — and ONE OPEN FORK it cannot close
+
+`K-FIT` is the doorstep contract for *everything*, but `draft_fits` implemented it only for the
+turtle form and one embedded run (`X60`). Features, arcs, levels and terrain had their quantisation
+**measured** (`X48`, `X49`, `X58`, `X59`) and nothing **refused** them — four silent-snap holes.
+`src/hexfit.loft` + `tests/fit.loft` close what can be closed (`X65`, `X66`).
+
+### The rule the module is built on
+
+**The admissible set is read off the field, never computed from a formula.** That is not a style
+preference — computing it would have been *wrong*, see the correction below. It is `SPEC` **L11**
+one level up: consult the table that owns the answer.
+
+### Where there is no grid, the doorstep says so — and that is a result
+
+Two of the four turned out to have **nothing to refuse**, and saying so in code is the honest
+outcome rather than a gap:
+
+- **A level** is an integer index used as a *filter before the cut* (`X58`). Nothing exists
+  *between* two levels, so `I-QUANT` has no purchase. Measured identical at `±10⁶`.
+- **A terrain height** is stored exactly — `Heights` is `vector<float>`, `HGHT` is 8 bytes per cell,
+  and `X63` gated that it survives storage. loft cannot even produce a non-finite one (`1.0/0.0` is
+  `float?` null, not an infinity).
+
+A doorstep that refuses more than the field distinguishes is **worse than none**: it makes legal
+models unauthorable. The temptation to invent a restriction so all four look symmetrical is exactly
+the over-unification the design protocol warns about, and it was declined.
+
+### ⚠ THE OPEN FORK — `h_height` is an integer in moros, a float here
+
+`ROUNDTRIP` §2.4 names moros's `Hex` as the schema of record, and there:
+
+```loft
+pub struct Hex {
+  h_height:        integer,      // <- INTEGER
+  ...
+```
+
+hexbody's gated storage (`X63`) is `hex_field`'s HXF, whose `HGHT` section is **8 bytes per cell**,
+f64. Both are "the foxel"; they disagree about what a height *is*.
+
+**Priced, not argued** (`tests/fit.loft` §5): on the gated slope, **2 of the 3 seat policies produce
+fractional heights** — including `SEAT_MEAN`, the one with the *smallest* residual. Against an
+integral slot those truncate **silently**, and `X59`'s returned residual would then be wrong by the
+truncation, which is precisely the failure `G5` says must be flagged rather than absorbed.
+
+| option | what it costs |
+|---|---|
+| **(a) heights stay continuous** — hexbody's HXF is the storage of record | moros's `Hex` is then *not* the schema, and `ROUNDTRIP` §2.4's wording has to move. The cheapest today, and the one the gates already describe |
+| **(b) heights quantise to an integer** — moros's `Hex` is the storage of record | `seat_fits` grows an integrality check and `seat_fit_z` an offer; `SEAT_MEAN` becomes unauthorable or must round, and the residual must absorb the rounding. Needs a **unit** decided too — an integer of *what*? `L8` gives 1 wu = 0.866 m, so an integer height is a very coarse quantum |
+| **(c) a scaled integer** — store `round(z · k)` for a fixed `k` | keeps moros's integer slot *and* a usable quantum. Needs `k` chosen and gated, and it is a real `I-QUANT` grid, so the doorstep would refuse off-grid seats and offer the nearest |
+
+**Not decided here.** `seat_fits` accepts every finite height, which is correct for the storage
+hexbody actually gates, and `seat_is_integral` exists so the fork's cost stays measurable rather
+than rhetorical. The decision belongs with whoever settles whether moros's `Hex` or hex_field's HXF
+is the foxel of record — which is the same question `X63` deliberately split when it moved the
+*mechanism* to T1 and left the *palette* at T4.
+
 ## 10.26 A6 — arcs: the centre is exact, the radius is a shell
 
 `OD-10` asked whether the **centre and radius** of a run of rounded slots are recoverable exactly

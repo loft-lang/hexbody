@@ -1,0 +1,215 @@
+// doorstep — PLOT THE ANSWER before writing any refusal: what does each of the four parameters
+// ACTUALLY distinguish?
+//
+// `ASSESSMENT.md` §5 item 2: `K-FIT` is the doorstep contract for *everything*, but `draft_fits`
+// implements it only for the turtle form and one embedded run.  Features, arcs, levels and terrain
+// have their quantisation MEASURED (`X48`, `X49`, `X58`, `X59`) but nothing REFUSES an off-grid
+// value at authoring time.  Each is a silent-snap hole (`I-QUANT` / `X50`).
+//
+// THE TRAP THIS PROBE EXISTS TO AVOID: inventing a restriction.  A doorstep that refuses more than
+// the field actually distinguishes is worse than none — it makes legal models unauthorable.  So
+// every grid below is MEASURED, and where there is no grid this probe must say so.
+//
+//   1  FEATURE t   — is it really only the edge centres (2i+1)/2n?  And what does an off-grid t do?
+//   2  ARC radius  — which radii are realisable, and what does a between-shells radius do?
+//   3  LEVEL       — is there any continuous parameter at all?  Anything to refuse?
+//   4  TERRAIN     — what does the height slot distinguish?  hex_field says float; moros says int
+use hex_field;
+use housedraw;
+use hexarc;
+use hexcombine;
+use hexseat;
+
+const W  = 41;
+const H  = 41;
+const Q0 = -20;
+const R0 = -20;
+
+fn main() {
+  println("=== doorstep probe — what does each parameter actually distinguish? ===");
+
+  // ── 1. FEATURE t ──────────────────────────────────────────────────────────
+  //
+  // `X48`: a feature's `t` is recoverable only at an edge centre `(2i+1)/2n`.  Confirm the grid,
+  // then measure what an OFF-GRID t does — the whole point is that it does not error.
+  println("");
+  println("1. FEATURE t — the grid, and what an off-grid value does");
+  p = plan_new(0, 0, 5, 4, 0, false);
+  cells = hexset_chunk(Q0, R0, W, H);
+  lb = labels_new(Q0, R0, W, H);
+  draw_floor(p, cells, lb, 9);
+  for side in 0..4 {
+    sr = side_edges(p, cells, side);
+    n = side_run_len(sr);
+    line = "   side {side}: {n} edges";
+    println(line);
+    for i in 0..n {
+      println("      i {i}: stored t {sr.sr_t[i] ?? 0.0}   formula (2i+1)/2n"
+              + " {((2 * i + 1) as float) / ((2 * n) as float)}   MATCH:"
+              + " {(sr.sr_t[i] ?? 0.0) == ((2 * i + 1) as float) / ((2 * n) as float)}");
+    }
+  }
+  // SORTED, the set rather than the index order — a run is NOT stored in t order (A5).
+  println("");
+  println("   the SET of admissible t per side, sorted, and its spacing:");
+  for side2 in 0..4 {
+    sr2 = side_edges(p, cells, side2);
+    n2 = side_run_len(sr2);
+    srt: vector<float> = [];
+    for i2 in 0..n2 { srt += [sr2.sr_t[i2] ?? 0.0]; }
+    // insertion sort — n is tiny
+    for i3 in 0..n2 {
+      for j3 in 0..n2 - 1 {
+        if (srt[j3] ?? 0.0) > (srt[j3 + 1] ?? 0.0) {
+          tmpv = srt[j3] ?? 0.0; srt[j3] = srt[j3 + 1] ?? 0.0; srt[j3 + 1] = tmpv;
+        }
+      }
+    }
+    lo = srt[0] ?? 0.0;
+    hi = srt[n2 - 1] ?? 0.0;
+    step = (hi - lo) / ((n2 - 1) as float) ?? 0.0;
+    uni = true;
+    for k3 in 0..n2 { if abs((srt[k3] ?? 0.0) - (lo + (k3 as float) * step)) > 1e-12 { uni = false; } }
+    println("      side {side2}: {n2} edges, lo {lo}, hi {hi}, span {hi - lo}, step {step},"
+            + " uniformly spaced {uni}");
+    nf = n2 as float;
+    formula = true;
+    for k4 in 0..n2 {
+      if abs((srt[k4] ?? 0.0) - ((2.0 * (k4 as float) + 1.0) / (2.0 * nf))) > 1e-12 { formula = false; }
+    }
+    println("        == (2i+1)/2n for every i: {formula}");
+    println("        span/1.0 = {hi - lo + step}  (the fraction of the side its edges cover)");
+  }
+
+  println("");
+  println("   authored t -> which edge is opened, and what t does it read back as?");
+  sr0 = side_edges(p, cells, 0);
+  n0 = side_run_len(sr0);
+  for want in [0.0, 0.1, 0.2, 0.35, 0.5, 0.7, 0.9, 1.0] {
+    // place_opening picks the edge whose stored t is NEAREST — that is the silent snap
+    best = -1;
+    bestd = 9.9;
+    for i in 0..n0 {
+      dd = abs((sr0.sr_t[i] ?? 0.0) - want);
+      if best < 0 || dd < bestd { best = i; bestd = dd; }
+    }
+    println("   t = {want}  ->  edge {best}, stored t {sr0.sr_t[best] ?? 0.0},"
+            + " residual {bestd}   ON GRID: {bestd == 0.0}");
+  }
+
+  // ── 2. ARC radius ─────────────────────────────────────────────────────────
+  //
+  // `X49`: the radius quantises to SHELLS, the realisable values of 3k^2 + m^2.
+  println("");
+  println("2. ARC radius — the realisable shells, and what a between-shells radius does");
+  shells = arc_shells_upto(64);
+  line2 = "   shells up to 64:";
+  for i in 0..len(shells) { line2 = line2 + " {shells[i] ?? 0}"; }
+  println(line2);
+  println("");
+  println("   authored N -> the disk it actually draws, and the shell that comes back");
+  for wantn in [0, 5, 12, 20, 36, 40, 48, 60] {
+    dk = hexset_chunk(Q0, R0, W, H);
+    ncell = arc_fill(0, 0, wantn, dk);
+    got = arc_shell_max(dk, 0, 0);
+    on = false;
+    for i in 0..len(shells) { if (shells[i] ?? -1) == wantn { on = true; } }
+    println("   N = {wantn:>2}  ->  {ncell:>3} cells, recovers shell {got:>2}"
+            + "   ON GRID: {on}   same field as N={got}: {got != wantn}");
+  }
+
+  // ── 3. LEVEL ──────────────────────────────────────────────────────────────
+  //
+  // Is there anything continuous here at all?  `X58`: a level FILTERS BEFORE THE CUT.  moros stores
+  // it as `ha_cy` / `ck_cy`, an integer.  If the parameter is already discrete then `I-QUANT` has
+  // nothing to say, and the honest answer is that this one needs no snap — which must be MEASURED,
+  // not assumed, because a different restriction could still exist.
+  println("");
+  println("3. LEVEL — is there a continuous parameter, or anything else to refuse?");
+  a = hexset_chunk(Q0, R0, W, H);
+  b = hexset_chunk(Q0, R0, W, H);
+  for r in 0..3 { for q in 0..3 { hexset_set(a, q, r, true); } }
+  for r in 2..5 { for q in 2..5 { hexset_set(b, q, r, true); } }
+  println("   two overlapping stencils; combine at a range of level integers:");
+  for lv in [-1000000, -7, -1, 0, 1, 7, 1000000] {
+    e1 = edgeset_new(Q0, R0, W, H);
+    nsame = combine_cut_level(a, lv, 1, b, lv, 2, lv, e1);
+    e2 = edgeset_new(Q0, R0, W, H);
+    ndiff = combine_cut_level(a, lv, 1, b, lv + 1, 2, lv, e2);
+    k = kappa_at_level(a, lv, b, lv, lv, 3, 3);
+    println("   level {lv:>8}: same-level {nsame:>3} edges, different-level {ndiff:>3} edges,"
+            + " kappa {k}");
+  }
+  println("   => a level is an INTEGER INDEX. Nothing between two levels exists to be snapped.");
+
+  // ── 4. TERRAIN height ─────────────────────────────────────────────────────
+  //
+  // THE ONE WITH A REAL DISAGREEMENT.  hex_field's `Heights` is `vector<float>` and the HXF `HGHT`
+  // section writes 8 bytes per cell (f64) — so hexbody's OWN gated storage (`X63`) keeps a height
+  // exactly as authored.  But `ROUNDTRIP` §2.4 names moros's `Hex` as the schema, and there
+  // `h_height` is an INTEGER.  Measure hexbody's side; the fork belongs in DESIGN, not in a guess.
+  println("");
+  println("4. TERRAIN height — what does the slot distinguish?");
+  hz = heights_new(Q0, R0, W, H);
+  println("   authored z -> read back from hex_field's Heights:");
+  for z in [0.0, 1.0, 1.5, 2.54, 3.14159265358979, 0.0000001, 1234567.875] {
+    height_set(hz, 0, 0, z);
+    back = height_get(hz, 0, 0);
+    println("   z = {z}  ->  {back}   EXACT: {back == z}");
+  }
+  println("");
+  println("   through STORAGE (the HXF HGHT section, 8 bytes per cell):");
+  nex = 0;
+  ntot = 0;
+  for z2 in [0.0, 1.5, 2.54, 3.14159265358979, 1234567.875] {
+    hz2 = heights_new(Q0, R0, W, H);
+    height_set(hz2, 0, 0, z2);
+    s2 = hexset_chunk(Q0, R0, W, H);
+    hexset_set(s2, 0, 0, true);
+    pth = "/tmp/hexbody-doorstep-z{ntot}.hxf";
+    doc_write(pth, s2, hz2, labels_new(Q0, R0, W, H), true, false);
+    d2 = doc_read(pth);
+    got2 = height_get(d2.doc_heights, 0, 0);
+    ntot = ntot + 1;
+    if got2 == z2 { nex = nex + 1; }
+    println("   z = {z2}  ->  {got2}   EXACT: {got2 == z2}");
+  }
+  println("   {nex} of {ntot} survive storage exactly");
+  println("");
+  println("   NON-FINITE heights — a float slot accepts them; does the field?");
+  for zb in [1.0 / 0.0, -1.0 / 0.0, 0.0 / 0.0] {
+    hz3 = heights_new(Q0, R0, W, H);
+    height_set(hz3, 0, 0, zb);
+    s3 = hexset_chunk(Q0, R0, W, H);
+    hexset_set(s3, 0, 0, true);
+    pth3 = "/tmp/hexbody-doorstep-nf{ntot}.hxf";
+    ntot = ntot + 1;
+    doc_write(pth3, s3, hz3, labels_new(Q0, R0, W, H), true, false);
+    d3 = doc_read(pth3);
+    g3 = height_get(d3.doc_heights, 0, 0);
+    // a seat residual computed against it — does the arithmetic stay meaningful?
+    fp3 = hexset_chunk(Q0, R0, W, H);
+    hexset_set(fp3, 0, 0, true);
+    println("   z = {zb}  ->  stored {g3}, equals itself {g3 == g3},"
+            + " residual {seat_residual(fp3, hz3, 0.0)}");
+  }
+
+  println("");
+  println("   the SEAT policies, and the residual each leaves (X59):");
+  terr = heights_new(Q0, R0, W, H);
+  fp = hexset_chunk(Q0, R0, W, H);
+  for r3 in 0..4 {
+    for q3 in 0..4 {
+      hexset_set(fp, q3, r3, true);
+      height_set(terr, q3, r3, 0.75 * (q3 as float));
+    }
+  }
+  for pol in [SEAT_LOW, SEAT_MEAN, SEAT_HIGH] {
+    zz = seat_height(fp, terr, pol);
+    println("   policy {pol}: seat {zz}, residual {seat_residual(fp, terr, zz)}"
+            + "   integral: {zz == (zz as integer) as float}");
+  }
+
+  println("");
+  println("READ THE ANSWER OFF THE OUTPUT. Where there is no grid, the doorstep must say so.");
+}

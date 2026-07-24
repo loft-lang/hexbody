@@ -1,7 +1,7 @@
 # ASSESSMENT — the project measured against its goals
 
 *Written 2026-07-24, from the gated state at `dd38f26` (18 green gates, `X1`–`X62`).*
-*Updated the same day: §4's "biggest risk" was gated — 19 gates, `X1`–`X64`. The original wording
+*Updated the same day: §4's "biggest risk" was gated and §5's items 1–2 are done — 20 gates, `X1`–`X66`. The original wording
 is kept visible rather than rewritten, because what it got right and wrong is the useful part.*
 
 **The question this answers**, asked by the user: *can we use this work in a friendly but powerful
@@ -62,7 +62,7 @@ what does not.
 |---|---|---|
 | **the editor** | — | **by design** (`L6`). Consumer-side. Not a hexbody defect |
 | **the coarse-quantum presentation obligation** | **[J] medium** | The user accepted the 5.408 m in-between quantum *"as long as they are clearly visible inside the editor"*. The **mechanism is gated** (`wall_snap_p`, `run_end_dist`); the **showing** is consumer-side and unbuilt. This is a promise hexbody has made and cannot itself keep |
-| **`fits?` covers form + ONE run** | **[J] high** | `K-FIT` is the doorstep contract for *everything*. `draft_fits` implements it for the turtle form and a single embedded run. **Features, arcs, levels and terrain have no doorstep** — their quantisation is measured (`X48`, `X49`, `X59`) but nothing refuses an off-grid value at authoring time. Each one is a silent-snap hole |
+| ~~**`fits?` covers form + ONE run**~~ | **CLOSED 2026-07-24** | `src/hexfit.loft` + `tests/fit.loft` (`X65`, `X66`). Features and arcs refuse off-grid values with a named reason, an offer and a residual — **0 false accepts, 0 disagreements** against what actually recovers. Levels and terrain were **measured to have nothing to refuse**, which is a result, not a gap. ⚠ One open fork: moros's `h_height` is an integer (`DESIGN.md` §10.27) |
 | **one embedded run per stencil** | **[G]** known, recorded | Several need the interior edges split into connected components first (`X60`) |
 | **L-shaped houses are not authorable** | **[G]** a real limit, written down | `I3` makes the wall the boundary of the fill, so a reflex corner enclosing no distinct cells is invisible to the field (`X46`). Not a bug — a grammar limit the editor must express |
 | **no `Plan`-as-primitive doorstep** | **[J] medium** | `Plan` is continuous-then-rasterised; `X62` measured that its corner is *quantised away*. An editor that shows the user a continuous rectangle is showing them something the field does not hold |
@@ -175,8 +175,9 @@ The round trip is closed (`M0`). The next move is a genuine fork, and it is the 
 1. ~~**Gate the foxel schema**~~ — **DONE 2026-07-24** (`X63`, `X64`, `tests/foxel.loft`). See §4.
    What is left of it is the **palette** (`X12`/`X13`), which is a vocabulary question and much
    smaller than the mechanism was.
-2. **Finish the doorstep** (`K-FIT` for features, arcs, levels, terrain). The quantisation of each
-   is already measured; what is missing is the refusal. Closes four silent-snap holes.
+2. ~~**Finish the doorstep**~~ — **DONE 2026-07-24** (`X65`, `X66`). It also **corrected `X48`**:
+   the feature grid is two families and `(2i+1)/2n` describes only one of them. What is left is the
+   `h_height` fork (`DESIGN.md` §10.27).
 3. **Start the body** (`G1`) — the first genuinely new subsystem, and the half of "hexbody" that
    does not exist yet. Largest, and `crawler` should be read first (`bodytest`).
 4. **Mesh export** — small, unblocks the "assets in a game" question directly.

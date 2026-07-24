@@ -1,0 +1,310 @@
+// fit — THE DOORSTEP GATE for features, arcs, levels and terrain (`K-FIT`, `I-QUANT`).
+//
+// `draft_fits` already gates the doorstep for the turtle form and one embedded run (`X60`).  The
+// four parameters here had their quantisation MEASURED (`X48`, `X49`, `X58`, `X59`) and never
+// REFUSED, so each was a silent-snap hole: author an off-grid value, and it round-trips as a
+// DIFFERENT value with `ρ = 0` — success reported on a model nobody wrote.
+//
+// THE CONTRACT, taken from `X60` because it is the only one that cannot be gamed:
+//
+//     the doorstep accepts EXACTLY what round-trips.
+//     0 disagreements  (it refuses something that would have worked)
+//     0 false accepts  (it admits something that does not come back)
+//
+// Measured against the real behaviour, not against the formula the doorstep uses — otherwise the
+// gate would only prove the code agrees with itself.
+//
+//   1  FEATURES — the admissible `t` is READ OFF the field, and `X48`'s formula is corrected
+//   2  FEATURES — accepts exactly what recovers, and the refusal carries an offer + residual
+//   3  ARCS — accepts exactly the realisable shells, and offers the nearest
+//   4  LEVELS — measured to have nothing to refuse, and shown not to be a vacuous `true`
+//   5  TERRAIN — the same, plus the OPEN FORK (moros's `h_height` is an integer) priced
+use hex_field;
+use housedraw;
+use hexarc;
+use hexdraft;
+use hexfit;
+use hexseat;
+use hexcombine;
+
+const W  = 41;
+const H  = 41;
+const Q0 = -20;
+const R0 = -20;
+
+fn main() {
+  ok = true;
+  println("=== fit — the doorstep for features, arcs, levels and terrain ===");
+
+  p = plan_new(0, 0, 5, 4, 0, false);
+  cells = hexset_chunk(Q0, R0, W, H);
+  lb = labels_new(Q0, R0, W, H);
+  ncell = draw_floor(p, cells, lb, 9);
+
+  // ── 1. THE ADMISSIBLE t IS READ OFF THE FIELD ─────────────────────────────
+  //
+  // `X48` recorded the grid as the edge centres `(2i+1)/2n`.  Measured, that holds for only ONE of
+  // the two side families.  This section is the correction, and it is why `feature_grid` consults
+  // `side_edges` instead of computing anything.
+  println("");
+  println("1. THE GRID — two families, and (2i+1)/2n is only one of them");
+  println("   side  edges  lo          hi          step        uniform  == (2i+1)/2n");
+  nuni = 0;
+  nformula = 0;
+  for side in 0..4 {
+    g = feature_grid(p, cells, side);
+    n = len(g);
+    srt: vector<float> = [];
+    for i in 0..n { srt += [g[i] ?? 0.0]; }
+    for i2 in 0..n {
+      for j in 0..n - 1 {
+        if (srt[j] ?? 0.0) > (srt[j + 1] ?? 0.0) {
+          sw = srt[j] ?? 0.0; srt[j] = srt[j + 1] ?? 0.0; srt[j + 1] = sw;
+        }
+      }
+    }
+    lo = srt[0] ?? 0.0;
+    hi = srt[n - 1] ?? 0.0;
+    step = (hi - lo) / ((n - 1) as float) ?? 0.0;
+    uni = true;
+    for k in 0..n {
+      if abs((srt[k] ?? 0.0) - (lo + (k as float) * step)) > 1e-12 { uni = false; }
+    }
+    formula = true;
+    for k2 in 0..n {
+      if abs((srt[k2] ?? 0.0) - ((2.0 * (k2 as float) + 1.0) / (2.0 * (n as float)))) > 1e-12 {
+        formula = false;
+      }
+    }
+    if uni { nuni = nuni + 1; }
+    if formula { nformula = nformula + 1; }
+    println("   {side:>4}  {n:>5}  {lo:<10.7}  {hi:<10.7}  {step:<10.7}  {uni:<7}  {formula}");
+  }
+  println("   {nuni} of 4 sides uniformly spaced, {nformula} of 4 match (2i+1)/2n");
+  if nuni != 4 {
+    println("  FAIL: a side's edge centres are not uniformly spaced — the grid is not what"
+            + " either family describes"); ok = false;
+  }
+  if nformula != 2 {
+    println("  FAIL: expected exactly 2 of 4 sides to match (2i+1)/2n (the tiling family)."
+            + " Got {nformula} — X48's correction no longer describes the field"); ok = false;
+  }
+  println("   => the INSET family spans exactly sqrt(3)/2 of its side, so (2i+1)/2n would refuse");
+  println("      every legal position on it. `feature_grid` reads `side_edges` and cannot.");
+
+  // ── 2. FEATURES — ACCEPTS EXACTLY WHAT RECOVERS ───────────────────────────
+  //
+  // The real contract.  For a dense sweep of authored `t`, compare the DOORSTEP's verdict against
+  // what actually happens: place the opening and read back which edge got it.  A `t` recovers
+  // exactly when the opened edge's own stored `t` IS the authored one.
+  println("");
+  println("2. FEATURES — the doorstep accepts exactly what recovers");
+  ndis = 0;
+  nfalse = 0;
+  nacc = 0;
+  ntried = 0;
+  for side2 in 0..4 {
+    g2 = feature_grid(p, cells, side2);
+    n2 = len(g2);
+    // every admissible t, and a dense sweep of inadmissible ones
+    cand: vector<float> = [];
+    for i3 in 0..n2 { cand += [g2[i3] ?? 0.0]; }
+    for s in 0..41 { cand += [(s as float) / 40.0]; }
+    for ci in 0..len(cand) {
+      t = cand[ci] ?? 0.0;
+      verdict = feature_fits(p, cells, side2, t, 1) == FIT_OK;
+      // what actually happens
+      eg = edgeset_new(Q0, R0, W, H);
+      draw_walls(cells, eg, 3);
+      place_opening(p, cells, eg, side2, t, 1, OPEN_DOOR);
+      sr = side_edges(p, cells, side2);
+      backt = -1.0;
+      for ei in 0..side_run_len(sr) {
+        if edge_mat(eg, sr.sr_qa[ei] ?? 0, sr.sr_ra[ei] ?? 0,
+                    sr.sr_qb[ei] ?? 0, sr.sr_rb[ei] ?? 0) == OPEN_DOOR {
+          backt = sr.sr_t[ei] ?? -1.0;
+        }
+      }
+      recovers = backt == t;
+      ntried = ntried + 1;
+      if verdict { nacc = nacc + 1; }
+      if verdict && !recovers { nfalse = nfalse + 1; }
+      if !verdict && recovers { ndis = ndis + 1; }
+    }
+  }
+  println("   {ntried} authored positions over 4 sides: {nacc} admitted");
+  println("   FALSE ACCEPTS (admitted but does not recover): {nfalse}");
+  println("   DISAGREEMENTS (refused but would have recovered): {ndis}");
+  if nfalse != 0 {
+    println("  FAIL: the doorstep admitted a t that snaps — the silent-snap hole is still open");
+    ok = false;
+  }
+  if ndis != 0 {
+    println("  FAIL: the doorstep refused a t that recovers exactly — it is over-refusing, which"
+            + " makes legal models unauthorable"); ok = false;
+  }
+  // CONTROL: the sweep must contain both kinds, or 0/0 proves nothing.
+  if nacc <= 0 || nacc >= ntried {
+    println("  FAIL: the sweep is all-accept or all-refuse ({nacc} of {ntried}) — 0 false accepts"
+            + " and 0 disagreements would be vacuous"); ok = false;
+  }
+  println("   CONTROL the sweep contains both: {nacc} admitted, {ntried - nacc} refused");
+
+  // the refusal owes an OFFER and a RESIDUAL (`K-FIT`)
+  println("");
+  println("   the refusal's OFFER — a raw position, the legal one it maps to, the residual:");
+  nbadoffer = 0;
+  for want in [0.0, 0.13, 0.37, 0.5, 0.61, 0.88, 1.0] {
+    off = feature_fit_t(p, cells, 0, want);
+    res = feature_fit_residual(p, cells, 0, want);
+    good = feature_fits(p, cells, 0, off, 1) == FIT_OK;
+    if !good { nbadoffer = nbadoffer + 1; }
+    println("   t {want:<5} -> offer {off:<20} residual {res:<22} the offer itself fits {good}");
+  }
+  if nbadoffer != 0 {
+    println("  FAIL: an offer was itself inadmissible — a blank no would be more honest"); ok = false;
+  }
+  println("   named reason for an off-grid t: \"{fit_reason(feature_fits(p, cells, 0, 0.37, 1))}\"");
+  if feature_fits(p, cells, 0, 0.37, 1) == FIT_OK {
+    println("  FAIL: 0.37 is on the grid, so the reason above tested nothing"); ok = false;
+  }
+  // the span restriction, and a side that carries no edges
+  println("   a 0-edge feature: {fit_reason(feature_fits(p, cells, 0, 0.5, 0))}");
+  println("   a 99-edge feature: {fit_reason(feature_fits(p, cells, 0, 0.5, 99))}");
+  println("   a non-side: {fit_reason(feature_fits(p, cells, 9, 0.5, 1))}");
+  if feature_fits(p, cells, 0, 0.5, 0) != FIT_BAD_SPAN
+     || feature_fits(p, cells, 0, 0.5, 99) != FIT_BAD_SPAN
+     || feature_fits(p, cells, 9, 0.5, 1) != FIT_NO_SIDE {
+    println("  FAIL: a span or side restriction is not named"); ok = false;
+  }
+
+  // ── 3. ARCS — ACCEPTS EXACTLY THE REALISABLE SHELLS ───────────────────────
+  //
+  // `X49`: a radius between two shells draws the disk of the shell BELOW it, so it round-trips as a
+  // different model with rho = 0.  Same contract: verdict vs what actually happens.
+  println("");
+  println("3. ARCS — the doorstep accepts exactly the realisable shells");
+  adis = 0;
+  afalse = 0;
+  aacc = 0;
+  for n24 in 0..65 {
+    verdict2 = arc_fits(n24) == FIT_OK;
+    dk = hexset_chunk(Q0, R0, W, H);
+    arc_fill(0, 0, n24, dk);
+    recovers2 = arc_shell_max(dk, 0, 0) == n24;
+    if verdict2 { aacc = aacc + 1; }
+    if verdict2 && !recovers2 { afalse = afalse + 1; }
+    if !verdict2 && recovers2 { adis = adis + 1; }
+  }
+  println("   radii 0..64: {aacc} admitted, {afalse} false accepts, {adis} disagreements");
+  if afalse != 0 || adis != 0 {
+    println("  FAIL: the arc doorstep does not match what the field distinguishes"); ok = false;
+  }
+  if aacc <= 0 || aacc >= 65 {
+    println("  FAIL: all or nothing admitted — the comparison is vacuous"); ok = false;
+  }
+  println("   the OFFER — a raw radius, the shell it maps to, the residual:");
+  nbad2 = 0;
+  for wr in [5, 11, 13, 20, 37, 40, 60] {
+    o2 = arc_fit_n(wr);
+    if arc_fits(o2) != FIT_OK { nbad2 = nbad2 + 1; }
+    println("   N {wr:>2} -> shell {o2:>2}, residual {arc_fit_residual(wr)}");
+  }
+  if nbad2 != 0 {
+    println("  FAIL: an arc offer was itself not a shell"); ok = false;
+  }
+  println("   named reason: \"{fit_reason(arc_fits(20))}\"");
+
+  // ── 4. LEVELS — NOTHING TO REFUSE, AND NOT A VACUOUS TRUE ─────────────────
+  //
+  // A level is an integer index used as a filter before the cut (`X58`), so nothing exists BETWEEN
+  // two levels to be snapped.  `level_fits` therefore returns OK always — which is a result, not an
+  // omission.  It is kept honest by the only thing that can keep an always-true predicate honest:
+  // the SAME doorstep must refuse the other parameters, so "accepts every level" is a statement
+  // about levels and not about the checker.
+  println("");
+  println("4. LEVELS — measured to have nothing to refuse");
+  a = hexset_chunk(Q0, R0, W, H);
+  b = hexset_chunk(Q0, R0, W, H);
+  for lr in 0..3 { for lq in 0..3 { hexset_set(a, lq, lr, true); } }
+  for lr2 in 2..5 { for lq2 in 2..5 { hexset_set(b, lq2, lr2, true); } }
+  nlv = 0;
+  nsame0 = -1;
+  ndiff0 = -1;
+  same_all = true;
+  for lv in [-1000000, -999, -7, -1, 0, 1, 7, 999, 1000000] {
+    e1 = edgeset_new(Q0, R0, W, H);
+    ns = combine_cut_level(a, lv, 1, b, lv, 2, lv, e1);
+    e2 = edgeset_new(Q0, R0, W, H);
+    nd = combine_cut_level(a, lv, 1, b, lv + 1, 2, lv, e2);
+    if nsame0 < 0 { nsame0 = ns; ndiff0 = nd; }
+    if ns != nsame0 || nd != ndiff0 { same_all = false; }
+    if level_fits(lv) == FIT_OK { nlv = nlv + 1; }
+  }
+  println("   9 levels across the integer range: {nlv} admitted, behaviour identical at every"
+          + " one: {same_all} (same-level {nsame0} edges, different-level {ndiff0})");
+  if nlv != 9 {
+    println("  FAIL: a level was refused, but nothing distinguishes one integer from another");
+    ok = false;
+  }
+  if !same_all {
+    println("  FAIL: behaviour varies with the level integer — then there IS something to refuse"
+            + " and `level_fits` is wrong to accept everything"); ok = false;
+  }
+  // THE CONTROL that makes "accepts everything" non-vacuous: the same doorstep refuses elsewhere.
+  refuses = feature_fits(p, cells, 0, 0.37, 1) != FIT_OK && arc_fits(20) != FIT_OK;
+  println("   CONTROL the same doorstep still refuses a bad t and a bad shell: {refuses}");
+  if !refuses {
+    println("  FAIL: the doorstep accepts everything, so 'levels have nothing to refuse' is a"
+            + " statement about the checker, not about levels"); ok = false;
+  }
+
+  // ── 5. TERRAIN — NOTHING TO REFUSE HERE, AND THE OPEN FORK PRICED ─────────
+  println("");
+  println("5. TERRAIN — the height slot is continuous, and the fork is priced not guessed");
+  hz = heights_new(Q0, R0, W, H);
+  nex = 0;
+  ntz = 0;
+  for z in [0.0, 1.0, 1.5, 2.54, 3.14159265358979, 0.0000001, 1234567.875] {
+    height_set(hz, 0, 0, z);
+    if height_get(hz, 0, 0) == z { nex = nex + 1; }
+    ntz = ntz + 1;
+    if seat_fits(z) != FIT_OK {
+      println("  FAIL: a finite height was refused, but the slot stores it exactly"); ok = false;
+    }
+  }
+  println("   {nex} of {ntz} authored heights stored exactly; all admitted");
+  if nex != ntz {
+    println("  FAIL: a height did not survive the slot — then there IS a grid here"); ok = false;
+  }
+  // THE FORK, PRICED.  moros's `Hex.h_height` is an INTEGER (`ROUNDTRIP` §2.4). If that becomes the
+  // storage of record, a fractional seat truncates — and the policy with the SMALLEST residual is
+  // exactly the one that produces fractional values. Measured rather than argued.
+  terr = heights_new(Q0, R0, W, H);
+  fp = hexset_chunk(Q0, R0, W, H);
+  for tr in 0..4 {
+    for tq in 0..4 {
+      hexset_set(fp, tq, tr, true);
+      height_set(terr, tq, tr, 0.75 * (tq as float));
+    }
+  }
+  nint = 0;
+  println("   IF moros's integer h_height became the storage of record:");
+  for pol in [SEAT_LOW, SEAT_MEAN, SEAT_HIGH] {
+    zz = seat_height(fp, terr, pol);
+    isint = seat_is_integral(zz);
+    if isint { nint = nint + 1; }
+    println("   policy {pol}: seat {zz:<8} residual {seat_residual(fp, terr, zz):<8}"
+            + " integral {isint}");
+  }
+  println("   => {nint} of 3 seat policies would survive an integral height slot;"
+          + " {3 - nint} would truncate SILENTLY. Open fork, DESIGN.md 10.27 — not guessed here.");
+  if nint == 3 {
+    println("  FAIL: every policy is integral, so the fork costs nothing and this section is"
+            + " describing a problem that does not exist"); ok = false;
+  }
+
+  println("");
+  if ok { println("=== FIT OK ==="); }
+  else { println("=== FIT BROKEN ==="); }
+}
