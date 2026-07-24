@@ -15,7 +15,7 @@ remain unstarted.
 | **done** | [`../../tests/joint.loft`](../../tests/joint.loft) ✅ — pose purity by two paths (byte-identical), the rolling identity (machine-ε), the joint doorstep. `src/hexjoint.loft` |
 | **decided** | a body is a **rig** (`⟨bones, joint limits⟩`, never a pose) · **flex is joints**, not deformation · the game's state is not the world's (`L15`) · **now** is the only tense |
 | **found by building** | the roll is **not bit-exact** — `travel → value → travel` is a float round-trip, so skid is machine-ε (the body's `ε_seam`), not the algebraic 0 the plan first claimed. Phase C, corrected |
-| **next** | the **proxy** (phase D) — the last of the four phases; then `G1` ships as a `hex_*` library |
+| **all four phases DONE** | rig text (A), pure pose (B), rolling (C), derived proxy (D). `G1` is complete; next is to **ship it as a `hex_*` library** the way the geometry did |
 
 **This plan exists because the in-flight tier had no file.** `m0-roundtrip/DESIGN.md` held M0's
 open decisions and M0 is closed, so the body's decisions were landing in `SPEC` rows and in
@@ -63,7 +63,7 @@ open decisions and M0 is closed, so the body's decisions were landing in `SPEC` 
 | **A** — the rig: `⟨bones, joint limits⟩`, its canonical text, its doorstep | M | `write(read(R)) = R` byte-for-byte; a joint value outside its limit is refused **with an offer** (`K-FIT`, and a joint value is *ordinal* so an offer is owed) | ✅ **DONE** — `Rig` = a tree of bones (parent, offset, length, joint limits); `rig_write`/`rig_read` round-trip **byte-for-byte incl. floats** (loft's float↔text is exact), a malformed text is **refused** not repaired, and `rig_admissible` is the whole-rig doorstep (topological + ordered limits). The joint doorstep half (`joint_fits`/`offer`/`residual`) was done in phase C's commit. `tests/joint.loft` §3–§4 |
 | **B** — forward kinematics: pose from joints | M | `tests/joint.loft` §1 — purity by two paths; control: an accumulating pose fails | ✅ **DONE** — `pose_of` is a pure function; two paths to a value give a **byte-identical** pose, an accumulator differs (`src/hexjoint.loft`) |
 | **C** — rolling: wheel angle `= travel/radius` | S | `tests/joint.loft` §2 — skid bounded; control: spin off-travel → `skid > 0` | ✅ **DONE** — ⚠ **and it corrected the spec**: skid is **machine-ε, not exactly 0** — the roll is a float round-trip (`travel → value → travel`), so it is the body's **sole float step** (the wheel's `ε_seam`, `I-FSEAM`/`X53`), not a `P4`-exact integer quantity. Worst 1 ulp of travel; control skids by whole units |
-| **D** — the proxy: `proxy ⊇ footprint`, overshoot ≤ ε, 12 orientations | M | `I4`'s control: shrink the proxy below the footprint → a real overlap is missed | not started |
+| **D** — the proxy: `proxy ⊇ shape`, overshoot bounded | M | `I4`'s control: shrink the proxy below the shape → a real overlap is missed | ✅ **DONE** — the proxy is **derived from the posed rig** (the founding claim, applied to the body): each bone's OBB bounds its capsule. **⊇ over 564 sampled shape points, 0 outside**; overshoot ≤ the **stated** bound `W(√2−1)`; two overlapping bodies are caught, and the `I4` control (shrink below the shape) misses the overlap. Whole-body FK composes `pose_of` up the tree, so it stays **pure** (`I6`). `tests/joint.loft` §5 |
 
 Phase A is the one that inherits M0 wholesale: a rig is a **description**, the same kind of object
 as a stencil's `Form`, so it gets a canonical text, a census if the space needs deciding, and a

@@ -239,9 +239,93 @@ fn main() {
     println("  FAIL: the doorstep admitted a non-topological rig"); ok = false;
   }
 
-  // ── 5. THE JOINT ROUND TRIP IS DISSOLVED, not asserted ────────────────────
+  // ── 5. THE PROXY — DERIVED from the posed rig, ⊇ the shape, overshoot bounded (I4) ──
+  //
+  // A body's collision proxy is derived from its geometry: each bone's SHAPE is the capsule of
+  // half-width `w` around its posed segment, and its PROXY is the OBB that bounds it.  `I4`: the
+  // proxy **⊇** the shape (never misses an overlap) and its overshoot is **bounded and stated**.
   println("");
-  println("5. the joint ROUND TRIP is DISSOLVED (I-POSE), and this gate asserts nothing about it:");
+  println("5. THE PROXY — derived from the posed rig; proxy contains the shape, overshoot bounded");
+  arm2 = rig_new();
+  arm2 = rig_bone(arm2, -1, 0.0, 0.0, 3.0, -1.0, 1.0);
+  arm2 = rig_bone(arm2, 0, 3.0, 0.0, 2.0, -0.25, 0.25);
+  vals = [0.0, 0.125];                                // root straight, child bent 1/8 turn
+  const W = 0.3;
+  o1 = bone_obb(arm2, vals, 1, W);
+  (sx0, sy0, sx1, sy1) = rig_world_seg(arm2, vals, 1);
+
+  // ⊇ and OVERSHOOT: sweep a grid over the bone's neighbourhood.  Every SHAPE point must be in the
+  // proxy (⊇); and for every PROXY point, how far outside the shape it sits is the overshoot.
+  nshape = 0;
+  nmiss = 0;
+  overshoot = 0.0;
+  for gi in 0..61 {
+    for gj in 0..41 {
+      gx = 2.0 + (gi as float) * 0.05;               // grid covering the posed bone
+      gy = -0.5 + (gj as float) * 0.05;
+      d = seg_dist(sx0, sy0, sx1, sy1, gx, gy);
+      inshape = d <= W;
+      inobb = obb_contains(o1, gx, gy);
+      if inshape {
+        nshape = nshape + 1;
+        if !inobb { nmiss = nmiss + 1; }             // a shape point outside the proxy -> ⊇ broken
+      }
+      if inobb {
+        overd = d - W;                                // how far this proxy point is outside the shape
+        if overd > overshoot { overshoot = overd; }
+      }
+    }
+  }
+  // The stated bound: an OBB corner sits `w(√2−1)` beyond the capsule's rounded cap.
+  const OVERSHOOT_BOUND = 0.12426406871192851;       // W * (sqrt(2) - 1)
+  println("   {nshape} shape points sampled, {nmiss} outside the proxy (must be 0)");
+  println("   overshoot {overshoot} <= stated bound {OVERSHOOT_BOUND} (W*(sqrt2-1)): {overshoot <= OVERSHOOT_BOUND}");
+  if nmiss != 0 {
+    println("  FAIL: the proxy does NOT contain the shape — an overlap through those points would"
+            + " be missed (I4 violated)"); ok = false;
+  }
+  if overshoot > OVERSHOOT_BOUND {
+    println("  FAIL: the proxy overshoots its shape by more than the stated bound"); ok = false;
+  }
+  if nshape < 100 {
+    println("  FAIL: too few shape points sampled — the grid does not cover the bone, so ⊇ is"
+            + " a statement about an empty set"); ok = false;
+  }
+
+  // TWO BODIES OVERLAP, and the proxy CATCHES it.  Q is a point near the edge of arm2's bone (perp
+  // offset 0.9W), so it lies IN the shape and IN the proxy.  A second body's bone passes through Q.
+  mx = (sx0 + sx1) / 2.0;
+  my = (sy0 + sy1) / 2.0;
+  perpx = 0.0 - o1.ob_uy;                             // unit perpendicular to the bone
+  perpy = o1.ob_ux;
+  qx = mx + 0.9 * W * perpx;
+  qy = my + 0.9 * W * perpy;
+  other = rig_new();
+  other = rig_bone(other, -1, 0.0, 0.0, 1.0, 0.0, 0.0);   // a lone bone through Q (posed below)
+  // place `other` so its world segment passes through Q: a horizontal bar centred on Q.
+  o2 = bone_obb(other, [0.0], 0, W);
+  // shift o2's centre to Q (the bone is at the origin; translate the OBB to Q for the test).
+  o2q = Obb { ob_cx: qx, ob_cy: qy, ob_ux: 1.0, ob_uy: 0.0, ob_hl: 0.5 + W, ob_hw: W };
+  caught = obb_contains(o1, qx, qy) && obb_contains(o2q, qx, qy);
+  println("   two bodies share Q=({qx}, {qy}); both proxies contain it -> overlap caught: {caught}");
+  if !caught {
+    println("  FAIL: a real overlap was not caught — a proxy that ⊇ the shape cannot miss a shared"
+            + " point"); ok = false;
+  }
+
+  // CONTROL (I4's own): SHRINK the proxy below the shape and the same overlap is MISSED.
+  o1shrunk = Obb { ob_cx: o1.ob_cx, ob_cy: o1.ob_cy, ob_ux: o1.ob_ux, ob_uy: o1.ob_uy,
+                   ob_hl: o1.ob_hl, ob_hw: W * 0.5 };  // half-width halved, below the shape
+  missed = !obb_contains(o1shrunk, qx, qy);
+  println("   CONTROL shrink the proxy below the shape -> the SAME overlap is missed: {missed}");
+  if !missed {
+    println("  FAIL: the control did not fire — a proxy shrunk below its shape still caught the"
+            + " overlap, so '⊇' above is not what prevents a miss"); ok = false;
+  }
+
+  // ── 6. THE JOINT ROUND TRIP IS DISSOLVED, not asserted ────────────────────
+  println("");
+  println("6. the joint ROUND TRIP is DISSOLVED (I-POSE), and this gate asserts nothing about it:");
   println("   an authored body is a RIG (bones + joint limits) and never a pose, so nothing");
   println("   recovers joints FROM a pose -- that is inverse kinematics, and the design never");
   println("   asks for it. The trip is on the rig text, phase A of plans/m1-moving-body.");

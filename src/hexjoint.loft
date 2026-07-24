@@ -214,3 +214,94 @@ pub fn rig_eq(a: Rig, b: Rig) -> boolean {
   }
   true
 }
+
+// ── THE COLLISION PROXY (phase D of plans/m1-moving-body) ────────────────────
+//
+// The project's founding claim, applied to the body: **a collision proxy is DERIVED from the
+// geometry itself**, not hand-authored.  A rig's geometry is its posed BONE SEGMENTS, so the proxy
+// is derived from those: each bone's SHAPE is the capsule (all points within a half-width `w` of
+// its segment), and its PROXY is the oriented box that bounds the capsule.  `SPEC` **I4**: a proxy
+// **⊇** its shape (never misses an overlap) and its overshoot is **bounded and stated**.
+//
+// The whole-body pose is FORWARD KINEMATICS up the tree — each bone's world frame composes its
+// parent's frame with its joint value — and it is a **PURE FUNCTION of the joint values** (`I6`),
+// because it composes `pose_of`, which is pure.  A flexing wing (more bones on more joints, `I-POSE`)
+// poses the same way; nothing here deforms.
+
+// The world segment of bone `i` at the given joint values: `(x0, y0)` its base, `(x1, y1)` its tip.
+// Composes the tree from the root (bones are topological, so ancestors are computed first).
+pub fn rig_world_seg(r: Rig, values: vector<float>, i: integer) -> (float, float, float, float) {
+  n = i + 1;
+  bx: vector<float> = [];
+  by: vector<float> = [];
+  th: vector<float> = [];
+  for k in 0..n {
+    v = values[k] ?? 0.0;
+    p = r.rg_parent[k] ?? -1;
+    if p < 0 {
+      bx += [0.0]; by += [0.0]; th += [v];
+    } else {
+      pth = th[p] ?? 0.0;
+      (rx, ry) = pose_of(pth, r.rg_ox[k] ?? 0.0, r.rg_oy[k] ?? 0.0);   // offset in parent's frame
+      bx += [(bx[p] ?? 0.0) + rx];
+      by += [(by[p] ?? 0.0) + ry];
+      th += [pth + v];                                                 // revolute joints add in 2D
+    }
+  }
+  x0 = bx[i] ?? 0.0;
+  y0 = by[i] ?? 0.0;
+  (ex, ey) = pose_of(th[i] ?? 0.0, r.rg_len[i] ?? 0.0, 0.0);           // tip = base + len along angle
+  (x0, y0, x0 + ex, y0 + ey)
+}
+
+// An oriented bounding box: centre, unit axis (along the bone), and half-extents.
+pub struct Obb {
+  ob_cx: float, ob_cy: float,   // centre
+  ob_ux: float, ob_uy: float,   // unit axis, along the segment
+  ob_hl: float,                 // half-length, along the axis
+  ob_hw: float,                 // half-width, perpendicular
+}
+
+// THE PROXY of bone `i`: the OBB that bounds its capsule of half-width `w`.  Length grows by `w`
+// at each end to cover the rounded caps; width is `w`.
+pub fn bone_obb(r: Rig, values: vector<float>, i: integer, w: float) -> Obb {
+  (x0, y0, x1, y1) = rig_world_seg(r, values, i);
+  dx = x1 - x0;
+  dy = y1 - y0;
+  seg = sqrt(dx * dx + dy * dy) ?? 0.0;
+  ux = 1.0;
+  uy = 0.0;
+  if seg > 0.000000001 { ux = dx / seg ?? 1.0; uy = dy / seg ?? 0.0; }
+  Obb { ob_cx: (x0 + x1) / 2.0, ob_cy: (y0 + y1) / 2.0,
+        ob_ux: ux, ob_uy: uy, ob_hl: seg / 2.0 + w, ob_hw: w }
+}
+
+// Is a world point inside the OBB?  Project onto the axis and its perpendicular.
+pub fn obb_contains(o: Obb, px: float, py: float) -> boolean {
+  dx = px - o.ob_cx;
+  dy = py - o.ob_cy;
+  along = dx * o.ob_ux + dy * o.ob_uy;
+  perp = 0.0 - dx * o.ob_uy + dy * o.ob_ux;
+  fabs(along) <= o.ob_hl && fabs(perp) <= o.ob_hw
+}
+
+// Distance from a point to a segment — the capsule test's core.
+pub fn seg_dist(x0: float, y0: float, x1: float, y1: float, px: float, py: float) -> float {
+  dx = x1 - x0;
+  dy = y1 - y0;
+  l2 = dx * dx + dy * dy;
+  if l2 < 0.000000000001 { return sqrt((px - x0) * (px - x0) + (py - y0) * (py - y0)) ?? 0.0; }
+  t = ((px - x0) * dx + (py - y0) * dy) / l2 ?? 0.0;
+  if t < 0.0 { t = 0.0; }
+  if t > 1.0 { t = 1.0; }
+  cx = x0 + t * dx;
+  cy = y0 + t * dy;
+  sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy)) ?? 0.0
+}
+
+// The bone's SHAPE: is a world point within `w` of its segment (inside the capsule)?
+pub fn bone_shape_has(r: Rig, values: vector<float>, i: integer, w: float,
+                      px: float, py: float) -> boolean {
+  (x0, y0, x1, y1) = rig_world_seg(r, values, i);
+  seg_dist(x0, y0, x1, y1, px, py) <= w
+}
