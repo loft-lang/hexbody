@@ -1,6 +1,8 @@
 # ASSESSMENT — the project measured against its goals
 
 *Written 2026-07-24, from the gated state at `dd38f26` (18 green gates, `X1`–`X62`).*
+*Updated the same day: §4's "biggest risk" was gated — 19 gates, `X1`–`X64`. The original wording
+is kept visible rather than rewritten, because what it got right and wrong is the useful part.*
 
 **The question this answers**, asked by the user: *can we use this work in a friendly but powerful
 editor, and as assets in a game?*
@@ -103,7 +105,16 @@ That is more than most pipelines can say.
 
 ---
 
-## 4. The biggest risk, and it is not on either list
+## 4. ~~The biggest risk~~ — GATED on 2026-07-24, and here is what is left
+
+> **UPDATE — this section's headline claim is now out of date, and deliberately left visible.**
+> The foxel was gated the same day this file was written (`X63`, `X64`, `tests/foxel.loft`). What
+> follows is the original assessment, then what actually happened. The **[J]** call was right about
+> the risk and right about the priority; it was **wrong that the schema had never been exercised as
+> a storage format** in the sense that mattered — the machinery was there, nobody had pointed a
+> gate at it.
+
+**The original claim:**
 
 > **The foxel schema is still T4.** `layer* × point → (height, material, wall1, wall2, wall3,
 > item)` — `X11`–`X15`, *shape real, behaviour unverified*.
@@ -125,15 +136,45 @@ repo has been dragged to T1; this one has not, and it is the one underneath all 
 
 **[J] If I could gate one more thing, it would be this**, ahead of any new feature.
 
+### What happened when it was gated
+
+**[G] The schema held, in every slot.** Footprint → `OCCU`, `height` → `HGHT`, `material` → `LABL`,
+`wall1..3` → `EDGE` (the halo grid, literally ×3 per cell), `item` + rotation → a named `LAYR`
+section, and `layer*` — the **storey** sense — is **N documents, not a section**. All compared
+exactly after a write/read: **0 diffs everywhere**. And the whole model trip crosses:
+`write(rebuild(load(store(draw(read(T)))))) = T` **byte-for-byte, 6 of 6** in-between directions.
+
+**[G] `X15`'s lossy writer is now a live control.** moros's own admission was that its writer
+*"never builds an `EdgeSet`"*; reproduced here (`has_e = false`) it returns **0 of 38** edges and
+**breaks the trip**, while still carrying the footprint — so it is the *documented* loss, not a
+broken write. That is the control moros's own test could not fire.
+
+**[G] The gating found a second thing, and it bit this gate first.** `doc_write` **appends**: a
+reused path leaves the second document unreachable and the reader returns the **first** with
+`doc_code == HXF_OK` (`X64`). Worse, the obvious instrument for detecting it — write twice, compare
+byte lengths — reads **0 and 0**, because **`file().content()` returns empty for non-UTF-8 bytes,
+silently** (loft, both backends; filed as `crawler/LOFT-HANDOFF.md` **H7**). `0 == 0 * 2` is a
+vacuously true *"it appended"*, and this gate **printed exactly that** before it was caught. Both
+are now `SPEC` **L12**.
+
+**[G] What is still T4, and the split matters.** `X63` did **not** touch the **palette**: `X12`
+(`wd_body`, `wd_thickness`) and `X13` (`ItemDef` / `MaterialDef` categories) are untouched by any
+gate here, and `X14`'s *5-bit, 0–23* is still a claim about moros even though the rotation slot
+round-trips. **Cite the split, never "the foxel is gated".**
+
+**[J] The residual risk is much smaller and has moved.** What is unverified is now a *vocabulary*
+(which body shapes and categories exist), not a *mechanism* (whether the model survives storage).
+A wrong palette costs an enumeration value; a wrong storage layer would have cost the design.
+
 ---
 
 ## 5. Where to pick up
 
 The round trip is closed (`M0`). The next move is a genuine fork, and it is the user's:
 
-1. **Gate the foxel schema** (`X11`–`X15`, T4 → T1). Smallest, and it is under everything else.
-   Write a foxel, read it back, check the field is identical; control = drop a slot and watch it
-   break. **[J] my recommendation.**
+1. ~~**Gate the foxel schema**~~ — **DONE 2026-07-24** (`X63`, `X64`, `tests/foxel.loft`). See §4.
+   What is left of it is the **palette** (`X12`/`X13`), which is a vocabulary question and much
+   smaller than the mechanism was.
 2. **Finish the doorstep** (`K-FIT` for features, arcs, levels, terrain). The quantisation of each
    is already measured; what is missing is the refusal. Closes four silent-snap holes.
 3. **Start the body** (`G1`) — the first genuinely new subsystem, and the half of "hexbody" that

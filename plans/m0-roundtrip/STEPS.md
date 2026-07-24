@@ -1222,6 +1222,71 @@ exists. The field holds only the **cell-region** corner, and the miter recovers 
 `make shot` now draws the miter-to-miter segment (`surface_quad`), with each feature as an interval
 on that surface. The rot-0 panels close cleanly; the closure itself is gated over all 12.
 
+## The foxel as a STORAGE format — **DONE** *(the last T4 mechanism — `X63`, `X64`)*
+
+`ASSESSMENT.md` §4 named this the largest single risk: the schema every design argument is written
+against had never been exercised as *storage*. It is the layer that closed OD-2/3/4/6/7/8, and every
+*"the feature lands in a slot the recovery does not read"* result (`X51`, `X58`, `X59`, `X60`) is an
+argument **about slots in it**.
+
+### The question `X15` could not ask
+
+moros's own comment is the warning: its Map↔`hex_field` round trip is **lossy** — *"items, item
+rotation and the three wall bytes do NOT [cross] … this writer … never builds an `EdgeSet`"* — and
+the test that should catch it *"was written to fail 'the day a section appears', but it watches our
+round trip, and our round trip drops the walls before the format ever sees them — so the section
+appeared and the test stayed green."* A gate that cannot fire is not a gate.
+
+`hex_field`'s `05-edges.loft` already gates that **one wall** crosses the format. That is the
+*format's* gate. The open question was whether the **model** crosses.
+
+### The slot inventory — all six, by the real pipeline
+
+| foxel slot | HXF section | result |
+|---|---|---|
+| (footprint) | `OCCU` | 0 diffs |
+| `height` | `HGHT` | 0 diffs |
+| `material` | `LABL` | 0 diffs |
+| `wall1..3` | `EDGE` — the halo grid, literally ×3 per cell | identical |
+| `item` + rotation | a **named `LAYR`** section | 27/27 |
+| `layer*` (the **storey**) | **N documents, not a section** | both load, distinct |
+
+And the prize — the whole trip through storage:
+
+    write(rebuild(load(store(draw(read(T)))))) = T      byte-for-byte, 6 of 6
+
+`Draft` is the vehicle because it is the **only** model whose recovery reads *both* cells and edges,
+so a dropped wall surfaces as a **text diff** rather than a smaller number. The rim survives too:
+a building that *is* the chunk boundary keeps 46/46 halo edges, which is exactly where the format's
+own comment warns walls silently open.
+
+### The control is `X15` itself, reproduced
+
+`has_e = false` — moros's writer, exactly — returns **0 of 38** edges and **breaks the trip**, while
+still carrying the footprint (0 cell diffs) so it is the *documented* loss and not a broken write.
+`has_h`/`has_l = false` give 27 diffs each.
+
+### ⚠ The gate printed a vacuously true claim before it was caught
+
+Section 0 measures a real footgun: **`doc_write` APPENDS**, so a reused path leaves the second
+document unreachable and the reader returns the **first** with `doc_code == HXF_OK`. The probe hit
+this and reported *1 of 6* directions surviving storage — a count off an established one (6/6 in
+memory) by a suspicious factor, which is the standing rule, and it was the counter.
+
+The sharper half is the **instrument**: the obvious way to detect an append is *write twice, compare
+byte lengths*. That reads **0 and 0** — because **`file().content()` returns empty for non-UTF-8
+bytes, silently** (loft, both backends; filed as `crawler/LOFT-HANDOFF.md` **H7**). So
+`0 == 0 * 2` is a **vacuously true** *"it appended"*, and this gate **printed exactly that**. The
+cell count is a real instrument; a byte length is not available at all. Both are now `SPEC` **L12**.
+
+### ⚠ Cite the SPLIT, never "the foxel is gated"
+
+`X63` does **not** touch the **palette**. `X12` (`wd_body`, `wd_thickness`) and `X13` (`ItemDef` /
+`MaterialDef` categories) are untouched by any gate here and stay **T4**; `X14`'s *5-bit, 0–23* is
+still a claim about moros even though the rotation slot round-trips. What moved from T4 to T1 is the
+**mechanism** (does the model survive storage), not the **vocabulary** (which shapes and categories
+exist). A wrong palette costs an enumeration value; a wrong storage layer would have cost the design.
+
 ## Order, and where it can go wrong
 
 ```

@@ -1,0 +1,396 @@
+// foxel — THE STORAGE GATE.  `X11`–`X15` were the last T4 block; this is where they get measured.
+//
+// The foxel is the schema the whole design is written against (`ROUNDTRIP` §2.4):
+//
+//     foxel  =  layer*  x  point -> ( height, material, wall1, wall2, wall3, item )
+//
+// It closed OD-2/3/4/6/7/8, and every "the feature lands in a slot the recovery does not read"
+// result (`X51` door, `X58` level, `X59` terrain, `X60` run) is an argument ABOUT slots in it.
+// Its SHAPE was read off moros's untested code; its BEHAVIOUR had never been measured here.
+//
+// `X15` is the warning, and it is moros's OWN written admission: the Map<->hex_field round trip is
+// LOSSY — *"items, item rotation and the three wall bytes do NOT [cross] … this writer calls the
+// cells/heights/labels form of `doc_write` and never builds an `EdgeSet`"* — and the test that
+// should catch it *"was written to fail 'the day a section appears', but it watches our round trip,
+// and our round trip drops the walls before the format ever sees them — so the section appeared and
+// the test stayed green."*  A gate that cannot fire is not a gate.  This one fires.
+//
+//   0  THE INSTRUMENT — `doc_write` APPENDS.  Gated first, because every section below depends on
+//      reading back what it just wrote, and a stale read looks exactly like a pass
+//   1  the SLOT INVENTORY — all six slots populated, written, read back, compared exactly
+//   2  the FULL TRIP THROUGH STORAGE — text -> field -> FILE -> field -> text, byte-for-byte
+//   3  the HALO TRAP — a wall on the chunk rim, which the format's own comment warns about
+//   4  the CONTROLS — moros's documented lossy path must BREAK each slot and break THE TRIP
+//   5  item and layer* — the two slots with no tag of their own, measured not asserted
+//
+// NOT what this gate is.  hex_field's `05-edges.loft` already gates that ONE wall crosses the
+// format; that is the FORMAT's gate and it is upstream.  This asks whether the MODEL crosses —
+// every slot, and whether `rebuild` still returns the authored text afterwards.
+use hex_field;
+use hexform;
+use formtext;
+use formfit;
+use housedraw;
+use hexwall;
+use hexdraft;
+
+const W  = 41;
+const H  = 41;
+const Q0 = -20;
+const R0 = -20;
+
+const WALLMAT  = 3;
+const EMBEDMAT = 5;
+const FLOORMAT = 9;
+const ITEMVAL  = 42;
+const ITEMROT  = 17;      // X14: items carry a 5-bit rotation, 0..23
+
+fn tmp(name: text) -> text { "/tmp/hexbody-foxel-{name}.hxf" }
+
+fn cells_diff(a: HexSet, b: HexSet) -> integer {
+  n = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      if hexset_get(a, q, r) != hexset_get(b, q, r) { n = n + 1; }
+    }
+  }
+  n
+}
+
+fn heights_diff(a: Heights, b: Heights) -> integer {
+  n = 0;
+  for hr in R0..R0 + H {
+    for hq in Q0..Q0 + W {
+      if height_get(a, hq, hr) != height_get(b, hq, hr) { n = n + 1; }
+    }
+  }
+  n
+}
+
+fn labels_diff(a: Labels, b: Labels) -> integer {
+  n = 0;
+  for lr in R0..R0 + H {
+    for lq in Q0..Q0 + W {
+      if label_get(a, lq, lr) != label_get(b, lq, lr) { n = n + 1; }
+    }
+  }
+  n
+}
+
+// A legal anchor for a run of `p` periods in direction `d`, wholly inside the footprint — the
+// `X60` doorstep, searched rather than guessed (guessing it produced two fixture bugs once).
+fn find_anchor(src: text, d: integer, p: integer) -> (integer, integer, boolean) {
+  for ta in -14..15 {
+    for tb in -14..15 {
+      cand = draft_new(form_read(src), d, ta, tb, p);
+      probe = hexset_chunk(Q0, R0, W, H);
+      form_fill(form_read(src), 0, 0, probe);
+      if draft_fits(cand, probe) == FIT_OK { return (ta, tb, true); }
+    }
+  }
+  (0, 0, false)
+}
+
+fn main() {
+  ok = true;
+  println("=== foxel — the schema as a STORAGE format (X11-X15) ===");
+
+  // ── 0. THE INSTRUMENT — `doc_write` APPENDS ───────────────────────────────
+  //
+  // Gated FIRST and on purpose.  Every section below writes a document and reads it back; if a
+  // write did not land where the read looks, "identical" would mean "I compared the old bytes to
+  // themselves".  That is `X15`'s own failure shape one level down, and it is not hypothetical:
+  // this gate's probe reported 1 of 6 directions surviving storage until the reused path was
+  // found.  So the hazard is measured, named, and worked around explicitly.
+  println("");
+  println("0. THE INSTRUMENT — doc_write APPENDS, so a reused path returns the FIRST document");
+  a0 = hexset_chunk(Q0, R0, W, H);
+  hexset_set(a0, 0, 0, true);
+  b0 = hexset_chunk(Q0, R0, W, H);
+  hexset_set(b0, 0, 0, true);
+  hexset_set(b0, 1, 0, true);
+  hexset_set(b0, 2, 0, true);
+  hz0 = heights_new(Q0, R0, W, H);
+  lb0 = labels_new(Q0, R0, W, H);
+  //
+  // MEASURED BY CELL COUNT, NOT BY FILE SIZE, and that is not a style choice: `file(p).content()`
+  // returns EMPTY for a file that is not valid UTF-8 — silently, with no error — so a byte-length
+  // instrument reads 0 here and `0 == 0 * 2` would be a vacuously true "it appended".  This gate
+  // printed exactly that before it was caught.  Filed upstream (`crawler/FILING.md`); loft is
+  // consumer-only from here.  The cell count is a real instrument: the two documents differ in it.
+  doc_write(tmp("app"), a0, hz0, lb0, false, false);
+  doc_write(tmp("app"), b0, hz0, lb0, false, false);
+  stale = doc_read(tmp("app"));
+  println("   wrote a 1-cell document then a 3-cell one to the SAME path");
+  println("   the reader returns code {stale.doc_code} (0 = OK, NOT an error) with"
+          + " {hexset_count(stale.doc_cells)} cells — the FIRST document, not the second (3)");
+  if hexset_count(stale.doc_cells) != 1 {
+    println("  FAIL: the reader did not return the FIRST document ({hexset_count(stale.doc_cells)}"
+            + " cells) — section 0 no longer describes the format, and this gate's reasoning about"
+            + " paths is stale. Re-read it before trusting any number below."); ok = false;
+  }
+  // CONTROL: a FRESH path must return the second document, or "returns the first" is vacuous —
+  // it would just mean the writer never wrote anything.
+  doc_write(tmp("app-fresh"), b0, hz0, lb0, false, false);
+  fresh = doc_read(tmp("app-fresh"));
+  println("   CONTROL the same write to a FRESH path: {hexset_count(fresh.doc_cells)} cells"
+          + " (must be 3)");
+  if hexset_count(fresh.doc_cells) != 3 {
+    println("  FAIL: control did not fire — the writer is not writing at all, so section 0"
+            + " measured nothing"); ok = false;
+  }
+  println("   => EVERY write below goes to its own path. `tools/run_tests.sh` clears them first.");
+
+  // ── the model: a house with every slot populated ──────────────────────────
+  //
+  // The real pipeline, not a synthetic fixture, so each slot carries what the design says it
+  // carries: footprint in OCCU, floor material in LABL, walls in EDGE (three per cell — that IS
+  // wall1..3), roof in HGHT, and an item layer for `h_item` / `h_item_rotation`.
+  p = plan_new(0, 0, 5, 4, 0, false);
+  cells = hexset_chunk(Q0, R0, W, H);
+  lb = labels_new(Q0, R0, W, H);
+  hz = heights_new(Q0, R0, W, H);
+  eg = edgeset_new(Q0, R0, W, H);
+  ly = layers_new(Q0, R0, W, H);
+  layer_add(ly, "item");
+  layer_add(ly, "item_rot");
+
+  ncell = draw_floor(p, cells, lb, FLOORMAT);
+  nwall = draw_walls(cells, eg, WALLMAT);
+  place_opening(p, cells, eg, 0, 0.5, 1, OPEN_DOOR);
+  place_opening(p, cells, eg, 2, 0.35, 2, OPEN_WINDOW);
+  draw_roof(p, cells, hz, 2.54, 1.0, 0);
+  nitem = 0;
+  for ir in R0..R0 + H {
+    for iq in Q0..Q0 + W {
+      if hexset_get(cells, iq, ir) {
+        layer_set(ly, "item", iq, ir, ITEMVAL);
+        layer_set(ly, "item_rot", iq, ir, ITEMROT);
+        nitem = nitem + 1;
+      }
+    }
+  }
+
+  // ── 1. THE SLOT INVENTORY ─────────────────────────────────────────────────
+  println("");
+  println("1. THE SLOT INVENTORY — every foxel slot written, read back, compared exactly");
+  println("   the model: {ncell} cells, {nwall} wall edges, a door, a 2-edge window, a roof,"
+          + " {nitem} items");
+  doc_write_all(tmp("full"), cells, hz, lb, eg, ly, true, true, true);
+  d = doc_read(tmp("full"));
+  if d.doc_code != HXF_OK {
+    println("  FAIL: the document was refused, code {d.doc_code}"); ok = false;
+  }
+  dcell = cells_diff(cells, d.doc_cells);
+  dhz = heights_diff(hz, d.doc_heights);
+  dlb = labels_diff(lb, d.doc_labels);
+  dedge = edgeset_equal(eg, d.doc_edges);
+  nback = 0;
+  nrot = 0;
+  for jr in R0..R0 + H {
+    for jq in Q0..Q0 + W {
+      if layer_get(d.doc_layers, "item", jq, jr) == ITEMVAL { nback = nback + 1; }
+      if layer_get(d.doc_layers, "item_rot", jq, jr) == ITEMROT { nrot = nrot + 1; }
+    }
+  }
+  println("");
+  println("   foxel slot     HXF section          survives");
+  println("   ------------   ------------------   --------------------------------");
+  println("   (footprint)    OCCU                 {dcell} diffs");
+  println("   height         HGHT                 {dhz} diffs");
+  println("   material       LABL                 {dlb} diffs");
+  println("   wall1..3       EDGE (halo, x3)      identical {dedge}");
+  println("   item           LAYR 'item'          {nback} of {nitem}");
+  println("   item rotation  LAYR 'item_rot'      {nrot} of {nitem}  (X14: 0..23)");
+  println("   layer*         one document/sheet   section 5");
+  println("   sections read back: h {d.doc_has_h}  l {d.doc_has_l}  e {d.doc_has_e},"
+          + " {layer_count(d.doc_layers)} named layers, {d.doc_skipped} skipped");
+  if dcell != 0 || dhz != 0 || dlb != 0 || !dedge {
+    println("  FAIL: a foxel slot did not survive the storage round trip"); ok = false;
+  }
+  if nback != nitem || nrot != nitem {
+    println("  FAIL: the item layers did not survive — {nback}/{nrot} of {nitem}"); ok = false;
+  }
+  // The model must actually EXERCISE every slot, or "0 diffs" is 0 diffs over nothing — the `X15`
+  // mistake in its purest form (a green test whose subject was never written).
+  if ncell <= 0 || nwall <= 0 || nitem <= 0 {
+    println("  FAIL: the fixture is empty in some slot — 0 diffs would prove nothing"); ok = false;
+  }
+  nz = 0;
+  for zr in R0..R0 + H {
+    for zq in Q0..Q0 + W { if height_get(hz, zq, zr) != 0.0 { nz = nz + 1; } }
+  }
+  println("   the fixture is non-empty in every slot: cells {ncell}, walls {nwall},"
+          + " non-zero heights {nz}, items {nitem}");
+  if nz <= 0 {
+    println("  FAIL: every height is zero — HGHT's 0 diffs would be vacuous"); ok = false;
+  }
+
+  // ── 2. THE FULL TRIP THROUGH STORAGE ──────────────────────────────────────
+  //
+  //     write(rebuild(LOAD(STORE(draw(read(T)))))) == T
+  //
+  // A `Draft` (form + embedded run, `X60`) is the right vehicle because it is the only model whose
+  // recovery reads BOTH cells and edges — so a storage path that drops the walls surfaces as a
+  // TEXT DIFF, not as a quietly smaller number.  That is exactly the hole `X15` describes.
+  println("");
+  println("2. THE FULL TRIP THROUGH STORAGE — write(rebuild(load(store(draw(read(T)))))) == T");
+  src = "stencil h4 h0 0\nside 0 len 4 turn 2\nside 1 len 4 turn 2\nside 2 len 4 turn 2"
+        + "\nside 3 len 4 turn 2\nside 4 len 4 turn 2\nside 5 len 4 turn 2";
+  nfit = 0;
+  nmem = 0;
+  nstore = 0;
+  for dd in [1, 3, 5, 7, 9, 11] {
+    (fa, fb, got) = find_anchor(src, dd, 1);
+    if !got { println("   d {dd}: no legal anchor — the fixture cannot test this direction"); }
+    else {
+      nfit = nfit + 1;
+      s = draft_new(form_read(src), dd, fa, fb, 1);
+      auth = draft_write(s, "h4");
+      dc = hexset_chunk(Q0, R0, W, H);
+      de = edgeset_new(Q0, R0, W, H);
+      draft_draw(s, 0, 0, dc, de, WALLMAT, EMBEDMAT);
+      // the in-memory baseline (`X60`) — if this ever drops, the storage number means nothing
+      if draft_rebuild_text(dc, de, "h4", EMBEDMAT) == auth { nmem = nmem + 1; }
+      // THROUGH STORAGE — its own path, per section 0
+      doc_write_all(tmp("draft{dd}"), dc, heights_new(Q0, R0, W, H),
+                    labels_new(Q0, R0, W, H), de, layers_new(Q0, R0, W, H), false, false, true);
+      rd = doc_read(tmp("draft{dd}"));
+      via = draft_rebuild_text(rd.doc_cells, rd.doc_edges, "h4", EMBEDMAT);
+      if via == auth { nstore = nstore + 1; }
+      else {
+        println("   d {dd} DIFF through storage:");
+        println("     want: {auth.replace(\"\\n\", \" | \")}");
+        println("     got:  {via.replace(\"\\n\", \" | \")}");
+      }
+    }
+  }
+  println("   {nfit} in-between directions fit; {nmem} round-trip in memory;"
+          + " {nstore} round-trip THROUGH STORAGE");
+  if nfit != 6 {
+    println("  FAIL: the doorstep no longer admits all 6 sampled directions ({nfit})"); ok = false;
+  }
+  if nmem != nfit {
+    println("  FAIL: the in-memory trip regressed — that is X60, not storage"); ok = false;
+  }
+  if nstore != nfit {
+    println("  FAIL: the model does not survive storage — a slot the recovery reads was lost");
+    ok = false;
+  }
+
+  // ── 3. THE HALO TRAP ──────────────────────────────────────────────────────
+  //
+  // The EDGE payload is the HALO grid (gw*gh*3, gw = w+2) because an edge on the chunk boundary
+  // belongs to a cell OUTSIDE the chunk.  The format's own comment: dropping those "would silently
+  // open the walls of every stamped building's rim".  So: a building that IS the rim.
+  println("");
+  println("3. THE HALO TRAP — a building whose every wall sits on the chunk boundary");
+  hq = Q0;
+  hr = R0;
+  small = hexset_chunk(hq, hr, 6, 6);
+  smalle = edgeset_new(hq, hr, 6, 6);
+  for rr in hr..hr + 6 { for qq in hq..hq + 6 { hexset_set(small, qq, rr, true); } }
+  nrim = draw_walls(small, smalle, WALLMAT);
+  doc_write_edges(tmp("halo"), small, heights_new(hq, hr, 6, 6), labels_new(hq, hr, 6, 6),
+                  smalle, false, false, true);
+  hd2 = doc_read(tmp("halo"));
+  println("   a fully-filled 6x6 chunk: {nrim} rim wall edges written,"
+          + " {edgeset_count_all(hd2.doc_edges)} read back, identical"
+          + " {edgeset_equal(smalle, hd2.doc_edges)}");
+  if !edgeset_equal(smalle, hd2.doc_edges) {
+    println("  FAIL: the rim walls did not survive — the halo was dropped"); ok = false;
+  }
+  if nrim <= 0 {
+    println("  FAIL: no rim walls were written, so this section tested nothing"); ok = false;
+  }
+
+  // ── 4. THE CONTROLS — moros's DOCUMENTED lossy path must break each slot ──
+  //
+  // `X15`: moros's writer "calls the cells/heights/labels form of `doc_write` and never builds an
+  // EdgeSet".  That is `has_e = false`.  Reproduced exactly.  This is the control moros's own test
+  // could not fire, because its round trip dropped the walls before the format saw them.
+  println("");
+  println("4. CONTROLS — the DOCUMENTED lossy path (X15) must break each slot, and THE TRIP");
+  doc_write_all(tmp("noe"), cells, hz, lb, eg, ly, true, true, false);
+  ne = doc_read(tmp("noe"));
+  println("   has_e = false (moros's writer): has_e {ne.doc_has_e}, identical"
+          + " {edgeset_equal(eg, ne.doc_edges)}, {edgeset_count_all(ne.doc_edges)} of"
+          + " {edgeset_count_all(eg)} edges back");
+  if edgeset_equal(eg, ne.doc_edges) {
+    println("  FAIL: control did not fire — dropping the EDGE section changed nothing, so"
+            + " section 1's wall result proves nothing"); ok = false;
+  }
+  doc_write_all(tmp("noh"), cells, hz, lb, eg, ly, false, true, true);
+  nh = doc_read(tmp("noh"));
+  println("   has_h = false: {heights_diff(hz, nh.doc_heights)} height diffs (must be > 0)");
+  if heights_diff(hz, nh.doc_heights) <= 0 {
+    println("  FAIL: control did not fire — dropping HGHT changed nothing"); ok = false;
+  }
+  doc_write_all(tmp("nol"), cells, hz, lb, eg, ly, true, false, true);
+  nl = doc_read(tmp("nol"));
+  println("   has_l = false: {labels_diff(lb, nl.doc_labels)} material diffs (must be > 0)");
+  if labels_diff(lb, nl.doc_labels) <= 0 {
+    println("  FAIL: control did not fire — dropping LABL changed nothing"); ok = false;
+  }
+  // AND THE TRIP ITSELF must fail through that path — a count that shrank is weaker evidence than
+  // the authored text failing to come back.
+  (la, lbb, lgot) = find_anchor(src, 1, 1);
+  ls = draft_new(form_read(src), 1, la, lbb, 1);
+  lauth = draft_write(ls, "h4");
+  ldc = hexset_chunk(Q0, R0, W, H);
+  lde = edgeset_new(Q0, R0, W, H);
+  draft_draw(ls, 0, 0, ldc, lde, WALLMAT, EMBEDMAT);
+  doc_write_all(tmp("lossy"), ldc, heights_new(Q0, R0, W, H), labels_new(Q0, R0, W, H),
+                lde, layers_new(Q0, R0, W, H), false, false, false);
+  lr = doc_read(tmp("lossy"));
+  lossy = draft_rebuild_text(lr.doc_cells, lr.doc_edges, "h4", EMBEDMAT);
+  println("   THE TRIP through the lossy path: matches authored {lossy == lauth}"
+          + " (must be false — the `wall` line is dropped)");
+  if !lgot {
+    println("  FAIL: no anchor for the lossy control, so it tested nothing"); ok = false;
+  }
+  if lossy == lauth {
+    println("  FAIL: control did not fire — the trip survived a path that drops the walls,"
+            + " so section 2 is measuring something other than the walls"); ok = false;
+  }
+  // and the footprint must still come back, or the control is "the file was empty"
+  println("   CONTROL the lossy path still carries the CELLS:"
+          + " {cells_diff(ldc, lr.doc_cells)} diffs (must be 0 — it lost the walls, not the file)");
+  if cells_diff(ldc, lr.doc_cells) != 0 {
+    println("  FAIL: the lossy path lost the footprint too — then it is a broken write, not the"
+            + " documented lossy path"); ok = false;
+  }
+
+  // ── 5. item AND layer* — the two slots with no tag of their own ───────────
+  //
+  // Measured, not asserted.  `item` rides a NAMED LAYR section (gated in section 1).  `layer*` is
+  // the STOREY sense (`ROUNDTRIP` §2.4.0) and the document has no `cy`: q0/r0/w/h is ONE sheet.
+  // So a multi-storey model is N documents, which is a real answer and not a gap.
+  println("");
+  println("5. layer* — the STOREY axis is N documents, not a section");
+  up = hexset_chunk(Q0, R0, W, H);
+  upe = edgeset_new(Q0, R0, W, H);
+  pu = plan_new(0, 0, 3, 3, 0, false);
+  draw_floor(pu, up, labels_new(Q0, R0, W, H), FLOORMAT);
+  draw_walls(up, upe, WALLMAT);
+  doc_write_edges(tmp("storey0"), cells, hz, lb, eg, true, true, true);
+  doc_write_edges(tmp("storey1"), up, hz, lb, upe, false, false, true);
+  z0 = doc_read(tmp("storey0"));
+  z1 = doc_read(tmp("storey1"));
+  println("   storey 0: {hexset_count(z0.doc_cells)} cells, storey 1:"
+          + " {hexset_count(z1.doc_cells)} cells; both loaded"
+          + " {z0.doc_code == HXF_OK && z1.doc_code == HXF_OK}");
+  println("   the two sheets are DISTINCT: {cells_diff(z0.doc_cells, z1.doc_cells) > 0}"
+          + " — a storey is addressed by which file you open, exactly as moros's `cy` indexes"
+          + " which chunk you fetch");
+  if z0.doc_code != HXF_OK || z1.doc_code != HXF_OK {
+    println("  FAIL: a storey document was refused"); ok = false;
+  }
+  if cells_diff(z0.doc_cells, z1.doc_cells) <= 0 {
+    println("  FAIL: the two storeys are identical, so 'distinct sheets' tested nothing"); ok = false;
+  }
+
+  println("");
+  if ok { println("=== FOXEL OK ==="); }
+  else { println("=== FOXEL BROKEN ==="); }
+}

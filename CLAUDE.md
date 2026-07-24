@@ -38,9 +38,10 @@ crawler's prototypes and design docs are **design tries** — input, not authori
 | **T3 · designed** | a doc argues a construction | **input to design, never truth** |
 | **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
 
-**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X62`** — eight of them re-measured *here*, and
+**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X64`** — eight of them re-measured *here*, and
 `X26`–`X31` **discovered here**. Everything else the design leans on is still a try or a schema
-(notably the whole foxel schema, `X11`–`X15`), and the census is where it gets re-measured. Citing a T2 number as settled is
+(the foxel **palette**, `X12`/`X13` — the schema's *storage* half is now T1 via `X63`), and the
+census is where the rest gets re-measured. Citing a T2 number as settled is
 the specific mistake to avoid — in either direction: re-deriving what is genuinely gated wastes
 effort, and trusting a try forfeits what this project is for.
 
@@ -73,7 +74,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X62` **with trust tiers** | **authoritative** on any object or map |
+| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X64` **with trust tiers** | **authoritative** on any object or map |
 | **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
@@ -139,12 +140,34 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 
 ## State (2026-07-24)
 
-> **`M0`'s round trip is CLOSED and `G2` is done — 18 green gates.** For where the project stands
-> against its goals and what to do next, read **[`ASSESSMENT.md`](ASSESSMENT.md)**: the editor
-> foundation is largely built, the **body** half (`G1`/`G3`/`G4`/`G6`) is not built at all, and the
-> largest single risk is that the **foxel schema is still T4** — it is the storage layer everything
-> is designed against, and the word `foxel` appears in `src/` only in comments.
+> **`M0`'s round trip is CLOSED, `G2` is done, and the foxel is gated — 19 green gates.** For where
+> the project stands against its goals and what to do next, read **[`ASSESSMENT.md`](ASSESSMENT.md)**:
+> the editor foundation is largely built and the **body** half (`G1`/`G3`/`G4`/`G6`) is not built at
+> all. The risk that file named as largest — *the foxel schema is still T4* — **was gated the same
+> day** (`X63`, `X64`); what is left of it is the **palette** (`X12`/`X13`), a vocabulary question
+> rather than a mechanism.
 
+- **The FOXEL is gated — `X63`, `X64`, the last T4 mechanism.** All six slots cross a write/read
+  exactly (footprint→`OCCU`, `height`→`HGHT`, `material`→`LABL`, `wall1..3`→`EDGE` (the halo grid,
+  ×3 per cell), `item`+rotation→a named `LAYR`), and **`layer*` — the STOREY sense — is N documents,
+  not a section**. The prize: **`write(rebuild(load(store(draw(read(T)))))) = T` byte-for-byte, 6/6**
+  in-between directions, with `Draft` as the vehicle because it is the only model whose recovery
+  reads **both** cells and edges. The rim survives too (46/46 halo edges).
+- **`X15`'s lossy writer is now a LIVE CONTROL** — moros admitted its writer *"never builds an
+  `EdgeSet`"*; reproduced (`has_e = false`) it returns **0 of 38** edges and **breaks the trip**,
+  while still carrying the footprint, so it is the *documented* loss and not a broken write. That is
+  the control moros's own test could not fire.
+- ⚠ **Cite the SPLIT, never "the foxel is gated".** `X63` does **not** touch the **palette**: `X12`
+  (`wd_body`, `wd_thickness`) and `X13` (`ItemDef`/`MaterialDef` categories) stay **T4**, and
+  `X14`'s *5-bit, 0–23* is still a moros claim even though the rotation slot round-trips.
+- ⚠ **`doc_write` APPENDS (`X64`, `SPEC` L12)** — a reused path leaves the second document
+  unreachable and the reader returns the **first** with `doc_code == HXF_OK`. Write to a **fresh
+  path**, always; `tools/run_tests.sh` clears `/tmp/hexbody-foxel-*.hxf` before the gate.
+- ⚠ **`file().content()` returns EMPTY for non-UTF-8 bytes, silently** (loft, both backends — filed
+  as `crawler/LOFT-HANDOFF.md` **H7**). So **a byte length is not an available instrument** for any
+  binary artefact: the natural append check reads `0` and `0`, and `0 == 0 * 2` is a **vacuously
+  true** *"it appended"* — which this gate PRINTED before it was caught. Measure by content the
+  format defines (a cell count, a digest), never by file size.
 - **`G2` is DONE (`X61` + `X62`).** The wall renders as **ONE flat quad per side** — its analytic
   surface — not one strip per stored edge: **38 stored edges → 4 quads**, `eave_spread(fitted)` is
   **exactly 0**, and `make shot` straightens (features draw as **intervals on the surface**, which is
@@ -166,10 +189,11 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 - **`plans/m0-roundtrip/shots/house12.png` was regenerated** — a review image (`L9`), not a gated
   baseline; `make test` never checked it.
 
-- **Eighteen gates, all green** — `make test` runs `tools/run_tests.sh`.
+- **Nineteen gates, all green** — `make test` runs `tools/run_tests.sh`.
   Form, wall (~3 min), box, census, text, house, surface, arc (A6 + A7), combine (A8), seam
   (A8 frame seam), arb (A8 nearest surface), line (A8 linework), censusb (domain B),
-  flip (law G, ~16 s), level (A8 bridge guarantee), terrain (A8, OD-4), embed (OD-13), trip.
+  flip (law G, ~16 s), level (A8 bridge guarantee), terrain (A8, OD-4), embed (OD-13),
+  foxel (the schema as storage), trip.
 - **Green:** `G0` / law **I** — `tests/house.loft`, 12/12 equivariant in cells *and* edges, `eave_spread
   0.0000`, every control fires. `make shot` reproduces the committed baseline byte-identically.
 - **Green:** `tests/form.loft` (**S0**/**S1**) — the 12 headings; **`X1`**/**`X2`** re-measured to **T1**
@@ -513,12 +537,14 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   wall1, wall2, wall3, item)`. A model is admissible **iff it draws into that exactly**, which
   makes `fits?` syntactic and finite. It closed OD-2/3/4/6/7/8 — roofs and terrain are `height`,
   trees are `item`, walls are the three edge slots, layers are in, the foxel is the stored truth.
+  **And it is now measured as a storage format** (`X63`) — that limit is only a limit if the schema
+  really stores what it claims, which is `SPEC` **G-FOXEL**.
 - **Still open** (`plans/m0-roundtrip/DESIGN.md` §10): **OD-1** the morph (narrowed to "probably
   unnecessary" by free poses) · **OD-5** is the flip exact (`X2` says yes) · **OD-9** does a door
   survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
   relocated into the schema, and rung A5's real question.
-- **Constraints are in `ROUNDTRIP.md` §7 (X1–X62) with trust tiers.** T1 now holds `X1`, `X2`,
-  `X19`–`X22`, `X24`–`X62`; do not re-derive those. Everything else is still a try or a schema.
+- **Constraints are in `ROUNDTRIP.md` §7 (X1–X64) with trust tiers.** T1 now holds `X1`, `X2`,
+  `X19`–`X22`, `X24`–`X64`; do not re-derive those. Everything else is still a try or a schema.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their
