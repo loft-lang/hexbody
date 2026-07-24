@@ -118,13 +118,16 @@ Seeded from crawler's plan-#11 P5 geometry work, verified running standalone her
 ## Run
 
 ```sh
-make test    # the headless gates in tests/ — form, then house
+make test    # all 21 headless gates in tests/, ~4 min — the table is tools/run_tests.sh
 make shot    # render the contact sheet -> /tmp/house12.png
 ```
 
 Gates live in **`tests/`**, modules in `src/`; the `Makefile` passes `--lib src/` so a gate can
 `use` them.
 
-Needs the loft toolchain at `../loft` and the `hex_field` family at `../loft-libs-world`
-(both siblings under `workspace/`). `--lib` reads the **working tree**, so confirm
-`loft-libs-world` is on branch `dev` before debugging anything strange.
+**Three sibling working trees feed the gates and none is pinned:** the loft toolchain at
+`../loft`, the `hex_field` family at `../loft-libs-world`, and **`../moros`** — whose source
+`tests/palette.loft` reads directly, because `SPEC` **L13** makes moros's voxel the storage of
+record. `--lib` reads the **working tree**, so confirm `loft-libs-world` is on branch `dev` before
+debugging anything strange; the palette gate prints which moros revision it read, but cannot see
+whether that tree is dirty.

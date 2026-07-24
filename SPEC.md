@@ -70,11 +70,14 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 | **I11** | the forward trailer-follow is **stable** — a drifted wagon returns to the drawbar, does not snake | overshoot gain → it oscillates (and isolates that reverse is the only unstable case) |
 
 **Round-trip items** — defined formally in [`ROUNDTRIP.md`](ROUNDTRIP.md); the law letter is the definition.
-**Prior art:** [`ROUNDTRIP.md`](ROUNDTRIP.md) **§7** lists the constraints `X1`–`X29` **with their
-trust tier**. **T1 now holds `X1`, `X2`, `X19`–`X22`, `X24`–`X29`**, eight of them re-measured *here*
-by `tests/form.loft` and `tests/wall.loft`. Everything still below the line is a design try (T2/T3)
-or a shape read from untested code (T4) — notably the **whole foxel schema** (`X11`–`X15`):
-*indicative, to be re-measured here*, never cited as settled.
+**Prior art:** [`ROUNDTRIP.md`](ROUNDTRIP.md) **§7** lists the constraints `X1`–`X70` **with their
+trust tier**. **T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X70`** — 55 of 70, and the 15 still below
+the line are **all inherited** (crawler tries `X3`–`X10`, `X16`, `X17`, `X23`, `X18`; moros schema
+`X12`, `X13`, `X15`). Nothing discovered here is below T1. ⚠ The foxel schema is no longer one
+block: its **mechanism** is gated (`X63`, `X64` — the six slots survive a write/read, and the model's
+round trip crosses with them), while its **palette** (`X12`, `X13`, and `X14`'s *5-bit, 0–23*) stays
+T4 — *schema-checked against moros's source every run* (`X69`), but never behaviourally measured
+here. **Cite the split, never "the foxel is gated".**
 [`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md) **§10** carries the open decisions;
 items marked ⚠ below depend on one.
 
@@ -105,7 +108,7 @@ items marked ⚠ below depend on one.
 | **K-PROXY** | a `Body` provides a **proxy**; the proxy is the interface — field-derived in the prototype, mesh/authored in a shipped game; its error bound is stated; a consumer runs a conformance gate on their mesh |
 | **K-JOINT** | the **joint value** is the interface; downstream (proxy, collision, render) is blind to whether it came from a constraint (derived) or a track (authored) |
 | **K-SEAT** | `seat(stencil, terrain) → (z0, T', residual)`; `z0` minimises the chosen earthwork objective; `T'` drains; `residual` flags an unseatable plot |
-| **K-FIT** | `fits?(m) → bool` and `snap(m) → (m*, residual)` are **one chokepoint**, consulted by the round-trip gate *and* by the editor. **The limit sits at the doorstep: the editor refuses at authoring time** — never a warning, never a downstream check. `authorable ⊆ { m : fits?(m) }`, and `𝕄*` is **closed under `Ops = {flip, place, combine, damage, seat}`** (law **C₂**), so what is admitted survives everything later done to it. A refusal **names its restriction** and offers the nearest fitting alternative with its residual — never a silent snap, never a blank rejection ([`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md) §5.2). **For a line this is closed-form** (§10.10): endpoints are hex **vertices** separated by a whole number of the direction's period, `nearest_vertex` snaps the anchor and `snap_run_d24`/`snap_run_p` the far end over all 24 directions, and `run_end_dist` is the residual the editor must show. **The in-between 12 carry the coarsest quantum — `√39` wu = `5.408 m` per period (`X56`) — and a coarse quantum is acceptable ONLY because it is VISIBLE: the editor must show the admissible run lengths and the residual, never snap silently.** `δ = 0` there, so *every* multiple is offered from any vertex; the conditional families (30/90/150°, one in three refused) are the ones whose refusals must be named rather than merely skipped **AND IT IS NOW COMPLETE** (`X65`, `X66`, `src/hexfit.loft`): features and arcs refuse off-grid values with a named reason, an offer and a residual — **0 false accepts and 0 disagreements** against what actually recovers — while **levels and terrain are measured to have nothing to refuse**, which is a result and not a gap. ⚠ One open fork stays: moros's `h_height` is an **integer** (`DESIGN.md` §10.27) |
+| **K-FIT** | `fits?(m) → bool` and `snap(m) → (m*, residual)` are **one chokepoint**, consulted by the round-trip gate *and* by the editor. **The limit sits at the doorstep: the editor refuses at authoring time** — never a warning, never a downstream check. `authorable ⊆ { m : fits?(m) }`, and `𝕄*` is **closed under `Ops = {flip, place, combine, damage, seat}`** (law **C₂**), so what is admitted survives everything later done to it. A refusal **names its restriction** and offers the nearest fitting alternative with its residual — never a silent snap, never a blank rejection ([`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md) §5.2). ⚠ **"The nearest" presumes an ORDINAL parameter, and not every parameter is one** (`X68`): a material id is **nominal** — `255` is not *"nearly 256"*, it is a **different material**, and offering it would read as a small correction while silently changing what the wall is made of. **For a nominal parameter the doorstep names its restriction and offers nothing.** Read this contract that way everywhere: the obligation is *never a blank no*, which a named reason satisfies; an offer is owed only where the parameter is ordered. **For a line this is closed-form** (§10.10): endpoints are hex **vertices** separated by a whole number of the direction's period, `nearest_vertex` snaps the anchor and `snap_run_d24`/`snap_run_p` the far end over all 24 directions, and `run_end_dist` is the residual the editor must show. **The in-between 12 carry the coarsest quantum — `√39` wu = `5.408 m` per period (`X56`) — and a coarse quantum is acceptable ONLY because it is VISIBLE: the editor must show the admissible run lengths and the residual, never snap silently.** `δ = 0` there, so *every* multiple is offered from any vertex; the conditional families (30/90/150°, one in three refused) are the ones whose refusals must be named rather than merely skipped **AND IT IS NOW COMPLETE** (`X65`, `X66`, `src/hexfit.loft`): features and arcs refuse off-grid values with a named reason, an offer and a residual — **0 false accepts and 0 disagreements** against what actually recovers — while **levels and terrain are measured to have nothing to refuse**, which is a result and not a gap. ⚠ One open fork stays: moros's `h_height` is an **integer** (`DESIGN.md` §10.27) |
 
 ---
 
@@ -126,6 +129,8 @@ items marked ⚠ below depend on one.
    | `form.loft` §14, §16 | **I-CORNER** parts 1 and 3 (`X35`, `X36`) |
    | `form.loft` §15 | **I3** — the band rule eats the floor (`X37`) |
    | `form.loft` §17 | **I-CORNER** parts 2 and 4 — the angle and the miter (`X62`) |
+   | `box.loft` §1–§4 | **I-DOMAIN** *(`O`: the box fills in all 24 orientations, and the two orbits are `X24`/`X25` — 60° is a lattice symmetry, 30° is not)*, **G0** *(§3: the even-rot box agrees with `housedraw`'s `Plan` cell-for-cell, so this generalises the gated path rather than replacing it)* |
+   | `box.loft` §5–§6 | **I3** — the **thick** wall is a ring of whole cells and it **seals**: flooding from outside never reaches the courtyard; control = punch one hole and it does. The edge wall and the ring differ in kind, not in thickness |
    | `census.loft` §1 | **I-CLOSE** — law J as the admission filter (660 proposed, 30 admitted) |
    | `census.loft` §2–§3 | law **F** decided at level 1 (`X38`); **I-EXTEND**'s census obligation |
    | `census.loft` §7 | **I-CLOSE**, **K-FIT** — non-convex forms break law F, so the doorstep refuses them (`X46`) |
@@ -137,14 +142,14 @@ items marked ⚠ below depend on one.
    | `arc.loft` §1–§4 | **I-QUANT**, **K-FIT** — centre exact, radius quantised to a shell (`X49`, `X50`) |
    | `arc.loft` §5 | **I1**, **I-RT** — the doored tower: a door is a material annotation, so it round-trips as **one** arc; deleting fragments it (`X51`) |
    | `combine.loft` | **I-ARBIT**, **I-CLOSED-OPS** — two stencils adjacent: "mark all, then cut once" is order-free, the shared edge fuses, only a behavioural difference is field-distinct (`X52`) |
-   | `seam.loft` | **I-FSEAM**, **I-ARBIT** — the frame seam: `ε_seam` ≈ machine ε and confined (the forbidden fix moves it inside), κ counted, arbitration order-free + fail-safe (`X53`) |
+   | `seam.loft` | **I-FSEAM**, **I-ARBIT**, **I-POSE** — the frame seam: `ε_seam` ≈ machine ε and confined (the forbidden fix moves it inside), κ counted, arbitration order-free + fail-safe (`X53`). **§2 *is* `I-POSE`'s control**: stamping the free-posed body into the world lattice is the forbidden fix, and it misclassifies 12 interior cells |
    | `arb.loft` | **I-ARBIT**, **K-PROXY** — overlap arbitration by nearest surface (`cut_arb`): each boundary edge → its nearest analytic surface, order-free, ties to lower id (`X54`) |
    | `line.loft` | **I-DOMAIN**, **I-ARBIT** — stencil against linework: the cut spans domains A/B, and an E–W world line recovers exactly straight, eave_spread 0 (`X55`) |
    | `censusb.loft` | **I-DOMAIN**, **I-QUANT**, **K-FIT** — the domain-B cost table on three axes: period classes (6/6/12), the angle split, and **`δ` — whether a direction links to the house angles unconditionally** (`X56`) |
    | `embed.loft` | **I-RT**, **I-DOMAIN** — `OD-13`'s load-bearing half: a stencil carries an in-between wall as interior-edge material, footprint and `rebuild` untouched (`X60`) |
-   | `terrain.loft` | **G5**, **I-RT** — seating on terrain: the `height` slot is orthogonal to the footprint, so `rebuild` is untouched; the residual is returned and flagged (`X59`) |
+   | `terrain.loft` | **G5**, **I-RT**, **K-SEAT** — seating on terrain: the `height` slot is orthogonal to the footprint, so `rebuild` is untouched; the residual is returned and flagged (`X59`). This is **`K-SEAT`'s `(z0, residual)` half measured**; the drainage half (`T'` drains) is `house.loft`'s `roof_ponds = 0`, and *which* `z0` is a policy, not a contract |
    | `level.loft` | **I-ARBIT**, **I-DOMAIN** — the bridge guarantee: a level filters before the cut, so different sheets never fuse, arbitrate or contend; level 0 is free (`X58`) |
-   | `flip.loft` | **I-FLIP**, **I-CLOSED-OPS** — linework under the 12 orientations: the 24 directions are closed, and a wall segment's mirror reverses traversal (`d → −d` at the mirrored far end); in-between directions included (`X57`) |
+   | `flip.loft` | **I-FLIP**, **I-CLOSED-OPS**, **L4** — linework under the 12 orientations: the 24 directions are closed, and a wall segment's mirror reverses traversal (`d → −d` at the mirrored far end); in-between directions included (`X57`). **`L4` is superseded, not unchecked**: what replaced "no mirror" is *commutation without drift*, and that is what this gate measures |
    | `text.loft` | **I-EXACT** — `write(read(T)) = T` as a byte diff, no ε (`X39`); **C1–C5** |
    | `trip.loft` | **I-RT**, **I-EXACT**, **I-TOTAL** — `write(rebuild(draw(read(T)))) = T` byte-for-byte over the **committed** corpus (`X41`); control: a non-grammar footprint → R2 with `ρ > 0` |
    | `wall.loft` §1, §2, §5 | **I-DOMAIN** *(`D`; the even/odd split, measured)* |
@@ -158,4 +163,22 @@ items marked ⚠ below depend on one.
 3. **The prose docs become reference-only** — read for *why*, never the build input. If building
    needs a fact, it belongs here as a checkable item, not in a paragraph.
 4. **Gaps are visible:** an unstarted `G*` with no gate, an `L*` with no enforcing check, is
-   open work — not silently assumed done.
+   open work — not silently assumed done. **Visible means counted**, so the ledger is below.
+
+### The coverage ledger *(2026-07-24 — 56 items defined, 33 defended by a gate, 23 not)*
+
+Recount it whenever a gate or an item is added; a stale ledger is worse than none. The split
+that matters is **unbuilt** (nothing to check yet) versus **checkable today and unchecked** — only
+the second is a defect.
+
+| the 23 undefended | why | verdict |
+|---|---|---|
+| `G1` `G3` `G4` `G6` `G★` `G✦` | the **body** half — no code exists (`PLAN.md` M1–M7) | **unbuilt**, on plan |
+| `I4` `I5` `I6` `I7` `I9` `I10` `I11` | the same: proxy containment, swept volumes, joints, re-derivation, replay, couplings | **unbuilt** — each is `G1`–`G6`'s invariant |
+| `K-JOINT` | the joint value as the interface | **unbuilt** — nothing produces a joint value |
+| `L1` `L2` `L5` | dynamics scope and the compute boundary | **not yet violable** — there is no simulation to overreach |
+| `L3` `L14` | the layer split, and the mortal side table | **not yet violable** — no layer-2 structure is persisted because none is built |
+| `L7` | determinism, *"built from line one"* | **not yet violable**, but it is the one to arm early: `I9`'s replay gate is writable **before** the body, as `rt_trip` was written before `rebuild` |
+| `L6` | the seam — no settlement/placement logic inside hexbody | **checkable today** — a grep-shaped gate (no world/settlement symbol in `src/`) would keep it honest as the body lands |
+| `L8` | scale — every new length stated in metres | **checkable today, and partly slipping**: `HEIGHT_SCALE` is single-sourced in `hexfit`, but `√3/2 = 0.8660254037844386` is an unnamed literal ~20 times across `hexsurf` / `hexroof` / `hexway`. Same class as `L11` |
+| `L9` | validation ≠ golden | **procedural** — enforced by where a file lives (`plans/*/shots/` vs a gate's own baseline), not by a check |

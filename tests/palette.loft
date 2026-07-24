@@ -29,6 +29,22 @@ const PLAINWALL = 7;      // a plain wall id, outside the opening vocabulary (1,
 
 fn moros_dir() -> text { "{source_dir()}/../../moros" }
 
+// WHICH moros this gate was green against.  `L13` makes moros the storage of record, and this
+// gate reads its **working tree** — an uncommitted edit upstream moves the limit on `𝕄*` with no
+// trace in hexbody's history, exactly as `--lib` does for `loft-libs-world`.  So the revision is
+// PRINTED, making a green attributable.  It is an instrument, never a check: an unreadable ref
+// means the instrument is missing, not that the schema is wrong, so nothing here sets `ok`.
+fn moros_rev() -> text {
+  head = file("{moros_dir()}/.git/HEAD").content().trim();
+  if head.len() <= 0 { return "unknown — no .git"; }
+  // A detached HEAD holds the sha itself; otherwise it names the ref to follow.
+  if !head.contains("ref: ") { return head; }
+  refpath = (head.split(' ')[1] ?? "").trim();
+  sha = file("{moros_dir()}/.git/{refpath}").content().trim();
+  if sha.len() <= 0 { return "unknown — {refpath} is packed"; }
+  sha
+}
+
 // Dangling ends of the marked wall chain: vertices touched by exactly one marked edge.  A closed
 // loop has NONE (`X35`); a broken run has two.  `hex_neighbor` with `hex_edge_corners`, never
 // `nb_q`/`nb_r` — `SPEC` L11, the root cause of four separate failures once.
@@ -97,6 +113,9 @@ fn main() {
     return;
   }
   println("   read types.loft {types.len()} bytes, palette.loft {pal.len()} bytes");
+  println("   moros revision {moros_rev()}");
+  println("   (the WORKING TREE was read, not that commit — an uncommitted edit upstream moves"
+          + " the limit on M* with no trace here. SPEC L13)");
 
   nfield = 0;
   nmiss = 0;

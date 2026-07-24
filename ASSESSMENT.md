@@ -190,9 +190,19 @@ storage/doorstep/vocabulary stack is now gated or schema-checked.*
 
 ### The frontier now
 
+0. **Arm a forward gate before writing body code. [G] there is currently none.** `SURFACE_LANDED`
+   is `true`, and the runner's `run_red` — the machinery that *asserts* a gate is red for its stated
+   reason — is defined but no longer invoked by the table. So the project enters its first unbuilt
+   half with **zero armed tripwires**, having just credited that pattern (§6) for its best result.
+   **[J]** The body's falsifiable equivalent of `write(rebuild(draw(read(T)))) = T` is already
+   written down: `I6` — *a part's pose is a pure function of its joint values* — **is** a round trip
+   (joints → pose → recover joints), and `I9`'s byte-identical replay is writable today, red, before
+   anything moves. Cheap, and it decides whether M0's method transfers to motion at all.
 1. **Start the body** (`G1`) — the first genuinely new subsystem, and the half of "hexbody" that
    does not exist yet (`G1`/`G3`/`G4`/`G6` are all unbuilt). Largest by far. Read `crawler` first
    (`bodytest`). **[J] this is the real next milestone**; everything before it was M0 finishing.
+   ⚠ **It is also the first milestone with no round-trip framing** — M0's method (a corpus of
+   committed bytes, a byte diff) does not transfer to motion unmodified. See item 0.
 2. **Mesh export** — still small, still the thing that most directly unblocks "assets in a game".
    `G2` computes the quads; nothing emits a format.
 3. **An opening body in the palette** — `wd_body` has no `DOOR`/`OPENING`/`DOORWAY` (`X70`). moros
@@ -203,6 +213,20 @@ storage/doorstep/vocabulary stack is now gated or schema-checked.*
 5. **The roof material** — `draw_roof` writes 27 heights and 0 materials, so a roof cell is
    indistinguishable from terrain at that height (`X69`). Costs nothing today; fixing it means
    deciding what a roof material *is*.
+
+### The coverage ledger, and what it says
+
+**[G] Measured 2026-07-24 by applying `SPEC`'s own rule** (*a gate defending no spec item, or a spec
+item no gate defends, is the thing to fix*) — the count now lives in [`SPEC.md`](SPEC.md) beside the
+gate map: **56 spec items defined, 33 defended, 23 not.** Of the 23, **21 are unbuilt on purpose**
+(the body half, plus limits that are not yet violable because there is no simulation to overreach).
+Only **two are checkable today and unchecked**: `L6` (the seam — no settlement/placement logic in
+`src/`, a grep-shaped gate) and `L8` (scale — `HEIGHT_SCALE` is single-sourced in `hexfit`, but
+`√3/2 = 0.8660254037844386` is an unnamed literal ~20 times across `hexsurf`/`hexroof`/`hexway`,
+which is the `L11` hazard class in miniature).
+
+**[J] That ratio is the honest headline of this file.** Nothing load-bearing that *could* be gated
+is ungated. The gap is entirely "not built yet", which is a schedule, not a debt.
 
 ### Open decisions, all recorded rather than pending
 

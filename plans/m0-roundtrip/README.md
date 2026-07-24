@@ -10,23 +10,39 @@ mechanics spine rather than running beside it (decided 2026-07-23).
 
 The contract is split in two: **[`../../ROUNDTRIP.md`](../../ROUNDTRIP.md)** holds only the
 **settled** core — definitions, the propositions that follow from them, and the constraints
-`X1`–`X50` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X50`) — while
+`X1`–`X70` **with trust tiers** (T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X70`; the 15 still below
+the line are all *inherited* from crawler or moros, none discovered here) — while
 **[`DESIGN.md`](DESIGN.md)** holds everything **in flight**: proposed laws, the grammar, `fits?`,
 the seam, the corpus, the method, the gates, and the open decisions.
 
-**Progress: S0–S8 done, rungs A1–A3 closed — the round trip holds over 119 committed entries** ([`STEPS.md`](STEPS.md)). Nine gates green through `tools/run_tests.sh`:
+> **This plan's blueprint gate is MET.** `S0`–`S8`, `S4b`, rungs `A1`–`A8` and phase B are closed,
+> and so are the four items that followed them — `OD-13`, `G2`, the foxel as storage, the doorstep
+> and the palette. **21 gates green** through `tools/run_tests.sh` (~4 min), every one carrying a
+> control that fires. What remains open is listed under *Open design questions*; none of it blocks
+> the round trip.
+
+The **gate table lives in [`../../SPEC.md`](../../SPEC.md)** — one row per gate, naming the spec
+item each defends — rather than being duplicated here, so it cannot drift from the runner. What
+this plan produced, in the order the ladder produced it:
 
 | gate | covers |
 |---|---|
-| `tests/form.loft` | the 12 headings (`X1`/`X2`/`X20` re-measured to T1), `X24`/`X25`, **S3**'s turtle fill (`X33`/`X34`) and **S4**'s boundary + corner (`X35`–`X37`) |
+| `tests/form.loft` | the 12 headings (`X1`/`X2`/`X20` re-measured to T1), `X24`/`X25`, **S3**'s turtle fill (`X33`/`X34`), **S4**'s boundary + corner (`X35`–`X37`) and the **miter** (`X62`) |
 | `tests/wall.loft` | the 24-direction wall — `X26`–`X32`, the first constraints hexbody *discovered* rather than inherited, including **two defects every other gate was green through** |
-| `tests/box.loft` | the box in 12 directions, thin wall and thick wall |
-| `tests/census.loft` | the census grown by level — **law F decided at levels 1–3** (`X38`, `X42`) |
+| `tests/box.loft` | the box in 12 directions, thin wall and thick wall — and the thick ring **seals** |
+| `tests/census.loft` | the census grown by level — **law F decided at levels 1–3** (`X38`, `X42`), and non-convex forms refused (`X46`) |
 | `tests/text.loft` | the canonical text — `write(read(T)) = T` byte-for-byte (`X39`) |
-| `tests/surface.loft` | the wall surface by averaging — exact direction and bands, no tolerance (`X47`) |
-| `tests/arc.loft` | the round tower — centre exact, radius quantised to a shell (`X49`) |
-| `tests/trip.loft` | `rt_trip` — byte-for-byte over **119 committed entries** in `corpus/a1` + `a2` + `a3` (`X41`) |
+| `tests/surface.loft` | the wall surface by averaging (`X47`), features as materials at an edge centre (`X48`), and **`G2`: one flat quad per wall** (`X61`) |
+| `tests/arc.loft` | the round tower — centre exact, radius quantised to a shell (`X49`) — and the doored tower as **one** arc (`X51`) |
+| `tests/trip.loft` | `rt_trip` — byte-for-byte over **119 committed entries** in `corpus/a1` + `a2` + `a3` (`X41`), indexed *and* constructive recovery (`X44`, `X45`) |
 | `tests/house.loft` | law **I**, 12/12 equivariant in cells *and* edges |
+| `combine` · `seam` · `arb` · `line` · `level` · `terrain` | **A8's six axes** — `X52`, `X53`, `X54`, `X55`, `X58`, `X59` |
+| `tests/censusb.loft` | domain B's cost table, and `δ` settling the in-between vector at `N = 39` (`X56`) |
+| `tests/flip.loft` | law **G** — linework under the 12 orientations, in-between included (`X57`) |
+| `tests/embed.loft` | `OD-13` — a stencil carrying an in-between wall, and `rebuild` **reading** it (`X60`) |
+| `tests/foxel.loft` | the schema as a **storage format**, all six slots (`X63`), and `doc_write` appends (`X64`) |
+| `tests/fit.loft` | the doorstep for features, arcs, levels and terrain (`X65`, `X66`), and the integer height slot (`X67`, `X68`) |
+| `tests/palette.loft` | moros's schema checked against its **source** every run (`X69`), and an opening is never *"no wall"* (`X70`) |
 
 Three things are settled in [`DESIGN.md`](DESIGN.md):
 
@@ -147,14 +163,43 @@ survives `read → draw → rebuild → write` byte-identically* — holds over 
 **Rungs A1–A7 and S0–S8 + S4b are closed — and A8 is COMPLETE, all six axes** (adjacency, frame
 seam, nearest-surface, linework, levels, terrain), together with phase B's census.
 
+### After the ladder — the five that finished M0
+
+- **`OD-13` — the in-between 12 are first class** (`X60`). A stencil carries a wall in any of the 24:
+  an embedded wall is a **material on INTERIOR edges**, so the footprint and form recovery are
+  untouched, and the run's two chain **ends** ARE its endpoints — recovered by a degree count and one
+  integer division, no fit. The point is the control: **dropping the run now FAILS the trip, 12 of 12**,
+  which is the one site the design named as silently omissible. Remaining: **one** run per stencil.
+- **`G2` — the fitted wall and the mitered corner** (`X61`, `X62`). 38 stored edges → **4 quads**,
+  `eave_spread(fitted)` exactly 0; adjacent surfaces differ by heading `3` or `9` (exactly 90°, in
+  integers) and `surface_quad` closes the outline with **0 gap**, 48/48. The `SURFACE_LANDED`
+  tripwire — armed at S4, fired at `G2` — is cashed in. ⚠ Part 4's wording was **wrong** and is
+  corrected: the miter recovers the **cell-region** corner, not the model corner, which `Plan`
+  quantises away.
+- **The foxel as a STORAGE format** (`X63`, `X64`) — the last T4 *mechanism*. All six slots cross a
+  write/read exactly, and `write(rebuild(load(store(draw(read(T)))))) = T` byte-for-byte, 6/6.
+  Control: `X15`'s documented lossy writer returns 0 of 38 edges and breaks the trip. It also found
+  **`doc_write` appends** (`SPEC` **L12**), and that `file().content()` reads empty for non-UTF-8
+  bytes — so a byte length is not an available instrument.
+- **The doorstep completed** (`X65`, `X66`, `X67`, `X68`) — `K-FIT` for the four parameters
+  `draft_fits` never covered. **0 false accepts / 0 disagreements** against what actually recovers.
+  It corrected `X48`: the feature grid is **two families**, and `(2i+1)/2n` covers only one — so the
+  doorstep *reads* the set off `side_edges` and computes nothing. Levels and terrain had **nothing
+  to refuse**, and saying so is the result. `L13` then made the height slot an integer.
+- **The palette** (`X69`, `X70`) — the last T4 *block*. moros's schema is checked against **its own
+  source** every run, so a transcribed limit can no longer rot silently; the gate prints which moros
+  revision it read. It surfaced one real disagreement: moros stores a door as material **0**, and
+  measured that **breaks the wall** (38 edges/0 ends → 36/2). An opening is never absence.
+
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"
 was the wrong word for an exact-invariant domain, where the construction is **recovered**, never
 approximated. See [`DESIGN.md`](DESIGN.md) §11.)*
 
-**Baseline:** [`shots/house12.png`](shots/house12.png) — the 12 orientations with walls drawn as
-the raw two-direction strip (zigzag and staircase). Still the valid *before*; regenerate beside it
-once recovery lands.
+**Baseline:** [`shots/house12.png`](shots/house12.png) — the 12 orientations. **Regenerated once
+`G2` landed**: the walls now draw as the fitted quad with features as intervals on it, not as the
+raw two-direction strip. It is a **review image** (`SPEC` **L9**), never pixel-diffed — `make test`
+does not look at it.
 
 ## Goal
 
@@ -228,10 +273,10 @@ crawler `plans/8-landform-morphogenesis/`).
 |---|---|---|---|
 | **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A7 ✅; A8 adjacency ✅ (`X52`), frame seam ✅ (`X53`), nearest-surface ✅ (`X54`), linework ✅ (`X55`), levels ✅ (`X58`), terrain ✅ (`X59`) — **A8 COMPLETE** |
 | **B** — linework census: `period`, `D`, `Sep`; the straight/arc recovery | M | `rt_census_b`; `eave_spread == 0` on the recovered line | **✅ CLOSED** — `D` by `X3`, `Sep` by `X49`, recovery by `X47`/`X49`, `eave_spread 0` by `X55`, `period` by **`X56`** |
-| **C** — `write` / `read`, canonical text frozen | S | `rt_canon`, `rt_project`, `rt_fits`, `rt_close` | Blocked on A, B, **OD-2** |
-| **D** — `rt_trip` written **empty** (red), before `rebuild` exists | XS | needs no ground truth — only `write`/`read`/`draw`/`rebuild` + `diff` | Blocked on C |
-| **E** — `rebuild` | MH | `rt_trip` green over **every** primitive kind | Blocked on D |
-| **F** — damage + frames: `rt_total`, `rt_ruin`, `rt_seam`, `rt_contend` | M | `ρ = 0` on `im(draw)`, reported off it; `ε_seam`; `κ` histogram | Blocked on E |
+| **C** — `write` / `read`, canonical text frozen | S | `rt_canon`, `rt_project`, `rt_fits`, `rt_close` | **✅ CLOSED** — `tests/text.loft` (`X39`); the doorstep is `tests/fit.loft` + `tests/embed.loft` (`X60`, `X65`, `X66`). It did **not** wait on `OD-2`: roofs stayed out of `𝕋`, which is what §10.28 now records |
+| **D** — `rt_trip` written **empty** (red), before `rebuild` exists | XS | needs no ground truth — only `write`/`read`/`draw`/`rebuild` + `diff` | **✅ CLOSED** — written red at S7 and *asserted* red by the runner's `run_red`, then promoted at S8 |
+| **E** — `rebuild` | MH | `rt_trip` green over **every** primitive kind | **✅ CLOSED** — `X41` (level 1), then indexed (`X44`) and **constructive** (`X45`) recovery, which reaches past the enumeration to today's house |
+| **F** — damage + frames: `rt_total`, `rt_ruin`, `rt_seam`, `rt_contend` | M | `ρ = 0` on `im(draw)`, reported off it; `ε_seam`; `κ` histogram | **◑ the FRAME half is closed** — `rt_seam`/`rt_contend` are `tests/seam.loft` (`X53`: `ε_seam ≈ 7.1e-15`, `κ` counted, arbitration order-free + fail-safe). **`rt_ruin` is not built**: damage is `G6`, and no code crumbles anything yet |
 
 Each gate carries a control that must fire. `rt_trip` must be **enumeration-driven** over
 primitive kinds — a new primitive without `write`/`draw`/`rebuild` coverage fails the gate rather
@@ -268,12 +313,21 @@ than going silently ungated.
 
 ## Open design questions
 
-- **OD-2 — are roofs inside the exact round trip?** `src/hexroof.loft:493`
-  `roof_match(..., tol: float)` is the `ε` **P4** forbids. Blocks phase **C** (freezing `⟨roof⟩`);
-  does **not** block phase A. Options in [`DESIGN.md`](DESIGN.md) §10.
+- **OD-2 — are roofs inside the exact round trip?** Answered by the foxel schema: a roof **is** the
+  `height` slot, so `roof_match(..., tol: float)` is legitimate **in R2** and is not the `ε` **P4**
+  forbids. It did not block phase **C**. ⚠ What is left is narrower and recorded in
+  [`DESIGN.md`](DESIGN.md) §10.28: `draw_roof` writes **27 heights and 0 materials**, so a roof cell
+  is indistinguishable from terrain at that height (`X13`, `X69`). Costs nothing today.
 - **OD-1 — the morph.** Largely dissolved by free poses (a non-12 building is simply a free-posed
   body); the residual question is whether a *seated* building ever needs an angle outside the 12.
-- **Unmeasured constants:** `ε_seam`, the `κ ≥ 3` contention rate — both due in phase **F**.
+- **OD-5 — is the flip exact?** `X2` (lattice reflection, `k → −k`) and `X57` (96/96 wall segments,
+  in-between included) both say **yes at T1**. Closeable by inspection rather than new work.
+- ~~**Unmeasured constants:** `ε_seam`, the `κ ≥ 3` contention rate~~ — **both MEASURED** (`X53`):
+  `ε_seam ≈ 7.1e-15`, and `κ ≥ 3` is rare at a point (10/841) but a swept segment touches 4 frames
+  where no point sees more than 3.
+- **The remainder this plan hands on:** one embedded run per stencil (needs the interior edges split
+  into connected components), and `wd_body` has **no opening body** — which is moros's to add, since
+  `L13` makes it the owner of the palette.
 
 ## The implementation order
 
