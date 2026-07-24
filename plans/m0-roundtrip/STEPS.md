@@ -818,9 +818,40 @@ which is what `arb_owner` avoids.
 
 ### What of A8 remains
 
-Overlap arbitration by nearest *surface* (only the lower-id case is gated), **linework** (domain B),
-**terrain** (`OD-4`), and **level** separation. The seam and contention machinery — the load-bearing,
-never-before-built part — is now measured and gated.
+Overlap arbitration by nearest *surface* (next), **linework** (domain B), **terrain** (`OD-4`), and
+**level** separation. The seam and contention machinery — the load-bearing, never-before-built part
+— is now measured and gated.
+
+## A8 · overlap arbitration by nearest surface — **DONE** *(gating `cut_arb` — `X54`)*
+
+The last arbitration axis. X52 (`combine`) tagged each boundary edge with its cell's source
+**material** — the union-then-cut principle. crawler's `cut_arb` does the richer thing: it tags each
+boundary edge with the nearest analytic **surface** — the edge's *collision proxy*, chosen by
+geometry. It was already **copied into `hexway`** (byte-identical to crawler's) but **ungated here**;
+this rung gates it.
+
+### The mechanism, and the case it handles that X52 does not
+
+`cut_arb` is "mark all, THEN cut once": for each boundary edge of the finished union it picks the
+nearest surface by `surf_distance`, ties to the lower id. It reads only the finished cells and the
+fixed surface set, never stamp order — **order-free by construction**. Where X52 answered *which
+material*, this answers *which surface an edge collides against* — the thing X52's material-only cut
+never assigned.
+
+### Measured on two overlapping tower disks (their rims splitting the union boundary)
+
+| claim | value |
+|---|---|
+| boundary edges tagged with the **true nearest** surface | **66 / 66** |
+| the two surfaces each win edges (real arbitration) | **33 → A, 33 → B** |
+| **CONTROL** — a fixed "always the lower id" rule | mis-tags **31** edges (the far rim, >1 u from surface A) |
+| **order-free** — A-then-B vs B-then-A stamp order | **0** tag differences |
+| **tie-break** — the same surface registered twice | all **42** edges take the **lower id** |
+
+So nearest-surface does **geometric** work a fixed rule cannot (the 31 far-rim edges it tags with B,
+the fixed rule gets wrong), it is order-free, and its tie-break is deterministically the lower id
+(the strict-`<` in `cut_arb`, exercised by duplicate surfaces — a "higher wins" or non-strict rule
+would take all 42). This is the collision-proxy half of the union cut, complementing `X52`.
 
 ## Order, and where it can go wrong
 

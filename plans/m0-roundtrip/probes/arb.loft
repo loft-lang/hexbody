@@ -1,0 +1,129 @@
+// arb — PLOT THE ANSWER FOR OVERLAP ARBITRATION BY NEAREST SURFACE (the last A8 axis).
+//
+// X52 (combine) tagged each boundary edge with its cell's SOURCE MATERIAL — the union-then-cut
+// principle.  crawler's `cut_arb` (already copied into `hexway`, but UNGATED here) does the richer
+// thing: it tags each boundary edge with the NEAREST analytic SURFACE — the edge's collision proxy,
+// chosen by geometry, ties to the lower id.  "Mark all, THEN cut once", so it reads the finished
+// union and the fixed surface set, never stamp order → order-free by construction.
+//
+// The instrument: two overlapping tower disks (A6 arcs).  The union's boundary runs on A's rim and
+// on B's rim; cut_arb must tag each edge with the arc it actually lies on.  A fixed "always the
+// lower id" rule ignores geometry and mis-tags the far tower's rim — that is the control.
+use hex_field;
+use hexform;
+use hexarc;
+use hexedge;
+use hexway;
+
+const W = 41;
+const H = 41;
+const Q0 = -20;
+const R0 = -20;
+const NA = 108;    // tower A: disk of shell 108, radius √108/2 ≈ 5.196, centre cell (0,0)
+const NB = 108;    // tower B: same, centre cell (5,0) → world (8.66, 0), so the disks overlap
+const BQ = 5;
+const BR = 0;
+const SQ3H = 0.8660254037844386;
+
+fn wx_of(cq: integer, cr: integer) -> float { (lattice_k(cq, cr) as float) * SQ3H }
+fn wy_of(cq: integer, cr: integer) -> float { (lattice_m(cq, cr) as float) * 0.5 }
+
+fn main() {
+  println("=== arb probe: overlap arbitration by nearest surface ===");
+
+  // the union of the two towers (mark all)
+  cells = hexset_chunk(Q0, R0, W, H);
+  na = arc_fill(0, 0, NA, cells);
+  nb = arc_fill(BQ, BR, NB, cells);
+  ntot = 0;
+  for cr in R0..R0 + H { for cq in Q0..Q0 + W { if hexset_get(cells, cq, cr) { ntot = ntot + 1; } } }
+  println("tower A {na} cells, tower B {nb} cells, union {ntot} cells");
+
+  // register the two arcs as surfaces (radius = √N/2)
+  ra = sqrt((NA as float)) / 2.0;
+  rb = sqrt((NB as float)) / 2.0;
+  sf = surfaces_new();
+  ia = surf_arc(sf, wx_of(0, 0), wy_of(0, 0), ra);
+  ib = surf_arc(sf, wx_of(BQ, BR), wy_of(BQ, BR), rb);
+  println("surface A id {ia} centre ({wx_of(0,0)},{wy_of(0,0)}) r {ra}");
+  println("surface B id {ib} centre ({wx_of(BQ,BR)},{wy_of(BQ,BR)}) r {rb}");
+
+  // cut once: each boundary edge → nearest surface
+  e = edgeset_new(Q0, R0, W, H);
+  cut_arb(cells, e, sf, sf.sf_n, 1);
+
+  // ── measure: each boundary edge is tagged with the surface it LIES ON ──────
+  nedge = 0;
+  on_arc = 0;      // assigned surface passes within 0.7 of the edge (it is the arc the edge is on)
+  is_nearest = 0;  // the assigned surface is the true argmin over all surfaces
+  tagB = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      if hexset_get(cells, q, r) {
+        for d in 0..6 {
+          nq = nb_q(q, r, d);
+          nr = nb_r(q, r, d);
+          if !hexset_get(cells, nq, nr) {
+            nedge = nedge + 1;
+            (ex, ey) = edge_point(q, r, nq, nr);
+            asg = edge_surf(e, q, r, nq, nr);
+            if surf_distance(sf, asg, ex, ey) < 0.7 { on_arc = on_arc + 1; }
+            if asg == ib { tagB = tagB + 1; }
+            // true argmin
+            best = -1; bd = 1000000.0;
+            for si in 1..sf.sf_n {
+              dd = surf_distance(sf, si, ex, ey);
+              if dd < bd - 0.000000001 { bd = dd; best = si; }
+            }
+            if asg == best { is_nearest = is_nearest + 1; }
+          }
+        }
+      }
+    }
+  }
+  println("");
+  println("boundary edges {nedge}: on their assigned arc (<0.7) {on_arc}, "
+          + "matches true argmin {is_nearest}, tagged B {tagB}");
+
+  // ── the CONTROL: a fixed 'always lower id' rule ignores geometry ───────────
+  // tag every edge with surface A (id 1); count how many are then FAR from their surface — those
+  // are B's rim, which nearest-surface tags correctly and the fixed rule gets wrong.
+  fixed_far = 0;
+  for r2 in R0..R0 + H {
+    for q2 in Q0..Q0 + W {
+      if hexset_get(cells, q2, r2) {
+        for d2 in 0..6 {
+          nq2 = nb_q(q2, r2, d2);
+          nr2 = nb_r(q2, r2, d2);
+          if !hexset_get(cells, nq2, nr2) {
+            (fx, fy) = edge_point(q2, r2, nq2, nr2);
+            if surf_distance(sf, ia, fx, fy) > 1.0 { fixed_far = fixed_far + 1; }
+          }
+        }
+      }
+    }
+  }
+  println("CONTROL fixed 'always surface A': {fixed_far} edges end up >1.0 from their surface"
+          + " (nearest-surface gets these right; the fixed rule does not)");
+
+  // ── order-free: rebuild the union in the OTHER stamp order, cut, compare ───
+  cells2 = hexset_chunk(Q0, R0, W, H);
+  arc_fill(BQ, BR, NB, cells2);   // B first
+  arc_fill(0, 0, NA, cells2);     // then A
+  e2 = edgeset_new(Q0, R0, W, H);
+  cut_arb(cells2, e2, sf, sf.sf_n, 1);
+  diff = 0;
+  for r3 in R0..R0 + H {
+    for q3 in Q0..Q0 + W {
+      for d3 in 0..6 {
+        nq3 = nb_q(q3, r3, d3);
+        nr3 = nb_r(q3, r3, d3);
+        if edge_surf(e, q3, r3, nq3, nr3) != edge_surf(e2, q3, r3, nq3, nr3) { diff = diff + 1; }
+      }
+    }
+  }
+  println("order-free: A-then-B vs B-then-A stamp order -> {diff / 2} edge-tag diffs (want 0)");
+
+  println("");
+  println("=== probe done ===");
+}

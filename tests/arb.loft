@@ -1,0 +1,183 @@
+// arb — THE GATE FOR cut_arb: OVERLAP ARBITRATION BY NEAREST SURFACE (rung A8, last axis).
+// Every check has a control that must fire.
+//
+// X52 (`combine.loft`) tagged each boundary edge with its cell's SOURCE MATERIAL — the union-then-
+// cut principle.  crawler's `cut_arb` (copied into `hexway`, until now UNGATED here) does the richer
+// thing: it tags each boundary edge with the NEAREST analytic SURFACE — the edge's collision proxy,
+// by geometry, ties to the LOWER id.  "Mark all, THEN cut once", so it reads the finished union and
+// the fixed surface set, never stamp order → order-free by construction.
+//
+//   1  nearest — every boundary edge gets the true nearest surface, and both surfaces win edges
+//   2  it does GEOMETRIC work — a fixed 'always the lower id' rule mis-tags the far tower's rim
+//   3  order-free — the two stamp orders give byte-identical edge tags
+//   4  the tie-break is the LOWER id — duplicate surfaces resolve to the lower every time
+//
+// The scene: two overlapping tower disks (A6 arcs), their rims splitting the union boundary.
+use hex_field;
+use hexform;
+use hexarc;
+use hexedge;
+use hexway;
+
+const W = 41;
+const H = 41;
+const Q0 = -20;
+const R0 = -20;
+const NA = 108;
+const NB = 108;
+const BQ = 5;    // tower B centre cell → world (8.66, 0); the disks overlap
+const BR = 0;
+const SQ3H = 0.8660254037844386;
+
+fn wx_of(cq: integer, cr: integer) -> float { (lattice_k(cq, cr) as float) * SQ3H }
+fn wy_of(cq: integer, cr: integer) -> float { (lattice_m(cq, cr) as float) * 0.5 }
+
+fn main() {
+  ok = true;
+  println("=== cut_arb — overlap arbitration by nearest surface (A8) ===");
+
+  cells = hexset_chunk(Q0, R0, W, H);
+  arc_fill(0, 0, NA, cells);
+  arc_fill(BQ, BR, NB, cells);
+  ra = sqrt((NA as float)) / 2.0;
+  rb = sqrt((NB as float)) / 2.0;
+  sf = surfaces_new();
+  ia = surf_arc(sf, wx_of(0, 0), wy_of(0, 0), ra);
+  ib = surf_arc(sf, wx_of(BQ, BR), wy_of(BQ, BR), rb);
+  e = edgeset_new(Q0, R0, W, H);
+  cut_arb(cells, e, sf, sf.sf_n, 1);
+
+  // ── 1. NEAREST — every edge gets the true nearest surface, and BOTH win ────
+  println("");
+  println("1. NEAREST — each boundary edge is tagged with the geometrically nearest surface");
+  nedge = 0; is_nearest = 0; tagA = 0; tagB = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      if hexset_get(cells, q, r) {
+        for d in 0..6 {
+          nq = nb_q(q, r, d);
+          nr = nb_r(q, r, d);
+          if !hexset_get(cells, nq, nr) {
+            nedge = nedge + 1;
+            (ex, ey) = edge_point(q, r, nq, nr);
+            asg = edge_surf(e, q, r, nq, nr);
+            if asg == ia { tagA = tagA + 1; }
+            if asg == ib { tagB = tagB + 1; }
+            best = -1; bd = 1000000.0;
+            for si in 1..sf.sf_n {
+              dd = surf_distance(sf, si, ex, ey);
+              if dd < bd - 0.000000001 { bd = dd; best = si; }
+            }
+            if asg == best { is_nearest = is_nearest + 1; }
+          }
+        }
+      }
+    }
+  }
+  println("   {nedge} boundary edges: {is_nearest} match the true argmin, {tagA} → A, {tagB} → B");
+  if is_nearest != nedge {
+    println("  FAIL: an edge was not tagged with the nearest surface — cut_arb is not nearest-wins");
+    ok = false;
+  }
+  if tagA <= 0 || tagB <= 0 {
+    println("  FAIL: one surface won no edges — the overlap is degenerate, arbitration untested");
+    ok = false;
+  }
+
+  // ── 2. IT DOES GEOMETRIC WORK — the fixed rule mis-tags the far rim ────────
+  println("");
+  println("2. GEOMETRIC — a fixed 'always the lower id' rule mis-tags the far tower's rim");
+  fixed_far = 0;
+  for r2 in R0..R0 + H {
+    for q2 in Q0..Q0 + W {
+      if hexset_get(cells, q2, r2) {
+        for d2 in 0..6 {
+          nq2 = nb_q(q2, r2, d2);
+          nr2 = nb_r(q2, r2, d2);
+          if !hexset_get(cells, nq2, nr2) {
+            (fx, fy) = edge_point(q2, r2, nq2, nr2);
+            if surf_distance(sf, ia, fx, fy) > 1.0 { fixed_far = fixed_far + 1; }
+          }
+        }
+      }
+    }
+  }
+  println("   CONTROL fixed 'always A': {fixed_far} edges land >1.0 from surface A (want > 0);"
+          + " nearest-surface tags exactly these with B instead");
+  if fixed_far <= 0 {
+    println("  FAIL: control did not fire — a fixed rule was as good as nearest, so nearest did"
+            + " no geometric work here"); ok = false;
+  }
+
+  // ── 3. ORDER-FREE — stamp order does not change the tags ───────────────────
+  println("");
+  println("3. ORDER-FREE — cut_arb reads the finished union, never stamp order");
+  cells2 = hexset_chunk(Q0, R0, W, H);
+  arc_fill(BQ, BR, NB, cells2);   // B first
+  arc_fill(0, 0, NA, cells2);     // then A
+  e2 = edgeset_new(Q0, R0, W, H);
+  cut_arb(cells2, e2, sf, sf.sf_n, 1);
+  diff = 0;
+  for r3 in R0..R0 + H {
+    for q3 in Q0..Q0 + W {
+      for d3 in 0..6 {
+        nq3 = nb_q(q3, r3, d3);
+        nr3 = nb_r(q3, r3, d3);
+        if edge_surf(e, q3, r3, nq3, nr3) != edge_surf(e2, q3, r3, nq3, nr3) { diff = diff + 1; }
+      }
+    }
+  }
+  println("   A-then-B vs B-then-A: {diff / 2} edge-tag differences (want 0)");
+  if diff != 0 {
+    println("  FAIL: the tags depended on stamp order — cut_arb is not order-free"); ok = false;
+  }
+
+  // ── 4. THE TIE-BREAK IS THE LOWER ID ──────────────────────────────────────
+  //
+  // Register the SAME arc twice (ids 1 and 2).  Every boundary edge is now exactly equidistant from
+  // both, so the tie-break decides alone — and it must be the lower id, every time.
+  println("");
+  println("4. TIE-BREAK — equidistant surfaces resolve to the LOWER id");
+  towerA = hexset_chunk(Q0, R0, W, H);
+  arc_fill(0, 0, NA, towerA);
+  sfd = surfaces_new();
+  lo = surf_arc(sfd, wx_of(0, 0), wy_of(0, 0), ra);   // id 1
+  surf_arc(sfd, wx_of(0, 0), wy_of(0, 0), ra);        // id 2, identical
+  ed = edgeset_new(Q0, R0, W, H);
+  cut_arb(towerA, ed, sfd, sfd.sf_n, 1);
+  tie_edges = 0; tie_lo = 0;
+  for r4 in R0..R0 + H {
+    for q4 in Q0..Q0 + W {
+      if hexset_get(towerA, q4, r4) {
+        for d4 in 0..6 {
+          nq4 = nb_q(q4, r4, d4);
+          nr4 = nb_r(q4, r4, d4);
+          if !hexset_get(towerA, nq4, nr4) {
+            tie_edges = tie_edges + 1;
+            if edge_surf(ed, q4, r4, nq4, nr4) == lo { tie_lo = tie_lo + 1; }
+          }
+        }
+      }
+    }
+  }
+  println("   duplicate surfaces, {tie_edges} edges: {tie_lo} took the lower id (want all)");
+  if tie_lo != tie_edges {
+    println("  FAIL: a tie did not go to the lower id — arbitration is not deterministic"); ok = false;
+  }
+  // CONTROL: the tie-break is real — id 2 exists and is equidistant, so a 'higher wins' rule COULD
+  // have taken it.  If every edge still went to id 1, the strict-less-than in cut_arb is what did it.
+  println("   CONTROL id 2 is equidistant on every edge, yet won {tie_edges - tie_lo} (a"
+          + " 'higher-id wins' or non-strict rule would take all {tie_edges})");
+  if tie_edges <= 0 {
+    println("  FAIL: no tie edges — the tie-break was never exercised"); ok = false;
+  }
+
+  println("");
+  println("   X54: cut_arb tags each boundary edge with its nearest analytic surface — order-free");
+  println("   by construction, geometric where a fixed rule is not, ties to the lower id. The");
+  println("   collision-proxy half of the union cut, complementing X52's material-by-source.");
+
+  println("");
+  if ok { println("=== ARB OK ==="); }
+  else { println("=== arb test FAILED ==="); }
+}
