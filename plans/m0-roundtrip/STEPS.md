@@ -1106,6 +1106,44 @@ parser refuses rather than repairs (`X39`, and the corpus loader trims for the s
 assertion that caught it was written to say so in as many words: *"the fixture is wrong, not the
 terrain claim."* Fourth time a first red has been the measurement rather than the subject.
 
+## OD-13 · a stencil carrying an in-between wall — **the load-bearing half only** *(`X60`)*
+
+`OD-13` is a standing requirement, not a question: *"a city/castle needs more directions to be
+believable so the other 12 need to be first class."* The geometry was already gated (`X56`, `X57`).
+This probes the half everything else rests on, **before** the grammar work.
+
+### The construction, from the pattern
+
+> An embedded wall is a **material on INTERIOR edges** — edges whose two cells are *both* in the
+> footprint. The footprint cells are untouched, so form recovery reads a slot the wall never writes.
+
+An interior edge is geometrically distinguishable from a boundary edge with no extra tagging.
+Measured on a 127-cell hexagon, for every in-between direction that fits: footprint **127 cells**,
+`rebuild` returns the **authored text**, run **wholly interior**, chain **2 ends / 0 branches**
+(the gated `X32` measure). **Control:** the same wall drawn as a *gap* (5 cells removed) **breaks**
+the round trip — so orthogonality is a result, not a restatement.
+
+### What this does NOT establish — and the dangerous site
+
+`rebuild` still does **not read** that chain. An embedded wall is therefore **silently dropped, and
+`rt_trip` does not notice** — precisely the site the design flagged as the one whose omission is
+silent. **`OD-13` is not closed.** It is closed when dropping the wall makes `rt_trip` fail.
+
+### ⚠ Two things observed and not explained
+
+- **Only 4 of 12** in-between directions admit a whole period wholly inside the stencil. Widening
+  the anchor search `±14 → ±26` (8.5 min instead of 13 s) found **the same four**, and doubling the
+  stencil 61 → 127 cells changed nothing either. **Structural, not a search artefact** — unexplained.
+- **Three reader instruments for recovering `(d, anchor, p)` were tried and all three were wrong**:
+  an unoriented edge sum; an oriented edge sum (`X47`'s instrument — but that is for form-boundary
+  side runs along `H₁₂`, *not* a `d24` chain crossing a fill); and an ends-extraction that
+  contradicted the gated `wall_chain_ends`. Nothing about recovery is asserted, because nothing
+  about it is understood yet.
+
+**The rule that kept this honest:** do not gate what you cannot explain. Three wrong instruments in
+a row is a signal to stop building instruments and report the frontier, not to keep guessing until
+one goes green.
+
 ## Order, and where it can go wrong
 
 ```

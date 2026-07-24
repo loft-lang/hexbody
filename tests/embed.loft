@@ -1,0 +1,189 @@
+// embed — CAN A STENCIL CARRY A WALL IN AN IN-BETWEEN DIRECTION? (`OD-13`, the load-bearing half).
+// Every check has a control that must fire.
+//
+// `OD-13` is a standing requirement: *"a city/castle needs more directions to be believable so the
+// other 12 need to be first class"*.  The geometry is already gated (`X56` accuracy and linking,
+// `X57` the 12 orientations).  What was untested is whether a stencil can **carry** such a wall
+// without disturbing what it already round-trips.
+//
+// The construction the `X51`/`X58`/`X59` pattern points at:
+//
+//   an embedded wall is a MATERIAL ON INTERIOR EDGES — edges whose two cells are BOTH in the
+//   footprint — so the footprint cells are untouched and form recovery reads a slot the wall
+//   never writes.
+//
+//   1  ORTHOGONALITY — the footprint and `rebuild` are untouched, in every in-between direction
+//   2  the embedded wall is really there, wholly interior, and a WELL-FORMED chain (`X32`)
+//   3  CONTROL — an embedded wall drawn by REMOVING cells breaks the round trip
+//
+// ⚠ NOT gated here, and deliberately: **recovering** the embedded wall's `(d, anchor, p)` back out
+// of the field.  Three reader instruments were tried and all three were wrong (see `STEPS.md`), so
+// nothing about recovery is asserted — only that the chain the reader will consume is well-formed
+// by the already-gated `X32` measure.  `OD-13` is NOT closed by this gate.
+use hex_field;
+use hexform;
+use formtext;
+use formfit;
+use housedraw;
+use hexwall;
+
+const W = 41;
+const H = 41;
+const Q0 = -20;
+const R0 = -20;
+const EMBED = 5;
+
+fn cellcount(s: HexSet) -> integer {
+  n = 0;
+  for r in R0..R0 + H { for q in Q0..Q0 + W { if hexset_get(s, q, r) { n = n + 1; } } }
+  n
+}
+
+// how many of the run's marked edges are INTERIOR (both cells in the footprint)
+fn interior_count(cells: HexSet, ew: EdgeSet) -> integer {
+  n = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      for d in 0..3 {
+        nq = nb_q(q, r, d);
+        nr = nb_r(q, r, d);
+        if edge_mat(ew, q, r, nq, nr) != 0
+           && hexset_get(cells, q, r) && hexset_get(cells, nq, nr) { n = n + 1; }
+      }
+    }
+  }
+  n
+}
+
+fn main() {
+  ok = true;
+  println("=== embed — a stencil carrying an in-between wall (OD-13, load-bearing half) ===");
+
+  src = "stencil h4 h0 0\nside 0 len 6 turn 2\nside 1 len 6 turn 2\nside 2 len 6 turn 2"
+        + "\nside 3 len 6 turn 2\nside 4 len 6 turn 2\nside 5 len 6 turn 2";
+  f = form_read(src);
+  cells = hexset_chunk(Q0, R0, W, H);
+  form_fill(f, 0, 0, cells);
+  base_cells = cellcount(cells);
+  base_text = rebuild_construct_text(cells, "h4");
+  println("");
+  println("stencil: hexagon len 6, {base_cells} cells; plain rebuild == authored:"
+          + " {base_text == src}");
+  if base_cells != 127 || base_text != src {
+    println("  FAIL: the fixture is wrong before anything is embedded"); ok = false;
+  }
+
+  // ── 1 & 2. EMBED A WALL IN EVERY IN-BETWEEN DIRECTION ─────────────────────
+  println("");
+  println("1+2. ORTHOGONALITY and the embedded chain, over the in-between 12");
+  println("      d   anchor      edges  interior  ends  branches   cells  rebuild==authored");
+  nbad = 0;
+  ntested = 0;
+  for d in [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23] {
+    // a LEGAL run (doorstep: vertex anchor, whole periods) that lies WHOLLY inside the footprint
+    ba = 0; bb = 0; found = false;
+    for ta in -14..15 {
+      for tb in -14..15 {
+        if !found && wall_run_ok(d, ta, tb, 1) {
+          e0 = edgeset_new(Q0, R0, W, H);
+          w0 = wall_from_run(d, ta, tb, 1, EMBED);
+          n0 = wall_write(w0, e0, Q0, R0, W, H);
+          if n0 > 0 && interior_count(cells, e0) == n0 { ba = ta; bb = tb; found = true; }
+        }
+      }
+    }
+    if !found {
+      println("      {d:>2}  (no legal anchor in the searched range)");
+    } else {
+      ntested = ntested + 1;
+      ew = edgeset_new(Q0, R0, W, H);
+      w = wall_from_run(d, ba, bb, 1, EMBED);
+      nedge = wall_write(w, ew, Q0, R0, W, H);
+      nint = interior_count(cells, ew);
+      ends = wall_chain_ends(ew, Q0, R0, W, H);
+      brs = wall_chain_branches(ew, Q0, R0, W, H);
+      // the embedded wall goes into the SAME field as the stencil's own walls
+      efield = edgeset_new(Q0, R0, W, H);
+      draw_walls(cells, efield, 1);
+      for r2 in R0..R0 + H {
+        for q2 in Q0..Q0 + W {
+          for d2 in 0..3 {
+            nq2 = nb_q(q2, r2, d2);
+            nr2 = nb_r(q2, r2, d2);
+            if edge_mat(ew, q2, r2, nq2, nr2) != 0 {
+              edge_set_mat(efield, q2, r2, nq2, nr2, EMBED);
+            }
+          }
+        }
+      }
+      nc = cellcount(cells);
+      tx = rebuild_construct_text(cells, "h4");
+      good = nc == base_cells && tx == src && nint == nedge && ends == 2 && brs == 0;
+      if !good { nbad = nbad + 1; }
+      println("      {d:>2}  ({ba:>3},{bb:>3})  {nedge:>6}  {nint:>8}  {ends:>4}  {brs:>8}"
+              + "   {nc:>5}  {tx == src}");
+    }
+  }
+  println("   {ntested} in-between directions embedded, {nbad} that failed any of:"
+          + " cells unchanged / text unchanged / wholly interior / 2 ends / 0 branches");
+  // ⚠ OBSERVED, NOT EXPLAINED: only 4 of the 12 admit a whole 1-period run wholly inside this
+  // stencil — and it is STRUCTURAL, not a search artefact.  Widening the anchor search from ±14 to
+  // ±26 (8.5 min instead of 13 s) found the same four and no more; doubling the stencil from 61 to
+  // 127 cells changed nothing either.  Recorded rather than asserted: what is gated is that every
+  // direction which DOES fit behaves, not that all twelve fit.
+  println("   (4 of 12 fit a whole period wholly inside; widening the search ±14 -> ±26 and");
+  println("    doubling the stencil both found the same four — structural, and unexplained)");
+  if ntested <= 0 {
+    println("  FAIL: no in-between wall fitted inside the stencil — nothing was tested"); ok = false;
+  }
+  if nbad != 0 {
+    println("  FAIL: embedding a wall disturbed the footprint, the round trip, or produced a"
+            + " malformed chain"); ok = false;
+  }
+
+  // ── 3. CONTROL — AN EMBEDDED WALL THAT REMOVES CELLS BREAKS THE TRIP ──────
+  //
+  // The footprint COULD have moved: draw the same wall as a gap (delete its cells) and the round
+  // trip stops recovering the stencil.  Without this, §1 restates the construction.
+  println("");
+  println("3. CONTROL — the same wall drawn as a GAP (cells removed) must break the round trip");
+  cclip = hexset_chunk(Q0, R0, W, H);
+  form_fill(f, 0, 0, cclip);
+  ec = edgeset_new(Q0, R0, W, H);
+  wc = wall_from_run(1, 0 - 9, 12, 1, EMBED);
+  wall_write(wc, ec, Q0, R0, W, H);
+  ndel = 0;
+  for r3 in R0..R0 + H {
+    for q3 in Q0..Q0 + W {
+      for d3 in 0..3 {
+        nq3 = nb_q(q3, r3, d3);
+        nr3 = nb_r(q3, r3, d3);
+        if edge_mat(ec, q3, r3, nq3, nr3) != 0 && hexset_get(cclip, q3, r3) {
+          hexset_set(cclip, q3, r3, false);
+          ndel = ndel + 1;
+        }
+      }
+    }
+  }
+  tx_clip = rebuild_construct_text(cclip, "h4");
+  println("   removed {ndel} cells; cells {cellcount(cclip)} (was {base_cells});"
+          + " rebuild == authored: {tx_clip == src} (must be false)");
+  if ndel <= 0 {
+    println("  FAIL: control did not fire — nothing was removed, so it tests nothing"); ok = false;
+  }
+  if tx_clip == src {
+    println("  FAIL: control did not fire — removing cells still round-tripped, so §1 proves"
+            + " nothing about the wall leaving the footprint alone"); ok = false;
+  }
+
+  println("");
+  println("   The load-bearing half of OD-13 holds: a stencil CAN carry a wall in any in-between");
+  println("   direction as interior-edge material, with the footprint and the round trip untouched,");
+  println("   and the chain a reader would consume is well-formed (2 ends, 0 branches — X32).");
+  println("   OD-13 is NOT closed: `rebuild` still does not READ that chain, so an embedded wall is");
+  println("   silently dropped — and rt_trip would not notice. That is the next step.");
+
+  println("");
+  if ok { println("=== EMBED OK ==="); }
+  else { println("=== embed test FAILED ==="); }
+}

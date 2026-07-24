@@ -1,0 +1,172 @@
+// embed — PLOT THE ANSWER FOR OD-13: can a stencil CARRY a wall in an in-between direction?
+//
+// The load-bearing claim, before any grammar work: an embedded wall is a MATERIAL ON INTERIOR EDGES
+// (both cells in the footprint), so
+//
+//   1  the FOOTPRINT is untouched -> form recovery (the hull of the cells, X45) is unperturbed
+//   2  the WALL is recoverable from exactly those interior edges, direction ∈ D
+//
+// Two fixture bugs found on the first run, both mine: anchoring at tri (0,0) — a hex CENTRE, so the
+// run is ILLEGAL — and summing edge vectors without orienting them along the chain.  Fixed here:
+// the anchor is SEARCHED for legality and full containment, and the edges are oriented by their dot
+// with the run direction before summing.
+use hex_field;
+use hexform;
+use formtext;
+use formfit;
+use housedraw;
+use hexwall;
+
+const W = 41;
+const H = 41;
+const Q0 = -20;
+const R0 = -20;
+const EMBED = 5;
+
+fn cellcount(s: HexSet) -> integer {
+  n = 0;
+  for r in R0..R0 + H { for q in Q0..Q0 + W { if hexset_get(s, q, r) { n = n + 1; } } }
+  n
+}
+
+// Every edge the run marks, split into interior (both cells in the footprint) and not.
+fn run_split(cells: HexSet, ew: EdgeSet) -> (integer, integer) {
+  ins = 0;
+  out = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      for d in 0..3 {
+        nq = nb_q(q, r, d);
+        nr = nb_r(q, r, d);
+        if edge_mat(ew, q, r, nq, nr) != 0 {
+          if hexset_get(cells, q, r) && hexset_get(cells, nq, nr) { ins = ins + 1; }
+          else { out = out + 1; }
+        }
+      }
+    }
+  }
+  (ins, out)
+}
+
+// The summed edge vector of the run's interior edges, ORIENTED along the run direction, in exact
+// triangle integers.  X47's instrument — but each edge must first be turned to point the same way,
+// or the sum is meaningless (that was the first run's bug).
+fn oriented_sum(cells: HexSet, e: EdgeSet, mat: integer, d24: integer) -> (integer, integer) {
+  dx = tri_x(tri_a(d24), tri_b(d24));
+  dy = tri_y(tri_a(d24), tri_b(d24));
+  sa = 0;
+  sb = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      for dd in 0..3 {
+        nq = nb_q(q, r, dd);
+        nr = nb_r(q, r, dd);
+        if edge_mat(e, q, r, nq, nr) == mat
+           && hexset_get(cells, q, r) && hexset_get(cells, nq, nr) {
+          (c1, c2) = hex_edge_corners(dd);
+          va = hex_corner_tri_a(q, r, c2) - hex_corner_tri_a(q, r, c1);
+          vb = hex_corner_tri_b(q, r, c2) - hex_corner_tri_b(q, r, c1);
+          // orient: flip the edge if it points against the run
+          if tri_x(va, vb) * dx + tri_y(va, vb) * dy < 0.0 { va = 0 - va; vb = 0 - vb; }
+          sa = sa + va;
+          sb = sb + vb;
+        }
+      }
+    }
+  }
+  (sa, sb)
+}
+
+fn main() {
+  println("=== embed probe (OD-13): a stencil carrying an in-between wall ===");
+
+  src = "stencil h4 h0 0\nside 0 len 4 turn 2\nside 1 len 4 turn 2\nside 2 len 4 turn 2"
+        + "\nside 3 len 4 turn 2\nside 4 len 4 turn 2\nside 5 len 4 turn 2";
+  f = form_read(src);
+  cells = hexset_chunk(Q0, R0, W, H);
+  form_fill(f, 0, 0, cells);
+  println("stencil: {cellcount(cells)} cells (hexagon len 4)");
+  println("plain rebuild == authored: {rebuild_construct_text(cells, \"h4\") == src}");
+  println("");
+  println("  d   anchor      run edges  interior/outside   cells  rebuild   sum        cross");
+
+  for d in [1, 3, 5, 7, 9, 11] {
+    // SEARCH a legal anchor whose whole run stays interior — the doorstep rule (10.10) applies to
+    // an embedded wall too: endpoints on hex vertices, a whole number of periods, and wholly inside.
+    besta = 0;
+    bestb = 0;
+    found = false;
+    for ta in -14..15 {
+      for tb in -14..15 {
+        if !found && wall_run_ok(d, ta, tb, 1) {
+          ew0 = edgeset_new(Q0, R0, W, H);
+          w0 = wall_from_run(d, ta, tb, 1, EMBED);
+          wall_write(w0, ew0, Q0, R0, W, H);
+          (i0, o0) = run_split(cells, ew0);
+          if i0 > 0 && o0 == 0 { besta = ta; bestb = tb; found = true; }
+        }
+      }
+    }
+    if !found { println("  {d:>2}  (none found — no whole run fits wholly inside this stencil)"); }
+    else {
+      ew = edgeset_new(Q0, R0, W, H);
+      w = wall_from_run(d, besta, bestb, 1, EMBED);
+      wall_write(w, ew, Q0, R0, W, H);
+      (nin, nout) = run_split(cells, ew);
+      efield = edgeset_new(Q0, R0, W, H);
+      draw_walls(cells, efield, 1);
+      for r2 in R0..R0 + H {
+        for q2 in Q0..Q0 + W {
+          for d2 in 0..3 {
+            nq2 = nb_q(q2, r2, d2);
+            nr2 = nb_r(q2, r2, d2);
+            if edge_mat(ew, q2, r2, nq2, nr2) != 0 {
+              edge_set_mat(efield, q2, r2, nq2, nr2, EMBED);
+            }
+          }
+        }
+      }
+      tx = rebuild_construct_text(cells, "h4");
+      // RECOVER FROM THE CHAIN'S ENDS, not by averaging edges: the doorstep puts a run's endpoints
+      // on hex VERTICES, so the two degree-1 vertices of the marked chain ARE the authored ends.
+      va: vector<integer> = [];
+      vb: vector<integer> = [];
+      for r3 in R0..R0 + H {
+        for q3 in Q0..Q0 + W {
+          for d3 in 0..3 {
+            nq3 = nb_q(q3, r3, d3);
+            nr3 = nb_r(q3, r3, d3);
+            if edge_mat(efield, q3, r3, nq3, nr3) == EMBED {
+              (k1, k2) = hex_edge_corners(d3);
+              va += [hex_corner_tri_a(q3, r3, k1)]; vb += [hex_corner_tri_b(q3, r3, k1)];
+              va += [hex_corner_tri_a(q3, r3, k2)]; vb += [hex_corner_tri_b(q3, r3, k2)];
+            }
+          }
+        }
+      }
+      nend = 0; e1a = 0; e1b = 0; e2a = 0; e2b = 0;
+      for i in 0..len(va) {
+        first = true;
+        for k in 0..i { if (va[k] ?? 0) == (va[i] ?? 0) && (vb[k] ?? 0) == (vb[i] ?? 0) { first = false; } }
+        if first {
+          deg = 0;
+          for j in 0..len(va) { if (va[j] ?? 0) == (va[i] ?? 0) && (vb[j] ?? 0) == (vb[i] ?? 0) { deg = deg + 1; } }
+          if deg == 1 {
+            nend = nend + 1;
+            if nend == 1 { e1a = va[i] ?? 0; e1b = vb[i] ?? 0; }
+            if nend == 2 { e2a = va[i] ?? 0; e2b = vb[i] ?? 0; }
+          }
+        }
+      }
+      fa = wall_end_a(d, besta, 1); fb = wall_end_b(d, bestb, 1);
+      hit = (e1a == besta && e1b == bestb && e2a == fa && e2b == fb)
+         || (e2a == besta && e2b == bestb && e1a == fa && e1b == fb);
+      println("  {d:>2}  ({besta:>3},{bestb:>3})   {nin + nout:>7}    {nin:>3}/{nout:<3}"
+              + "        {cellcount(cells):>3}   {tx == src}    ends {nend}  endpoints match {hit}");
+    }
+  }
+
+  println("");
+  println("cross 0 => the embedded run's oriented edge sum is EXACTLY parallel to its direction,");
+  println("so the direction comes back exactly — X47's instrument, on interior edges.");
+}

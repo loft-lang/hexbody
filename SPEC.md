@@ -134,6 +134,7 @@ items marked ⚠ below depend on one.
    | `arb.loft` | **I-ARBIT**, **K-PROXY** — overlap arbitration by nearest surface (`cut_arb`): each boundary edge → its nearest analytic surface, order-free, ties to lower id (`X54`) |
    | `line.loft` | **I-DOMAIN**, **I-ARBIT** — stencil against linework: the cut spans domains A/B, and an E–W world line recovers exactly straight, eave_spread 0 (`X55`) |
    | `censusb.loft` | **I-DOMAIN**, **I-QUANT**, **K-FIT** — the domain-B cost table on three axes: period classes (6/6/12), the angle split, and **`δ` — whether a direction links to the house angles unconditionally** (`X56`) |
+   | `embed.loft` | **I-RT**, **I-DOMAIN** — `OD-13`'s load-bearing half: a stencil carries an in-between wall as interior-edge material, footprint and `rebuild` untouched (`X60`) |
    | `terrain.loft` | **G5**, **I-RT** — seating on terrain: the `height` slot is orthogonal to the footprint, so `rebuild` is untouched; the residual is returned and flagged (`X59`) |
    | `level.loft` | **I-ARBIT**, **I-DOMAIN** — the bridge guarantee: a level filters before the cut, so different sheets never fuse, arbitrate or contend; level 0 is free (`X58`) |
    | `flip.loft` | **I-FLIP**, **I-CLOSED-OPS** — linework under the 12 orientations: the 24 directions are closed, and a wall segment's mirror reverses traversal (`d → −d` at the mirrored far end); in-between directions included (`X57`) |

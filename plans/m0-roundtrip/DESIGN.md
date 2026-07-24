@@ -591,6 +591,33 @@ settled core, so it moves only once the replacement is built rather than asserte
 | the in-between angle error, after the `N = 39` switch | `1.1021°` (`X56`), 3.7× better than before |
 | in-between runs link to the house angles unconditionally | `δ = 0` (`X56`) |
 
+### The invariant, and the one site where omission is SILENT
+
+The pattern that carried `X51`/`X58`/`X59` says where to put an embedded wall:
+
+> **An embedded wall is a MATERIAL ON INTERIOR EDGES** — edges whose *two* cells are both in the
+> footprint. The footprint **cells** are untouched, so form recovery (the convex hull of the filled
+> cells, `X45`) is unperturbed; the wall is recovered by a **separate pass reading exactly those
+> interior edges**. The two recoveries read **disjoint slots**.
+
+An *interior* edge (both cells in) is geometrically distinguishable from a *boundary* edge (one cell
+in, one out) with no extra tagging, so the split needs no new storage — only the discipline of never
+letting an embedded wall change the fill.
+
+**Four re-assertion sites, and their failure modes are not equal:**
+
+| site | must | if omitted |
+|---|---|---|
+| `draw` | mark interior edges, never change cells | loud — the footprint moves and form recovery breaks |
+| **`rebuild`** | read interior edges as a **separate pass** | **SILENT — the wall is simply dropped** |
+| `write`/`read` | carry the embedded wall in the text | loud — a text diff |
+| `fits?` | refuse an off-grid anchor/length (`X56`) | silent — snapped, per `X50` |
+
+**`rebuild` is the dangerous one.** Today it returns the turtle form alone, so an embedded wall would
+vanish and **`rt_trip` would still pass** — the round trip would report success on a model missing
+half its content. So the extension is not done when the wall draws; it is done when **dropping the
+wall makes `rt_trip` fail**, and a control proves it would.
+
 **What is missing is permission and round-trip, not geometry.** To make them first class:
 
 1. **the grammar** — a stencil is footprint-only today (`stencil / side len turn`); it needs a
