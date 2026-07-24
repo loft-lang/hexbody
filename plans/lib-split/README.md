@@ -16,7 +16,7 @@ two structural findings that must land before any packaging:
 | finding | what it is |
 |---|---|
 | **`Plan` is misfiled** | `hexbox` and `hexsurf` depend on `housedraw` almost entirely for the **`Plan` type** and its accessors — an *object* living inside the `draw` map. Moving it removes the only awkward edge in the graph |
-| **three modules are not ours** | `hexedge`, `hexway`, `hexroof` are byte-identical copies of crawler's; their proper home is `loft-libs-world` (recorded long before this plan). `housedraw` depends on two of them, so the extraction is a **prerequisite**, not a follow-up |
+| ~~**three modules are not ours**~~ **EXTRACTED** | `hex_edge`/`hex_way`/`hex_roof` are libraries in `loft-libs-world` and hexbody consumes them. ⚠ **crawler still carries its copies** — the migration is designed for them in [`CRAWLER-HANDOFF.md`](CRAWLER-HANDOFF.md) and is theirs to run or decline. Until they do, the honest state is *two sources, deliberately* |
 
 ## Goal
 
@@ -49,7 +49,7 @@ stable seam, without pointing `--lib` at a working tree.
 
 | Phase | Effort | Verify | Status |
 |---|---|---|---|
-| **0a** — extract `hexedge`/`hexway`/`hexroof` to `loft-libs-world` | M | crawler and hexbody both consume one source; no byte drift | not started · **cross-repo, blocks 2+** |
+| **0a** ◑ — extract `hexedge`/`hexway`/`hexroof` to `loft-libs-world` | M | crawler and hexbody both consume one source; no byte drift | **hexbody half DONE** 2026-07-24 (`loft-libs-world` `9e8021c`, hexbody `79e23b8`): three libraries, 14 tests, in CI; hexbody's `src/` 20 → 17 modules. **crawler half is theirs** — designed and handed off in [`CRAWLER-HANDOFF.md`](CRAWLER-HANDOFF.md), not performed |
 | **0b** ✅ — **`hex_field` is warning-clean and in the CI matrix** | M | `LOFT_DENY_WARNINGS=1 loft --interpret --tests tests` → **47 passed, 6 files** | **DONE 2026-07-24** (`loft-libs-world` `6bef19b`, `b61a735`). 126 warning lines → 0; 15 sites, all pure substitutions. Consumers verified: hexbody 23/23, moros_map 76/11. ⚠ **Publishing itself is still open** — CI green is the precondition, not the act |
 | **0c** — conform to the library rules | M | `[library] entry`, per-library `README.md`, SPDX headers, repo `LICENSE`, `tests/NN-*.loft` in the **library form**, `LOFT_DENY_WARNINGS=1`, `loft test --deps` | not started. hexbody conforms to **none** of these today; the test-form gap is the one that costs thinking ([`DESIGN.md`](DESIGN.md) §4b) |
 | **1** — move `Plan` and its accessors out of `housedraw` into the model layer | S | the dependency graph loses the `shape → draw` edge; 23 gates unchanged | not started |
