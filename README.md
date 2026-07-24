@@ -87,33 +87,32 @@ achieved*, `ROUNDTRIP` *what the objects are* — and on any question about an o
 | `road_arcs.py` · `ways.py` | road arcs by the same collision-match ladder; ways as an exact centreline **plus offsets**, never a rasterised band |
 | `hexforms.py` | the blueprint-phase test bench — validated exact vector maps |
 
-**Code duplicated, not yet extracted:** `hexedge` / `hexway` / `hexroof` are byte-identical copies
-of crawler's. Their proper home is `loft-libs-world` — see *Status*.
+**The geometry now SHIPS as libraries** (`G-LIB` ✅, 2026-07-24): nine `hex_*` packages in
+`loft-libs-world`, published to the registry. hexbody is the **workshop** — it keeps the gates,
+corpus and plans; `src/` is two tools. `hexedge`/`hexway`/`hexroof` became `hex_edge`/`hex_way`/
+`hex_roof` (crawler's copies migrate on their own schedule — `plans/lib-split/CRAWLER-HANDOFF.md`).
+See `plans/lib-split/`.
 
 ## Status
 
-Seeded from crawler's plan-#11 P5 geometry work, verified running standalone here:
+**`M0` is closed and the geometry SHIPS** (2026-07-24). hexbody is the **workshop**: it holds the
+gates, the corpus and the plans, and its geometry lives as **nine `hex_*` libraries** published to
+`loft-lang/registry` — so `src/` is two tools, and a consumer (the editor, `crawler`, `moros`, or
+one not built yet) depends on the libraries, not on hexbody.
 
-| file | what it is |
+| where the work is now | what it is |
 |---|---|
-| `src/housedraw.loft` | the drawing routines — `draw_floor`, `draw_walls` (thin, edge-based), `place_opening` (doors/windows), `draw_roof` |
-| `src/hexform.loft` | **the 12 headings of `H₁₂`** as exact lattice steps, in doubled `(k,m)` — parity-free, so nothing downstream branches on `r & 1` |
-| `tests/house.loft` | the gate: one house at all **12 orientations**, cells + edges equivariant, openings, roof, eave; every check has a control that fires |
-| `tests/form.loft` | the gate for `hexform`: the involution, the two length classes, and the **exact rotation and reflection re-measured here** (`X1`/`X2`, now T1) |
-| `src/houseshot.loft` | the 12-orientation contact sheet → `/tmp/house12.png` |
-| `src/hexedge`, `src/hexway`, `src/hexroof` | supporting geometry algorithms (edges, tracks, roof profiles) copied from crawler; they belong to this project's *"more algorithms"* remit |
+| **`../loft-libs-world/hex_*`** | the geometry, as nine published libraries — `hex_field` (base) + `hex_edge`/`hex_way`/`hex_roof`/`hex_form`/`hex_shape`/`hex_draw`/`hex_recover`/`hex_fit`/`hex_place`. Each carries its own `README.md`, `USAGE.md` and conformance tests |
+| **`tests/`** | hexbody's 23 gates — the exhaustive, evidence-printing measurement the libraries' thin conformance tests point back to (`house`, `form`, `wall`, `census`, `trip`, … and the forward gate `joint`) |
+| **`corpus/`** | 119 committed round-trip entries, the regression anchor |
+| **`src/`** | two tools — `corpusgen.loft` (writes the corpus) and `houseshot.loft` (the 12-orientation contact sheet) |
+| **`plans/lib-split/`** | how the split was done, and `CRAWLER-HANDOFF.md` — crawler's migration off its own copies, theirs to run |
 
-**Migration status (2026-07-23):**
-
-- **`housedraw` / `housetest` / `houseshot` are now hexbody-only.** *(`housetest` has since
-  become [`tests/house.loft`](tests/house.loft).)* crawler's game never called
-  them (they were only self-referential), so crawler deleted its copies and dropped the
-  `housetest` row from its gate; hexbody owns them and gates them here.
-- **`hexedge` / `hexway` / `hexroof` are still duplicated** (crawler + hexbody). They are
-  load-bearing in crawler's game — `hexedge` alone has 28 users including `sim.loft` — so
-  crawler keeps them. hexbody's copies are a stopgap. Their proper home is the shared
-  low-level library `loft-libs-world` (like `hex_field`); extracting them there, so both
-  crawler and hexbody consume one source, is the follow-up that ends the duplication.
+**What ended the duplication:** `hexedge`/`hexway`/`hexroof` were byte-identical copies of
+crawler's, load-bearing in crawler's game (`hexedge` alone has 28 users). They are now
+`hex_edge`/`hex_way`/`hex_roof` in `loft-libs-world`; hexbody consumes them from there, and crawler
+migrates on its own schedule via the handoff. `housedraw`/`houseshot` were hexbody-only and became
+`hex_draw` + the `houseshot` tool.
 
 ## Run
 

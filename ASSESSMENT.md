@@ -273,19 +273,22 @@ is ungated. The gap is entirely "not built yet", which is a schedule, not a debt
     — will build on our basis. Our goal is to provide libraries for them."* `G4`/`G★`/`G✦` were
     **requirement sources all along** and now sit in `SPEC`'s *Use cases* section; `L1`'s earned
     set is empty here.
-  - ⚠ **[G] THE REAL FRONTIER MOVED, and it is bigger than the body.** `G-LIB` — *a capability is
-    not done when a hexbody gate is green, it is done when a consumer can depend on it*. Measured
-    2026-07-24: `loft.toml` has **no `[library]` entry** (hexbody is packaged as the *application*
-    kind; `hex_field` declares one), and **no consumer references hexbody** across `../crawler` or
-    `../moros`. So the only way in is `--lib` at a working tree — the same unpinned-tree fragility
-    that broke this suite the same day. **[G] The split is now DESIGNED** — [`plans/lib-split/`](plans/lib-split/), six libraries
-    derived from `ROUNDTRIP`'s objects and maps rather than from a consumer survey, strictly
-    layered and acyclic, sized to the family's house style (300–1500 lines). It surfaced two
-    structural findings: **`Plan` is misfiled** (an object living inside the `draw` map — moving it
-    removes the graph's only awkward edge), and the three crawler copies must reach
-    `loft-libs-world` **first**, because `housedraw` imports two of them. Two decisions are left
-    open on purpose — the **naming family** (a one-way door under `I-EXTEND`) and whether
-    `formcensus` ships at all.
+  - ✅ **[G] `G-LIB` IS MET — the geometry SHIPS, and that was the real frontier, bigger than the
+    body.** *A capability is not done when a hexbody gate is green; it is done when a consumer can
+    depend on it.* On 2026-07-24 that became true: hexbody is the **workshop**, so its geometry is
+    **nine `hex_*` libraries published to `loft-lang/registry`** (`0114376`) — `hex_field` plus
+    `hex_edge`/`hex_way`/`hex_roof`/`hex_form`/`hex_shape`/`hex_draw`/`hex_recover`/`hex_fit`/`hex_place`,
+    the chunk's **first inter-dependent family**, signed, all `validate.py` gates green.
+    **Verified as a real consumer**: a package depending only on `hex_fit`+`hex_form`+`hex_field`,
+    with **no `--lib`**, auto-installed the whole DAG and ran. The split ([`plans/lib-split/`](plans/lib-split/))
+    was derived from `ROUNDTRIP`'s objects, and getting there surfaced findings worth keeping:
+    **`Plan` was misfiled** (an object inside the `draw` map; moving it removed the graph's only
+    awkward edge and exposed a byte-identical **duplicate of `hex_grid::HEX_LEN`** no gate could
+    have caught — `L11`/`X26`'s class), the three crawler copies became `hex_edge`/`hex_way`/`hex_roof`,
+    and `hexbody`'s own `src/` went **20 modules → 2 tools**. ⚠ **Deps live in the registry index,
+    not the manifest** — declaring them in `loft.toml` broke the `--lib` dev loop; filed as `H8` in
+    `../crawler/LOFT-HANDOFF.md`. **[J] With G-LIB met, the body (`G1`) is now unambiguously the
+    frontier**, and its forward gate is already armed and red (`tests/joint.loft`).
 
 ### What can no longer be re-derived cheaply — read these first
 

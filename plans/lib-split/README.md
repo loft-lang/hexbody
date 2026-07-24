@@ -5,13 +5,13 @@ the seam every capability ships through)* · **Value:** `F` · **Effort:** `MH`
 
 ## Status
 
-**`G-LIB` is not met, and it gates everything downstream.** Measured 2026-07-24: `loft.toml` has
-**no `[library]` entry**, and **no consumer references hexbody** across `../crawler` and `../moros`.
-The only way in is `--lib` at a sibling working tree — the same unpinned-tree fragility that broke
-this suite the same day, and it would break a consumer's the same way.
+**✅ DONE — `G-LIB` is met.** The geometry is **published** as nine `hex_*` libraries in
+`loft-lang/registry` (`0114376`), the chunk's first inter-dependent family, signed and verified as
+a real consumer (`hex_fit` + its whole DAG installs and runs with **no `--lib`**). hexbody is the
+**workshop** — it ships no library itself; `src/` went **20 modules → 2 tools**.
 
-**Nothing here is built.** The split is *designed* ([`DESIGN.md`](DESIGN.md)) and the design surfaced
-two structural findings that must land before any packaging:
+*Original status kept below, because what the design got right and had to correct is the useful
+part. The design surfaced two structural findings that landed before packaging:*
 
 | finding | what it is |
 |---|---|

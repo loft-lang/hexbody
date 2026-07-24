@@ -90,7 +90,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 | file | role | authority |
 |---|---|---|
 | **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X70` **with trust tiers** | **authoritative** on any object or map |
-| **`plans/lib-split/`** | **`G-LIB`: how hexbody becomes consumable** — six libraries derived from `ROUNDTRIP`'s objects, strictly layered; two prerequisites (the crawler copies leave; `Plan` is un-misfiled) and two open decisions (the naming family, whether `formcensus` ships) | a proposal |
+| **`plans/lib-split/`** | **`G-LIB` ✅ how hexbody became consumable** — nine `hex_*` libraries **published** to `loft-lang/registry`, derived from `ROUNDTRIP`'s objects; hexbody is the workshop, `src/` is two tools. Carries `CRAWLER-HANDOFF.md` (their migration, theirs to run) | done · closure record |
 | **`plans/<active>/DESIGN.md`** | the **in-flight half** of whichever plan is open — proposals, consequences being worked out, and the **open decisions with their costs**. Today that is **`plans/m1-moving-body/DESIGN.md`**; `plans/m0-roundtrip/DESIGN.md` is the same tier for a **closed** plan and is history | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
@@ -121,9 +121,10 @@ decided, and what is true of *this checkout*.
 ## Conventions — verified against `../crawler`, `../moros`, `loft-libs-*`
 
 **Two project kinds, two test conventions. hexbody takes the *application*'s GATE FORM**, like
-crawler — but ⚠ **it must SHIP as the library kind** (`G-LIB`), and does not yet: `loft.toml` has
-no `[library]` entry, so nothing can depend on hexbody except by pointing `--lib` at this working
-tree. The gate convention below is right; the *packaging* is the open gap.
+crawler — and it stays that kind: **hexbody is the WORKSHOP and ships no library itself** (`src/`
+is two tools). Its geometry ships as the nine `hex_*` **libraries** in `../loft-libs-world`, which
+follow the library conventions (`[library] entry`, per-lib `README.md`+`USAGE.md`, SPDX headers,
+`tests/NN-*.loft`, `LOFT_DENY_WARNINGS=1`, the CI matrix). See `plans/lib-split/` (`G-LIB` ✅).
 
 | | **library** (`gridmesh`, `hex_field`) | **application** (crawler) | **hexbody** |
 |---|---|---|---|
@@ -218,6 +219,14 @@ schema of record. `loft.lock` pins only the registry packages (`graphics`/`glb`/
 > **`M0` IS CLOSED** — the round trip, `G2`, the foxel as a storage format, the doorstep and the
 > palette. **23 green gates, ~4 min**, every one carrying a control that fires.
 >
+> **AND `G-LIB` IS MET — the geometry SHIPS.** hexbody is the **workshop**; its geometry is **nine
+> `hex_*` libraries published to `loft-lang/registry`** (`0114376`) — `hex_field` + eight more,
+> the chunk's first inter-dependent family, signed, verified as a real consumer (no `--lib`). So
+> `src/` is now **two tools** (`corpusgen`, `houseshot`); the geometry lives in `../loft-libs-world`.
+> Details: [`plans/lib-split/`](plans/lib-split/). ⚠ Deps live in the registry **index**, not the
+> manifest (`H8`, `../crawler/LOFT-HANDOFF.md`). **The body (`G1`) is now the frontier** — its
+> forward gate is armed and red.
+>
 > **This section deliberately does not restate them.** For where the project stands against its
 > goals and what to do next, read **[`ASSESSMENT.md`](ASSESSMENT.md)** (with its coverage ledger:
 > 56 spec items, 35 defended, and **zero** checkable-today-and-unchecked). For what is gated,
@@ -252,9 +261,10 @@ A measurement cannot overturn any of these. They bound the design.
   So the train, the derailment and the colossus are **requirement sources**, not deliverables: each
   says what the libraries must *allow*, and is satisfied when a **consumer could build it**.
   `G4`/`G★`/`G✦` are no longer goals; `L1`'s *earned set* is empty here, because dynamics is a
-  consumer's call. ⚠ **A capability is not done when a hexbody gate is green — it is done when a
-  consumer can depend on it**, and today none can: `loft.toml` has **no `[library]` entry** and no
-  consumer references hexbody, so the only way in is `--lib` at a working tree.
+  consumer's call. **A capability is not done when a hexbody gate is green — it is done when a
+  consumer can depend on it**, and now one can: **the geometry is PUBLISHED** as nine `hex_*`
+  libraries (`G-LIB` ✅, `plans/lib-split/`). `hexbody` itself is the **workshop** — it ships no
+  library; `src/` is two tools and the geometry lives in `../loft-libs-world`.
   ⚠ **AND THE CONSUMER SET IS GROWING** (same day): *"there will be similar other projects in the
   future: world creation, world simulation, weather, physics simulation for that — probably their
   own project to prevent clutter, almost all of them building in some way on our work."* hexbody is
