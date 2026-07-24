@@ -30,8 +30,8 @@
 // belongs in the material vocabulary — "a door in a cottage wall" is a material — which is
 // what the consumer reads to decide passability.
 use hex_field;
-use hexway;
-use hexroof;
+use hex_way;
+use hex_roof;
 
 pub const HEX_LEN = 1.7320508075688772;   // one hex step = 1.5 m (SCALE.md)
 const SQ3_2 = 0.8660254037844386;         // half a hex step; also metres per world unit

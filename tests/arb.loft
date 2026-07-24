@@ -16,8 +16,8 @@
 use hex_field;
 use hexform;
 use hexarc;
-use hexedge;
-use hexway;
+use hex_edge;
+use hex_way;
 
 const W = 41;
 const H = 41;

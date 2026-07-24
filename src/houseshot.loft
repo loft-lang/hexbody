@@ -16,8 +16,8 @@
 // for why the fit is needed downstream.
 use graphics;
 use hex_field;
-use hexway;
-use hexroof;
+use hex_way;
+use hex_roof;
 use housedraw;
 use hexsurf;
 

@@ -18,7 +18,7 @@
 // for the mirror.  No world coordinates, no tolerance, so a mismatch is a real mismatch.
 use hex_field;
 use hex_grid;
-use hexedge;
+use hex_edge;
 use hexwall;
 
 const Q0 = -16;

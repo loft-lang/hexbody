@@ -9,8 +9,8 @@
 // mode does not count — and two of the obvious ones cannot see the fault they sit next
 // to (see gates 2 and 5).
 use hex_field;
-use hexway;
-use hexroof;
+use hex_way;
+use hex_roof;
 use housedraw;
 
 const Q0 = -20;
