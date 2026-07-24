@@ -953,6 +953,57 @@ go red. So: **a conditional direction must exist** and show a class-dependent `m
 "unconditional" is vacuous; **`N = 13` must genuinely beat `N = 39` on period**, or nothing was
 traded and the third axis decided nothing; and **the measured period must not equal `√N/3`**.
 
+## Linework under the 12 orientations — **DONE** *(law **G**, `rt_flip`, finally gated — `X57`)*
+
+Asked directly: *houses cannot hold walls in the extra 12 directions, but a stencil should be able
+to — does that survive the flip?* It does, and gating it filled a hole: **`rt_flip` had no gate at
+all**. `rt_orient` was green, but only over **houses**, which are drawn by `draw_walls` (the exact
+combinatorial boundary of a filled region). World linework goes through **`wall_write`**, a band
+around a line, and *nothing* had gated that path under the orientations.
+
+### The geometry survives — including the in-between 12
+
+Edges are keyed by their exact **triangle-lattice corners**, so the whole comparison is integer with
+no tolerance: a mismatch is a mismatch.
+
+| check | result |
+|---|---|
+| the 24 vectors under rotation / reflection / six-rotations-identity | **0 / 0 / 0 of 24** |
+| a wall segment **mirrors** exactly, 24 directions × 4 lengths | **96 / 96** (48 in-between) |
+| a wall segment **rotates** exactly — `N=3` and `N=39` families | **0 mismatches** |
+
+### The segment mirror rule — and the trap that hides it
+
+A wall is an **undirected segment**, and `wall_write`'s band sits to one side of the centreline *by
+traversal direction*. So mirroring **reverses traversal**:
+
+```
+mirror(wall(d, A, p))  ==  wall(−d, mirror(farend(d, A, p)), p)
+```
+
+The naive `d → 12−d` anchored at the mirrored **start** is wrong — and wrong in a way almost nothing
+exposes, because for every direction *except the two the mirror fixes* (90°, 270°) the two rules
+agree. There, reversing traversal is the only difference and nothing masks it. That is the gate's
+control, and it fires on exactly those two.
+
+### ⚠ One open anomaly, pinned rather than explained
+
+The **`N = 1` family** (30/90/150…) does **not** satisfy the naive *rotation* rule: **18** cases, all
+at `p = 3`, never at the 180° rotation. It is **not** called a rasteriser defect — the mirror rule
+needed a traversal correction before it was right, and this may be the same kind of thing. The gate
+**asserts the count**, so it cannot drift, improve or worsen unnoticed. It does not touch what the
+gate was written for (the in-between directions are clean), and **houses are unaffected** — they go
+through `draw_walls`, gated 12/12 by `tests/house.loft`.
+
+### What this does NOT establish
+
+The **geometry** survives; the **model** still forbids it. `ROUNDTRIP` §2.2 says *"`D` is never an
+authoring palette… a road is never a stencil"*, the stencil grammar is footprint-only (`stencil /
+side len turn`), and `rebuild` recovers the turtle form alone. So a stencil carrying linework needs
+`draw`, `rebuild` and `fits?` extended together — a design step, not a build. And **roads were not
+tested at all**: `hexway`'s `Track` is a float world-space curve with no lattice anchoring, which
+raises questions walls do not.
+
 ## Order, and where it can go wrong
 
 ```

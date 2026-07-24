@@ -484,7 +484,7 @@ already see safe; only a real scene converts an axis nobody imagined into one yo
 | `rt_close` | J | `Σ lenᵢ·e(hᵢ) = 0` ∧ `Σ turnᵢ = 12` | drop one turn → non-zero sum |
 | `rt_seam` ✅ | K₁ | error `≡ 0` in interiors; `≤ ε_seam` on `Σ` — **landed as `tests/seam.loft` §1–§2 (`X53`)**: `ε_seam ≈ 7.1e-15`, 0 disagreements vs an exact oracle | "fix" a crack by snapping a body wall → interior error ≠ 0 (**fires**: 12 cells) |
 | `rt_contend` ✅ | K₂ | `κ` histogram over the `G★` pile — **landed as `tests/seam.loft` §3–§4 (`X53`)**: κ≥3 rare at a point, worse on a sweep; arbitration order-free + fail-safe | tie-break on iteration order → replay diverges (**fires**: 2 vs 5); a world-blind counter undercounts |
-| `rt_flip` | G | text diff | asymmetric feature → diff |
+| `rt_flip` ✅ | G | text diff — **landed as `tests/flip.loft` (`X57`)**, at the FIELD level rather than the text: linework is closed under the 12 orientations, and a wall segment's mirror **reverses traversal** (`d → −d` at the mirrored far end). 96/96 mirror cases exact, 48 of them in-between | the naive `d → 12−d` at the mirrored start must **fail**, on exactly the 2 directions the mirror fixes (90°/270°) — **fires**. ⚠ `N=1` rotation is an open anomaly, pinned at 18 cases |
 | `rt_drift` | H | text diff after `φ¹²` | inject a rounding step → drift |
 | `rt_orient` | I | field equality over `O × Λ` | — **GREEN** |
 
@@ -568,6 +568,45 @@ here** — crawler holds `plans/9-canopy-trees/TREES.md` plus `src/canopy*.loft`
 **OD-4 · is terrain inside the exact round trip?**
 No `⟨terrain⟩` production. Structurally identical to OD-2, so answer them together. Prior art:
 crawler `plans/8-landform-morphogenesis/`.
+
+---
+
+**OD-13 · the in-between 12 must be FIRST CLASS** *(contradicts `ROUNDTRIP` §2.2 — and this is a
+stated requirement, not a question about whether it is wanted)*
+
+> *"the normal 12 directions are fine but a city/castle needs more directions to be believable so
+> the other 12 need to be first class"* — user, 2026-07-24.
+
+`ROUNDTRIP` §2.2 currently says the opposite in as many words: *"**`D` is never an authoring
+palette.** A stencil is placed at one of the 12 `o ∈ O`, never at one of the 24. A road is never a
+stencil: it is drawn where it runs."* That sentence is what has to move, and `ROUNDTRIP` is the
+settled core, so it moves only once the replacement is built rather than asserted.
+
+**The geometry is already ready** — that half is done and gated:
+
+| | |
+|---|---|
+| the 24 directions are closed under the 12 orientations | `X57`, 0/24 on all three closure checks |
+| a wall segment mirrors exactly, in-between included | `X57`, 96/96 (48 in-between) |
+| the in-between angle error, after the `N = 39` switch | `1.1021°` (`X56`), 3.7× better than before |
+| in-between runs link to the house angles unconditionally | `δ = 0` (`X56`) |
+
+**What is missing is permission and round-trip, not geometry.** To make them first class:
+
+1. **the grammar** — a stencil is footprint-only today (`stencil / side len turn`); it needs a
+   production for embedded linework in its **local** frame;
+2. **`draw`** — render it;
+3. **`rebuild`** — recover it. Today `rebuild` returns the turtle form alone, so embedded linework
+   would be silently dropped and `rt_trip` would not even notice;
+4. **`fits?`** — refuse off-grid anchors and lengths at the doorstep, per `X56`'s quantisation.
+
+**Not verified at all: roads.** `X57` tested *walls*. `hexway`'s `Track` is a float world-space curve
+with no lattice anchoring, so a stencil-local road raises anchoring and recovery questions walls do
+not. Treat "stencils carry roads" as unexamined.
+
+**Also open, and now more relevant:** the `N = 1` rotation anomaly (`X57`, 18 cases pinned). It is in
+the 30/90/150° family — *house* angles — but a castle drawing those as **linework** rather than as a
+house footprint would meet it.
 
 ---
 

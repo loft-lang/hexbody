@@ -134,6 +134,7 @@ items marked ⚠ below depend on one.
    | `arb.loft` | **I-ARBIT**, **K-PROXY** — overlap arbitration by nearest surface (`cut_arb`): each boundary edge → its nearest analytic surface, order-free, ties to lower id (`X54`) |
    | `line.loft` | **I-DOMAIN**, **I-ARBIT** — stencil against linework: the cut spans domains A/B, and an E–W world line recovers exactly straight, eave_spread 0 (`X55`) |
    | `censusb.loft` | **I-DOMAIN**, **I-QUANT**, **K-FIT** — the domain-B cost table on three axes: period classes (6/6/12), the angle split, and **`δ` — whether a direction links to the house angles unconditionally** (`X56`) |
+   | `flip.loft` | **I-FLIP**, **I-CLOSED-OPS** — linework under the 12 orientations: the 24 directions are closed, and a wall segment's mirror reverses traversal (`d → −d` at the mirrored far end); in-between directions included (`X57`) |
    | `text.loft` | **I-EXACT** — `write(read(T)) = T` as a byte diff, no ε (`X39`); **C1–C5** |
    | `trip.loft` | **I-RT**, **I-EXACT**, **I-TOTAL** — `write(rebuild(draw(read(T)))) = T` byte-for-byte over the **committed** corpus (`X41`); control: a non-grammar footprint → R2 with `ρ > 0` |
    | `wall.loft` §1, §2, §5 | **I-DOMAIN** *(`D`; the even/odd split, measured)* |

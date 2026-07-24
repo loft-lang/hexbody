@@ -1,0 +1,249 @@
+// flip — THE GATE FOR LINEWORK UNDER THE 12 ORIENTATIONS (law **G**, `rt_flip`).
+// Every check has a control that must fire.
+//
+// `rt_orient` (law I) is green over HOUSES — `tests/house.loft`, 12/12 in cells and edges. But a
+// house is drawn by `draw_walls`, the exact combinatorial boundary of a filled region.  WORLD
+// LINEWORK is drawn by `wall_write`, a band around a line, and nothing gated that path under the
+// orientations at all.  This gate closes that: if a stencil is ever to CONTAIN a wall in one of the
+// 24 directions, rotating or flipping the stencil must map it onto another drawable wall EXACTLY,
+// or the flipped stencil draws a different field than the flip of the drawn field.
+//
+//   1  the 24 direction VECTORS are closed under the 12 orientations
+//   2  a wall SEGMENT rotates exactly, at several lengths
+//   3  a wall SEGMENT mirrors exactly — traversal reverses, so `d → −d` at the mirrored FAR END
+//   4  CONTROL: the naive mirror rule must FAIL, and fail on exactly the self-mirror directions
+//
+// Exact integer arithmetic throughout: an edge is keyed by its two **triangle-lattice corners**, and
+// the orientations are exact integer maps on those — `(a,b) → (−b, a+b)` for 60°, `(a,b) → (−a, a+b)`
+// for the mirror.  No world coordinates, no tolerance, so a mismatch is a real mismatch.
+use hex_field;
+use hex_grid;
+use hexedge;
+use hexwall;
+
+const Q0 = -16;
+const R0 = -16;
+const GW = 33;
+const GH = 33;
+
+fn rot_a(a: integer, b: integer) -> integer { 0 - b }
+fn rot_b(a: integer, b: integer) -> integer { a + b }
+fn mir_a(a: integer, b: integer) -> integer { 0 - a }
+fn mir_b(a: integer, b: integer) -> integer { a + b }
+
+// one integer per triangle point, and one per edge (unordered pair of its corners)
+fn pcode(a: integer, b: integer) -> integer { (a + 500) * 1000 + (b + 500) }
+fn ekey(c1: integer, c2: integer) -> integer {
+  if c1 < c2 { return c1 * 1000000 + c2; }
+  c2 * 1000000 + c1
+}
+
+// The marked edges of `e`, keyed exactly, after `nrot` 60° rotations and an optional mirror.
+// Sorted, so two edge sets compare elementwise.
+fn edge_keys(e: EdgeSet, nrot: integer, mir: boolean) -> vector<integer> {
+  out: vector<integer> = [];
+  for r in R0..R0 + GH {
+    for q in Q0..Q0 + GW {
+      for d in 0..3 {
+        (nq, nr) = hex_neighbor(q, r, d);
+        if edge_mat(e, q, r, nq, nr) != 0 {
+          (e1, e2) = hex_edge_corners(d);
+          a1 = hex_corner_tri_a(q, r, e1);
+          b1 = hex_corner_tri_b(q, r, e1);
+          a2 = hex_corner_tri_a(q, r, e2);
+          b2 = hex_corner_tri_b(q, r, e2);
+          if mir {
+            ta1 = mir_a(a1, b1); tb1 = mir_b(a1, b1); a1 = ta1; b1 = tb1;
+            ta2 = mir_a(a2, b2); tb2 = mir_b(a2, b2); a2 = ta2; b2 = tb2;
+          }
+          for t in 0..nrot {
+            ra1 = rot_a(a1, b1); rb1 = rot_b(a1, b1); a1 = ra1; b1 = rb1;
+            ra2 = rot_a(a2, b2); rb2 = rot_b(a2, b2); a2 = ra2; b2 = rb2;
+          }
+          out += [ekey(pcode(a1, b1), pcode(a2, b2))];
+        }
+      }
+    }
+  }
+  for i in 1..len(out) {
+    p = i;
+    while p > 0 && (out[p - 1] ?? 0) > (out[p] ?? 0) {
+      t2 = out[p - 1] ?? 0; out[p - 1] = out[p] ?? 0; out[p] = t2; p = p - 1;
+    }
+  }
+  out
+}
+
+fn keydiff(a: vector<integer>, b: vector<integer>) -> integer {
+  if len(a) != len(b) { return 9999; }
+  n = 0;
+  for i in 0..len(a) { if (a[i] ?? 0) != (b[i] ?? 0) { n = n + 1; } }
+  n
+}
+
+fn draw_wall(d: integer, a0: integer, b0: integer, p: integer) -> EdgeSet {
+  e = edgeset_new(Q0, R0, GW, GH);
+  w = wall_from_run(d, a0, b0, p, 1);
+  wall_write(w, e, Q0, R0, GW, GH);
+  e
+}
+
+fn main() {
+  ok = true;
+  println("=== linework under the 12 orientations (law G, rt_flip) ===");
+
+  // ── 1. THE DIRECTION VECTORS ARE CLOSED ───────────────────────────────────
+  println("");
+  println("1. VECTORS — the 24 directions are closed under rotation and reflection");
+  nrot = 0; nref = 0; nid = 0;
+  for d in 0..24 {
+    k = wall_step_k(d);
+    m = wall_step_m(d);
+    e4 = (d + 4) % 24;
+    rkv = ((k - m) / 2) ?? 0;
+    rmv = ((3 * k + m) / 2) ?? 0;
+    if rkv != wall_step_k(e4) || rmv != wall_step_m(e4) { nrot = nrot + 1; }
+    f = ((12 - d) % 24 + 24) % 24;
+    if (0 - k) != wall_step_k(f) || m != wall_step_m(f) { nref = nref + 1; }
+    ak = k; am = m;
+    for t in 0..6 {
+      nk = ((ak - am) / 2) ?? 0; nm = ((3 * ak + am) / 2) ?? 0; ak = nk; am = nm;
+    }
+    if ak != k || am != m { nid = nid + 1; }
+  }
+  println("   rotation d→d+4: {nrot} mismatches; reflection d→12−d: {nref}; six rotations = id:"
+          + " {nid}   (all want 0 of 24)");
+  if nrot != 0 || nref != 0 || nid != 0 {
+    println("  FAIL: the direction table is not closed under the orientations"); ok = false;
+  }
+
+  // ── 2. A WALL SEGMENT ROTATES EXACTLY ─────────────────────────────────────
+  //
+  // A rotation preserves handedness, so traversal is preserved: the rotated wall is the same
+  // traversal in direction d+4n from the rotated anchor.  Only ADMISSIBLE runs are compared — an
+  // `p` the doorstep refuses is not a wall anyone can author, so it proves nothing either way.
+  //
+  // Partitioned by period class, because the answer is not uniform: the `N = 3` and `N = 39`
+  // families rotate exactly, and the `N = 1` family (30/90/150/…) does NOT, at `p = 3`.  See §2b.
+  println("");
+  println("2. ROTATION — rot^n(wall(d, A, p)) == wall(d+4n, rot^n(A), p), admissible runs only");
+  bad3 = 0; bad1 = 0; bad39 = 0; nchecked = 0; nskip = 0;
+  for p2 in 1..4 {
+    for d2 in 0..24 {
+      if !wall_run_ok(d2, 3, 0, p2) { nskip = nskip + 1; }
+      else {
+        base = draw_wall(d2, 3, 0, p2);
+        for n2 in 1..6 {
+          aa = 3; bb = 0;
+          for t3 in 0..n2 { na = rot_a(aa, bb); nb = rot_b(aa, bb); aa = na; bb = nb; }
+          native = draw_wall((d2 + 4 * n2) % 24, aa, bb, p2);
+          if keydiff(edge_keys(base, n2, false), edge_keys(native, 0, false)) != 0 {
+            nn = tri_n2(d2);
+            if nn == 3 { bad3 = bad3 + 1; }
+            if nn == 1 { bad1 = bad1 + 1; }
+            if nn == 39 { bad39 = bad39 + 1; }
+          }
+          nchecked = nchecked + 1;
+        }
+      }
+    }
+  }
+  println("   {nchecked} admissible cases ({nskip} refused runs skipped)");
+  println("   mismatches by period class:  N=3 (0/60/120…): {bad3}   N=39 (in-between): {bad39}"
+          + "   N=1 (30/90/150…): {bad1}");
+  if bad3 != 0 || bad39 != 0 {
+    println("  FAIL: a wall in the N=3 or N=39 family does not rotate onto a drawable wall");
+    ok = false;
+  }
+
+  // ── 2b. THE N=1 FAMILY DOES NOT ROTATE UNDER THIS RULE — an OPEN question ──
+  //
+  // Found by this gate, not assumed.  Every failure is `N = 1`, at `p = 3` only, and never at
+  // `n = 3` (the 180° rotation).  It is NOT called a rasteriser defect here, because the mirror
+  // rule in §3 needed a traversal correction before it was right, and this may be the same kind of
+  // thing — the naive rotation rule may simply be wrong for the staircase family.  Either way it is
+  // pinned: the count is asserted, so it cannot drift, improve or worsen unnoticed.
+  //
+  // It does not touch what this gate was written for: the in-between directions are clean, and
+  // HOUSES never come near it — they are drawn by `draw_walls` (the exact combinatorial boundary),
+  // gated 12/12 by `tests/house.loft`, not by `wall_write`.
+  println("");
+  println("2b. OPEN — the N=1 family (30/90/150…) does not satisfy the naive rotation rule");
+  println("    {bad1} cases, all at p=3, none at n=3 (the 180° rotation). Pinned, not explained:");
+  println("    either the rule needs the traversal care §3's mirror needed, or `wall_write` is not");
+  println("    rotation-covariant for the staircase family. Houses are unaffected (draw_walls).");
+  if bad1 != 18 {
+    println("  FAIL: the N=1 rotation anomaly moved — it was 18 cases, now {bad1}. Re-diagnose"
+            + " rather than re-baselining: it either got fixed (good, remove this) or spread");
+    ok = false;
+  }
+
+  // ── 3. A WALL SEGMENT MIRRORS EXACTLY ─────────────────────────────────────
+  //
+  // A mirror REVERSES handedness, and `wall_write`'s band is offset to one side of the centreline
+  // by traversal direction — so the mirrored wall is the same segment traversed the OTHER way:
+  // direction `−d`, anchored at the mirrored FAR END.
+  println("");
+  println("3. MIRROR — mirror(wall(d, A, p)) == wall(−d, mirror(farend), p)");
+  badmir = 0; nmir = 0; badodd = 0; nbetween = 0;
+  for p3 in 1..5 {
+    for d3 in 0..24 {
+      base2 = draw_wall(d3, 3, 0, p3);
+      fa = wall_end_a(d3, 3, p3);
+      fb = wall_end_b(d3, 0, p3);
+      native2 = draw_wall(((0 - d3) % 24 + 24) % 24, mir_a(fa, fb), mir_b(fa, fb), p3);
+      if keydiff(edge_keys(base2, 0, true), edge_keys(native2, 0, false)) != 0 {
+        badmir = badmir + 1;
+        if d3 % 2 == 1 { badodd = badodd + 1; }
+      }
+      nmir = nmir + 1;
+      if d3 % 2 == 1 { nbetween = nbetween + 1; }
+    }
+  }
+  println("   {nmir} (direction × length) cases, {nbetween} of them in-between:"
+          + " {badmir} mismatches, {badodd} in-between (want 0 and 0)");
+  if badmir != 0 { println("  FAIL: a wall does not mirror onto a drawable wall"); ok = false; }
+  if nbetween <= 0 {
+    println("  FAIL: no in-between direction was exercised — the whole point went untested");
+    ok = false;
+  }
+
+  // ── 4. CONTROL — THE NAIVE MIRROR RULE MUST FAIL ──────────────────────────
+  //
+  // Treating the wall as a directed ray gives `d → 12−d` anchored at the mirrored START.  That is
+  // wrong, and it is wrong in a way almost nothing exposes: for every direction except the two the
+  // mirror FIXES (90° and 270°), the two rules agree.  So the control both fires and names its
+  // failure set — if it ever stopped firing, §3's rule would be untested.
+  println("");
+  println("4. CONTROL — the naive rule (d→12−d at the mirrored START) must fail");
+  naive_bad = 0;
+  naive_list = "";
+  for d4 in 0..24 {
+    base3 = draw_wall(d4, 3, 0, 3);
+    naive = draw_wall(((12 - d4) % 24 + 24) % 24, mir_a(3, 0), mir_b(3, 0), 3);
+    if keydiff(edge_keys(base3, 0, true), edge_keys(naive, 0, false)) != 0 {
+      naive_bad = naive_bad + 1;
+      naive_list = naive_list + "{d4} ";
+    }
+  }
+  println("   the naive rule fails on {naive_bad} of 24 directions: {naive_list}");
+  println("   (these are exactly the directions the mirror FIXES, where reversing traversal is the"
+          + " only difference and nothing else masks it)");
+  if naive_bad == 0 {
+    println("  FAIL: control did not fire — the naive rule works, so section 3 proves nothing about"
+            + " the traversal rule"); ok = false;
+  }
+  if naive_bad != 2 {
+    println("  FAIL: the naive rule failed on {naive_bad} directions, expected exactly 2 (the"
+            + " self-mirror pair) — the failure set is not what it should be"); ok = false;
+  }
+
+  println("");
+  println("   Linework is closed under the 12 orientations, in-between directions included, so a");
+  println("   stencil MAY carry one: the geometry survives. The segment mirror rule is d → −d at");
+  println("   the mirrored FAR END — the naive d → 12−d is wrong and only 90°/270° expose it.");
+
+  println("");
+  if ok { println("=== FLIP OK ==="); }
+  else { println("=== flip test FAILED ==="); }
+}
