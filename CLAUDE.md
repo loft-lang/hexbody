@@ -190,7 +190,7 @@ a file in `tests/` cannot `use` a module in `src/` (*"Library 'hexform' not foun
 ## Run
 
 ```sh
-make test    # all 23 gates, ~4 min (the table is tools/run_tests.sh; wall alone is ~3 min)
+make test    # all 24 gates, ~4 min (the table is tools/run_tests.sh; wall alone is ~3 min)
 make shot    # contact sheet -> /tmp/house12.png
 ```
 
@@ -217,19 +217,26 @@ schema of record. `loft.lock` pins only the registry packages (`graphics`/`glb`/
 ## State (2026-07-24)
 
 > **`M0` IS CLOSED** — the round trip, `G2`, the foxel as a storage format, the doorstep and the
-> palette. **23 green gates, ~4 min**, every one carrying a control that fires.
+> palette. **24 green gates, ~4 min** (the 24th is `G1` — see below), every one carrying a control
+> that fires.
 >
 > **AND `G-LIB` IS MET — the geometry SHIPS.** hexbody is the **workshop**; its geometry is **nine
 > `hex_*` libraries published to `loft-lang/registry`** (`0114376`) — `hex_field` + eight more,
 > the chunk's first inter-dependent family, signed, verified as a real consumer (no `--lib`). So
-> `src/` is now **two tools** (`corpusgen`, `houseshot`); the geometry lives in `../loft-libs-world`.
-> Details: [`plans/lib-split/`](plans/lib-split/). ⚠ Deps live in the registry **index**, not the
-> manifest (`H8`, `../crawler/LOFT-HANDOFF.md`). **The body (`G1`) is now the frontier** — its
-> forward gate is armed and red.
+> `src/` holds hexbody's gates + two tools (`corpusgen`, `houseshot`); the geometry lives in
+> `../loft-libs-world`. Details: [`plans/lib-split/`](plans/lib-split/). ⚠ Deps live in the registry
+> **index**, not the manifest (`H8`, `../crawler/LOFT-HANDOFF.md`).
+>
+> **AND `G1` IS BUILT — the body half has started** (2026-07-25). `src/hexjoint.loft`,
+> `tests/joint.loft` (gate 23 of 24): a pose is a **pure function** of joint values (`I6`), a
+> wheel's angle is `travel/radius` (skid machine-ε — the body's `ε_seam`, not algebraic 0), a rig
+> round-trips as canonical text, and a bone carries a **derived proxy ⊇ its shape** (`I4`). It
+> defends `G1`/`I6`/`I4`/`I-POSE`/`K-FIT`; workshop form, ships as a `hex_*` library next.
+> **The frontier is now `G3` (interaction) and `I9` (replay)** — [`plans/m1-moving-body/`](plans/m1-moving-body/).
 >
 > **This section deliberately does not restate them.** For where the project stands against its
 > goals and what to do next, read **[`ASSESSMENT.md`](ASSESSMENT.md)** (with its coverage ledger:
-> 56 spec items, 35 defended, and **zero** checkable-today-and-unchecked). For what is gated,
+> 56 spec items, **39 defended**, and **zero** checkable-today-and-unchecked). For what is gated,
 > **[`ROUNDTRIP.md`](ROUNDTRIP.md) §7** — `X1`–`X70` with trust tiers, 55 at T1, and the 15 below
 > the line **all inherited** from crawler or moros. For the gate↔spec map, **[`SPEC.md`](SPEC.md)**.
 >
@@ -384,10 +391,11 @@ A measurement cannot overturn any of these. They bound the design.
   been masking four of six cases (`X57`).
 - **The tripwire beats both a permanently red suite and a forgotten TODO.** `SURFACE_LANDED` sat
   `false` from S4 to `G2`, printing PENDING, and fired on exactly the step it was aimed at (`X62`).
-  Use it for the next requirement that outruns its machinery. **One is armed now**:
-  `tests/joint.loft` states `SPEC` **I6** and is held red by the runner's `run_red` until `G1`
-  lands — it fails if it prints `JOINT OK`, fails if it is red for any other reason, and flips to
-  `JOINT BLOCKED` the moment a body verb is declared in `src/`.
+  Use it for the next requirement that outruns its machinery. **Vindicated a second time by `G1`:**
+  `tests/joint.loft` was written red (`run_red`) before `src/hexjoint.loft` existed; its tripwire
+  would have flipped it to `JOINT BLOCKED` the moment a body verb landed, forcing the real checks;
+  it fired on exactly that step and was then promoted into the table (gate 23 of 24). The next one
+  to arm this way is `I9`'s byte-identical replay — now that `G1` produced animate state to replay.
 
 ### Rules a specific defect paid for
 

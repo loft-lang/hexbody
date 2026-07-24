@@ -31,10 +31,12 @@ field exactly, with no tolerance anywhere* — is **done and gated**. That is wh
 on, and it buys more than it appears to: save/load, undo, copy/paste, diffable project files,
 orientation, and refusal-with-an-offer all fall out of it.
 
-The **body** half of "hexbody" — motion, interaction, vehicles, destruction (`G1`, `G3`, `G4`,
-`G6`) — is **not built at all**. Today the repo is an exact-geometry round-trip harness with a
-body-shaped hole. That is on-plan (`PLAN.md` M0 is the round trip), but it means "assets in a
-game" currently means *static* assets.
+The **body** half of "hexbody" has now **started**: `G1` (the moving body) is built and gated
+2026-07-25 — a pure pose, a rolling wheel, a rig that round-trips, and a collision proxy derived
+from the geometry (`src/hexjoint.loft`, `tests/joint.loft`). What is *still* unbuilt is the rest of
+it — **`G3` interaction** and **`G6` destruction** — while `G4`/`G★`/`G✦` moved to Use cases (a
+consumer's, not hexbody's). So "assets in a game" is no longer only *static*: a body can be
+authored, saved, posed and collision-checked. What is missing is bodies *interacting* and *breaking*.
 
 ---
 
@@ -99,11 +101,11 @@ That is more than most pipelines can say.
 
 | missing | status |
 |---|---|
-| **`G1` moving body** (revolute joints, wheel angle = travel/radius) | **not built** |
-| **`G3` interaction** (swept volumes, `dt`-independent) | **not built** |
-| **`G4` vehicles** (the train) | **not built** |
-| **`G6` destruction** (ruins, crumble, wall-becomes-floor) | **not built** |
-| **`G★` the demo, `G✦` the colossus** | **not built** |
+| ~~**`G1` moving body**~~ | ✅ **BUILT 2026-07-25** (`src/hexjoint.loft`, `tests/joint.loft`) — pure pose (`I6`), wheel angle = travel/radius (skid machine-ε, the body's float step), the rig canonical text, and a **derived proxy ⊇ its shape** (`I4`). Workshop form; ships as a `hex_*` library next. `plans/m1-moving-body/` |
+| **`G3` interaction** (swept volumes, `dt`-independent, `I5`) | **not built** — the next body milestone (M2, the chokepoint) |
+| **`G6` destruction** (ruins, crumble, wall-becomes-floor, `I7`) | **not built** |
+| **`G4` train · `G★` demo · `G✦` colossus** | **not hexbody's to build** — Use cases now (`SPEC`), requirement sources; a consumer builds them |
+| **determinism / replay** (`I9`, `L7`) | **not built, but now writable** — G1 produced animate state to replay; the next forward gate to arm |
 | **mesh export** | **not built** — `G2` *computes* the quads; nothing emits a mesh format. **[J] small but real: an asset you cannot export is not an asset** |
 | **roofs** | **[G] partly** — `hexroof` is a byte-identical copy of crawler's, but `tests/house.loft` *does* exercise it: `draw_roof`, `roof_ponds` (must be 0) and `eave_spread`. **[J]** That gates *drainage and the eave*, not the roof as a recoverable object — no roof goes through `draw`/`rebuild`, so it has no round-trip status |
 | **roads** | **[B] and unexamined** — `hexway`'s `Track` is a float world-space curve with **no lattice anchoring**. `X55` gated *linework* (`d ∈ D`), which is a different thing. Treat "stencils carry roads" as unverified |
@@ -210,21 +212,22 @@ storage/doorstep/vocabulary stack is now gated or schema-checked.*
    **function**, not an injective one, and `θ` vs `θ + 2π` is the obvious collision — so
    `recover_joints(pose(j)) = j` needs a stated domain, which is a `DESIGN.md` §10 decision before
    it is any gate's assertion. Same shape `X38`'s census settled for `draw`.
-1. **Start the body** (`G1`) — the first genuinely new subsystem, and the half of "hexbody" that
-   does not exist yet (`G1`/`G3`/`G4`/`G6` are all unbuilt). Largest by far. Read `crawler` first
-   (`bodytest`). **[J] this is the real next milestone**; everything before it was M0 finishing.
-   ⚠ **It is also the first milestone with no round-trip framing** — M0's method (a corpus of
-   committed bytes, a byte diff) does not transfer to motion unmodified. See item 0.
-2. **Mesh export** — still small, still the thing that most directly unblocks "assets in a game".
+1. ~~**Start the body** (`G1`)~~ **DONE 2026-07-25** — `src/hexjoint.loft`, `tests/joint.loft`, all
+   four M1 phases: the rig canonical text (A), the pure pose (B), the rolling wheel (C), the derived
+   proxy (D). **[G]** gates `I6`, `I4`, `I-POSE`, `K-FIT`. It confirmed the fear in item 0 was
+   right — M0's byte-diff method does *not* transfer to motion, so the body's checks are purity,
+   an identity and a containment, not a corpus. **[J] The frontier moved to the rest of the body.**
+2. **Ship `G1` as a `hex_*` library** — built and gated in the workshop; the natural follow-through,
+   same path the geometry took (`plans/lib-split/`).
+3. **`G3` — interaction** (M2, the chokepoint): two bodies interact *iff* swept volumes cross,
+   `dt`-independent (`I5`). The next genuinely-new subsystem. Read `crawler` first.
+4. **Determinism / replay** (`I9`, `L7`) — G1 produced animate state (joint values) to replay, so
+   the byte-identical-replay gate is finally writable; `L7` says *built from line one*, so arm it
+   the way `joint.loft` was armed before its subject.
+5. **Mesh export** — still small, still the thing that most directly unblocks "assets in a game".
    `G2` computes the quads; nothing emits a format.
-3. **An opening body in the palette** — `wd_body` has no `DOOR`/`OPENING`/`DOORWAY` (`X70`). moros
-   owns the palette and `L13` means hexbody consumes it, so this is **upstream work**, not hexbody's.
-   Until it exists, an opening has no geometry to render.
-4. **Multiple runs per stencil** — the recorded `OD-13` remainder; needs the interior edges split
-   into connected components first.
-5. **The roof material** — `draw_roof` writes 27 heights and 0 materials, so a roof cell is
-   indistinguishable from terrain at that height (`X69`). Costs nothing today; fixing it means
-   deciding what a roof material *is*.
+6. **Lower-stakes, recorded:** an opening body in `wd_body` (moros's, upstream) · multiple runs per
+   stencil (`OD-13` remainder) · the roof material (`draw_roof` writes 0 materials, `X69`).
 
 ### The coverage ledger, and what it says
 
@@ -236,6 +239,9 @@ and exactly **two were checkable today and unchecked** — `L6` (the seam) and `
 
 **[G] Both are now gated** — `tests/scope.loft` and `tests/scale.loft`, four and five controls
 respectively. **56 defined, 35 defended, 21 not, and the checkable-but-unchecked column is empty.**
+**[G] Updated 2026-07-25:** G1 landing moved `G1`/`I6`/`I4`/`K-JOINT` into the defended set —
+**39 defended, 17 not** — and every remaining gap is still *not built yet* (the rest of the body),
+never *built but ungated*. `SPEC.md`'s ledger carries the current breakdown.
 
 **[G] Each found something.** `L8`'s ladder is exact — a hex step is `3/2` m, `WALL_W` is `1/4` m,
 `BAND_SIDES` is `3/4` m, all within **1 ulp** — but the figure `SPEC` L8 *prints*, `0.866`, misses
@@ -287,8 +293,8 @@ is ungated. The gap is entirely "not built yet", which is a schedule, not a debt
     have caught — `L11`/`X26`'s class), the three crawler copies became `hex_edge`/`hex_way`/`hex_roof`,
     and `hexbody`'s own `src/` went **20 modules → 2 tools**. ⚠ **Deps live in the registry index,
     not the manifest** — declaring them in `loft.toml` broke the `--lib` dev loop; filed as `H8` in
-    `../crawler/LOFT-HANDOFF.md`. **[J] With G-LIB met, the body (`G1`) is now unambiguously the
-    frontier**, and its forward gate is already armed and red (`tests/joint.loft`).
+    `../crawler/LOFT-HANDOFF.md`. **[J] With G-LIB met, the body became the frontier — and `G1` has
+    since landed** (2026-07-25, `tests/joint.loft` now green); the frontier moved on to `G3`.
 
 ### What can no longer be re-derived cheaply — read these first
 
