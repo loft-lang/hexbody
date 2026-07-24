@@ -78,6 +78,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
 | `PLAN.md` | milestone through-line (P, M0–M7); the synthesis layer, not a plan index | — |
+| **`ASSESSMENT.md`** | the project **measured against its goals** (editor-readiness, game-asset readiness, the frontier). Every claim marked **[G]** gated / **[B]** built-ungated / **[J]** judgement | **synthesis, not authority** — never cite a **[J]** as fact |
 | `plans/README.md` | plan conventions, lightest-workflow table, value categories | — |
 
 **Build and verify against `ROUNDTRIP` + `SPEC`; design in `DESIGN.md`.** If building needs a fact, it belongs there as
@@ -137,6 +138,12 @@ Needs `../loft` and `../loft-libs-world` as siblings. **`--lib` reads the WORKIN
 check that `loft-libs-world` is on branch `dev` before debugging anything strange.
 
 ## State (2026-07-24)
+
+> **`M0`'s round trip is CLOSED and `G2` is done — 18 green gates.** For where the project stands
+> against its goals and what to do next, read **[`ASSESSMENT.md`](ASSESSMENT.md)**: the editor
+> foundation is largely built, the **body** half (`G1`/`G3`/`G4`/`G6`) is not built at all, and the
+> largest single risk is that the **foxel schema is still T4** — it is the storage layer everything
+> is designed against, and the word `foxel` appears in `src/` only in comments.
 
 - **`G2` is DONE (`X61` + `X62`).** The wall renders as **ONE flat quad per side** — its analytic
   surface — not one strip per stored edge: **38 stored edges → 4 quads**, `eave_spread(fitted)` is

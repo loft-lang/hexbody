@@ -1,0 +1,165 @@
+# ASSESSMENT — the project measured against its goals
+
+*Written 2026-07-24, from the gated state at `dd38f26` (18 green gates, `X1`–`X62`).*
+
+**The question this answers**, asked by the user: *can we use this work in a friendly but powerful
+editor, and as assets in a game?*
+
+**How to read it.** Every claim below is marked: **[G]** gated here (T1, a green gate with a
+control that fires) · **[B]** built but ungated · **[J]** my judgement, falsifiable but not
+measured. Do not promote a **[J]** to a fact by citing this file — that is exactly the `X15`
+mistake this repo exists to avoid. This is a **synthesis document**, not an authority: on any
+object or map `ROUNDTRIP.md` wins, on any target `SPEC.md` wins.
+
+---
+
+## 1. The short answer
+
+**The editor foundation is real and mostly done. The game-asset half is largely unbuilt, and the
+gap is not where it looks.**
+
+The load-bearing, genuinely hard part — *a model that survives a round trip through a lattice
+field exactly, with no tolerance anywhere* — is **done and gated**. That is what an editor stands
+on, and it buys more than it appears to: save/load, undo, copy/paste, diffable project files,
+orientation, and refusal-with-an-offer all fall out of it.
+
+The **body** half of "hexbody" — motion, interaction, vehicles, destruction (`G1`, `G3`, `G4`,
+`G6`) — is **not built at all**. Today the repo is an exact-geometry round-trip harness with a
+body-shaped hole. That is on-plan (`PLAN.md` M0 is the round trip), but it means "assets in a
+game" currently means *static* assets.
+
+---
+
+## 2. The editor — what is already yours
+
+`SPEC` **L6** says the editor itself is the **consumer's**, not hexbody's. So the question is not
+"is there an editor" (there is not, by design) but **"does hexbody hand an editor what it needs?"**
+
+### What "friendly" needs, and what exists
+
+| an editor needs | status | where |
+|---|---|---|
+| **never a blank "no"** — refuse with a *named reason* and an *offer* | **[G]** `draft_fits` returns a named reason (centre anchor, zero periods, bad direction, endpoint off the period grid, run leaving the footprint); `draft_fit_p` offers the nearest shorter run that fits. **0 disagreements, 0 false accepts** against the trip itself | `X60`, `tests/embed.loft` |
+| **arbitrary mouse point → legal geometry** | **[G]** `nearest_vertex` + `snap_run_d24` / `snap_run_p`, both gated against brute force; `run_end_dist` is the residual to display | `tests/wall.loft` §8 |
+| **no silent correction** — the user must see what was changed | **[G]** `I-QUANT`/`X50` is the rule and it is measured three independent ways (endpoints → hex vertices, feature `t` → edge centres, arc radius → shells). Off the grid a value is *silently snapped, not rejected*, which is precisely why the doorstep must refuse it | `X48`, `X49`, `X50` |
+| **save / load / undo / diff** | **[G]** `write(rebuild(draw(read(T)))) = T` **byte-for-byte** over 119 corpus entries + all 12 in-between directions. A canonical text means project files are diffable and merge sanely | `X41`, `X60` |
+| **author once, get every orientation** | **[G]** law **I**, 12/12 equivariant in cells *and* edges; the flip is exact on linework too (96/96) | `G0`, `X57` |
+| **place on terrain without re-authoring** | **[G]** seating writes the `height` slot only — 0 cell diffs, 0 edge diffs, authored text back on flat ground *and* on a slope; the slope's cost is a **returned residual** (`1.650`), not an absorbed one | `X59` (`G5`'s seating half) |
+| **combine pieces predictably** | **[G]** union-then-cut, order-free by construction, adjacent stencils **fuse** (nobody owns the shared edge) | `X52` |
+| **bridges / floors that do not interfere** | **[G]** a level **filters before the cut**, so different sheets never fuse or contend; level 0 is byte-identically free | `X58` |
+| **clean render of what you authored** | **[G]** one flat quad per wall, corners **mitered** to a 0 gap; features draw as intervals on the surface | `X61`, `X62` (`G2` ✅) |
+
+**[J] This is a strong hand.** The refuse-with-an-offer contract in particular is the thing most
+editors get wrong and it is here *gated against the round trip itself*, which is the only check
+that cannot be gamed: the doorstep is correct exactly when it accepts what round-trips and refuses
+what does not.
+
+### What is missing before an editor can ship
+
+| gap | severity | note |
+|---|---|---|
+| **the editor** | — | **by design** (`L6`). Consumer-side. Not a hexbody defect |
+| **the coarse-quantum presentation obligation** | **[J] medium** | The user accepted the 5.408 m in-between quantum *"as long as they are clearly visible inside the editor"*. The **mechanism is gated** (`wall_snap_p`, `run_end_dist`); the **showing** is consumer-side and unbuilt. This is a promise hexbody has made and cannot itself keep |
+| **`fits?` covers form + ONE run** | **[J] high** | `K-FIT` is the doorstep contract for *everything*. `draft_fits` implements it for the turtle form and a single embedded run. **Features, arcs, levels and terrain have no doorstep** — their quantisation is measured (`X48`, `X49`, `X59`) but nothing refuses an off-grid value at authoring time. Each one is a silent-snap hole |
+| **one embedded run per stencil** | **[G]** known, recorded | Several need the interior edges split into connected components first (`X60`) |
+| **L-shaped houses are not authorable** | **[G]** a real limit, written down | `I3` makes the wall the boundary of the fill, so a reflex corner enclosing no distinct cells is invisible to the field (`X46`). Not a bug — a grammar limit the editor must express |
+| **no `Plan`-as-primitive doorstep** | **[J] medium** | `Plan` is continuous-then-rasterised; `X62` measured that its corner is *quantised away*. An editor that shows the user a continuous rectangle is showing them something the field does not hold |
+
+---
+
+## 3. Game assets — what is real and what is claimed
+
+### The founding claim, and how far it is honoured
+
+The project's premise: *collision **proxies are derived from the geometry itself***. That is the
+part that distinguishes it from "a mesh and a hand-drawn hitbox".
+
+| the claim | status |
+|---|---|
+| the wall's **analytic surface** is exact, not fitted | **[G]** direction *exactly* a heading (zero cross product, 24/24), position an exact rational, no tolerance (`X47`) |
+| it renders as **one quad per side**, mitered | **[G]** 38 stored edges → 4 quads, `eave_spread` exactly 0; miter gap exactly 0 at 48/48 corners (`X61`, `X62`) |
+| the **proxy** is tagged from the geometry | **[G]** `cut_arb` tags each boundary edge with its **nearest analytic surface**, 66/66 and 112/112, order-free, ties to the lower id (`X54`, `X55`) |
+| a **posed body** meets the world within machine ε | **[G]** `ε_seam ≈ 7.1e-15`; a routed query agrees with an exact integer oracle on all 1681 grid points, interiors exact. The forbidden fix (snapping the body to the world lattice) misclassifies 12 interior cells — so 0 is a result, not a tautology (`X53`) |
+| arbitration is **order-free and fail-safe** | **[G]** owner = lowest id among solids; a world gap under a body solid reads solid, no fall-through (`X53`, `I4`) |
+| **determinism** | **[G] partly** — the seam and arbitration are deterministic functions of their inputs by construction (`L7`/`I9`). **[J]** untested as a *replay*, because there is nothing animate to replay yet |
+
+**[J] The static-asset story is genuinely good.** For a building that does not move, you can emit
+clean wall quads and a collision proxy derived from the same geometry, and trust both exactly.
+That is more than most pipelines can say.
+
+### What is not built
+
+| missing | status |
+|---|---|
+| **`G1` moving body** (revolute joints, wheel angle = travel/radius) | **not built** |
+| **`G3` interaction** (swept volumes, `dt`-independent) | **not built** |
+| **`G4` vehicles** (the train) | **not built** |
+| **`G6` destruction** (ruins, crumble, wall-becomes-floor) | **not built** |
+| **`G★` the demo, `G✦` the colossus** | **not built** |
+| **mesh export** | **not built** — `G2` *computes* the quads; nothing emits a mesh format. **[J] small but real: an asset you cannot export is not an asset** |
+| **roofs** | **[G] partly** — `hexroof` is a byte-identical copy of crawler's, but `tests/house.loft` *does* exercise it: `draw_roof`, `roof_ponds` (must be 0) and `eave_spread`. **[J]** That gates *drainage and the eave*, not the roof as a recoverable object — no roof goes through `draw`/`rebuild`, so it has no round-trip status |
+| **roads** | **[B] and unexamined** — `hexway`'s `Track` is a float world-space curve with **no lattice anchoring**. `X55` gated *linework* (`d ∈ D`), which is a different thing. Treat "stencils carry roads" as unverified |
+| **terrain generation** | **not built** (crawler's plan #8 is *"Future — nothing built"*). A **producer**, not a round-trip question, so it blocks nothing here |
+
+---
+
+## 4. The biggest risk, and it is not on either list
+
+> **The foxel schema is still T4.** `layer* × point → (height, material, wall1, wall2, wall3,
+> item)` — `X11`–`X15`, *shape real, behaviour unverified*.
+
+That schema is the **storage layer the entire design is written against**. It is what closed
+`OD-2`, `OD-3`, `OD-4`, `OD-6`, `OD-7` and `OD-8`, and it is what makes `fits?` syntactic and
+finite. Every "the round trip survives because the feature lands in a slot the recovery does not
+read" result (`X51` door, `X58` level, `X59` terrain, `X60` run) is an argument **about slots in
+this schema**.
+
+**[G] Checked while writing this file:** the string `foxel` occurs in `src/` and `tests/` **only in
+comments**. The working representation is `HexSet` + `EdgeSet`, which *models* the schema; **no code
+here writes a foxel, reads it back, and checks it.**
+
+**[J]** The round trip has been verified end-to-end many times over, so the schema is very unlikely
+to be *wrong* in shape. But it has never been exercised **as a storage format**, which is a
+different claim from the one all those green gates support. Every other load-bearing thing in this
+repo has been dragged to T1; this one has not, and it is the one underneath all the others.
+
+**[J] If I could gate one more thing, it would be this**, ahead of any new feature.
+
+---
+
+## 5. Where to pick up
+
+The round trip is closed (`M0`). The next move is a genuine fork, and it is the user's:
+
+1. **Gate the foxel schema** (`X11`–`X15`, T4 → T1). Smallest, and it is under everything else.
+   Write a foxel, read it back, check the field is identical; control = drop a slot and watch it
+   break. **[J] my recommendation.**
+2. **Finish the doorstep** (`K-FIT` for features, arcs, levels, terrain). The quantisation of each
+   is already measured; what is missing is the refusal. Closes four silent-snap holes.
+3. **Start the body** (`G1`) — the first genuinely new subsystem, and the half of "hexbody" that
+   does not exist yet. Largest, and `crawler` should be read first (`bodytest`).
+4. **Mesh export** — small, unblocks the "assets in a game" question directly.
+5. **Multiple runs per stencil** — the recorded `OD-13` remainder; needs interior-edge components.
+
+**Still open** (`plans/m0-roundtrip/DESIGN.md` §10): **OD-1** the morph (narrowed to *probably
+unnecessary* by free poses) · **OD-5** is the flip exact (`X2` and `X57` both say yes, at T1 now —
+**[J]** this looks closeable by inspection rather than new work).
+
+---
+
+## 6. What this project got right, worth not losing
+
+**[J]**, but grounded in the record:
+
+- **The tripwire pattern.** `SURFACE_LANDED` sat `false` from S4 to `G2`, printing PENDING, and
+  fired on exactly the step it was aimed at (`X62`). Better than both a permanently red suite and
+  a forgotten TODO. **Reach for it for the next requirement that outruns its machinery.**
+- **"The feature lands in a slot the recovery does not read."** Seen four times now (`X51`, `X58`,
+  `X59`, `X60`). It is the first thing to try on any new feature, and each time the *tempting*
+  design changed the cells and the control was to do exactly that and watch recovery break.
+- **A count that disagrees with a gated number by a clean factor is a bug in the counter.** Earned
+  five times, most recently `X62` part 2 (24/48 = exactly half). Zero real defects among them.
+- **Re-derive the instrument before confirming the number.** An 8.5-minute widened search
+  "confirmed" a false finding because it shared the broken helper (`X60`).
+- **A comment asserting "this case never happens" is a claim like any other.** `wall_separates`'
+  comment was load-bearing, wrong, and sat under a green suite (`X57`).
