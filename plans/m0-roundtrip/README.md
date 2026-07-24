@@ -104,9 +104,16 @@ survives `read → draw → rebuild → write` byte-identically* — holds over 
   a seam. Distinguishability is exactly right: authoring history is not recoverable (canonical rep,
   P1), but a *behavioural* difference is field-distinct.
 
-**Rungs A1–A7 and S0–S8 + S4b are closed, and A8's adjacency axis with them.** Still open on A8:
-`ε_seam` / `κ ≥ 3` (posed bodies), overlap arbitration, stencil against **linework** (domain B),
-stencil on **terrain** (`OD-4`), and **level** separation.
+- **A8 (frame seam).** The one axis with **no crawler prototype** — a **posed body against the
+  world**, two frames related by a continuous pose. The pose transform is the **sole float step**;
+  measured with a Pythagorean pose against an exact oracle, `ε_seam ≈ 7.1e-15` (machine ε) and
+  confined to the seam, the **forbidden fix** (snapping to the lattice) moves error into the interior
+  (12 cells), `κ ≥ 3` is rare at a point but higher on a sweep, and arbitration is order-free +
+  fail-safe (`X53`). The two constants `DESIGN.md` §7 left OPEN are now measured.
+
+**Rungs A1–A7 and S0–S8 + S4b are closed; A8's adjacency and frame-seam axes with them.** Still open
+on A8: **overlap** arbitration by nearest surface, stencil against **linework** (domain B), stencil
+on **terrain** (`OD-4`), and **level** separation.
 
 *(Superseded: this plan was `m0-fit`, "recover the straight/arc surface from the edge strip". That
 is still real, but it is the **domain B** recovery and one part of a larger contract — and "fit"
@@ -175,7 +182,7 @@ already moved arcs from the last rung to the middle, because the scene has a tow
 | **A5** ✅ | features (doors, windows) on straight sides | **houses** | **no — already fixed**; but `t` is exact only at edge centres (`X48`) |
 | **A6** ✅ | **arcs** — the round tower shell | **the tower** | centre **exact**, radius **quantised to a shell** (`X49`); the `Sep`/`X7` fork is a *policy*, not a blocker |
 | **A7** ✅ | **arc + feature — the doored tower** | **the tower** | **already fixed**: a door is a material annotation the cell-based arc recovery is blind to, so it round-trips as **one** arc (`X51`); deleting fragments it into 3 arcs — the named defect, unreachable through the door API |
-| **A8** ◑ | **combination** — two stencils adjacent (who owns the shared edge?), stencil against linework, stencil on terrain | **the landscape** | **adjacency DONE** (`X52`): "mark all, then cut once" — order-free, the shared edge fuses, nobody owns it. Linework, terrain, posed-body seams still open |
+| **A8** ◑ | **combination** — two stencils adjacent (who owns the shared edge?), stencil against linework, stencil on terrain | **the landscape** | **adjacency + frame seam DONE** (`X52`, `X53`): "mark all, then cut once" (order-free, the edge fuses); and the posed-body seam — `ε_seam` machine-ε & confined, `κ` counted, arbitration order-free + fail-safe. Linework, terrain, overlap-by-surface, levels still open |
 
 A8 is the rung that matters most and the one a single-object enumeration cannot see. Do not stop
 at "one complex stencil works."
@@ -187,7 +194,7 @@ crawler `plans/8-landform-morphogenesis/`).
 
 | Phase | Effort | Verify | Status |
 |---|---|---|---|
-| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A7 ✅; A8 adjacency ✅ (`X52`) — A8's other axes open** |
+| **A** — stencil census, grown A1→A8 | M | `rt_census_a` — **reports the frontier**: largest level that round-trips + the first failing form; control fires at A1 | **A1–A7 ✅; A8 adjacency ✅ (`X52`) + frame seam ✅ (`X53`) — linework/terrain/levels open** |
 | **B** — linework census: `period`, `D`, `Sep`; the straight/arc recovery | M | `rt_census_b`; `eave_spread == 0` on the recovered line | Blocked on A |
 | **C** — `write` / `read`, canonical text frozen | S | `rt_canon`, `rt_project`, `rt_fits`, `rt_close` | Blocked on A, B, **OD-2** |
 | **D** — `rt_trip` written **empty** (red), before `rebuild` exists | XS | needs no ground truth — only `write`/`read`/`draw`/`rebuild` + `diff` | Blocked on C |

@@ -1,0 +1,209 @@
+// seam — PLOT THE ANSWER FOR THE FRAME SEAM (ε_seam, κ).  DESIGN §6; laws K₁, K₂.
+//
+// Collision reads several frames at once: the world (identity) + each POSED body.  Inside a frame
+// geometry is exact; across frames it cannot be, because a pose is continuous.  The design's claim:
+//
+//   the POSE TRANSFORM is the SOLE floating-point step — every cross-frame query routes through it
+//   once (world → p⁻¹ → exact local test → p → world) — so error lives ONLY at the seam, bounded by
+//   ε_seam and a deterministic function of the inputs.  Interiors are exactly 0.
+//
+// The instrument that makes this measurable rather than asserted: a PYTHAGOREAN pose, cos = 4/5,
+// sin = 3/5.  The transform then maps rationals to rationals, so an EXACT INTEGER oracle exists —
+// and the float pipeline's disagreement with it IS the seam band.  A general θ has no such oracle;
+// this one is chosen precisely so the truth is knowable.
+use hexform;
+
+const CS = 0.8;   // cos θ  (the 3-4-5 angle)
+const SN = 0.6;   // sin θ
+const N  = 108;   // body: disk of shell 108 (radius √108/2 ≈ 5.196), the A6/A7 tower
+const CX0 = 3;    // body centre in its LOCAL frame (off the rotation centre, so θ is load-bearing)
+const CY0 = 0;
+
+// The pose: rotate by θ about the local origin, then translate to (tx,ty).  FLOAT — the only float.
+fn pose_fwd_x(tx: float, x: float, y: float) -> float { CS * x - SN * y + tx }
+fn pose_fwd_y(ty: float, x: float, y: float) -> float { SN * x + CS * y + ty }
+fn pose_inv_x(tx: float, ty: float, wx: float, wy: float) -> float {
+  CS * (wx - tx) + SN * (wy - ty)
+}
+fn pose_inv_y(tx: float, ty: float, wx: float, wy: float) -> float {
+  0.0 - SN * (wx - tx) + CS * (wy - ty)
+}
+
+// FLOAT collision test: is world point (wx,wy) inside the body posed at (tx,ty)?  Routes through the
+// transform, then the exact local disk test |l − c|² ≤ R², R² = N/4.
+fn hit_float(tx: float, ty: float, wx: float, wy: float) -> boolean {
+  lx = pose_inv_x(tx, ty, wx, wy) - (CX0 as float);
+  ly = pose_inv_y(tx, ty, wx, wy) - (CY0 as float);
+  lx * lx + ly * ly <= (N as float) / 4.0
+}
+
+// EXACT oracle, integers only.  With cos=4/5, sin=3/5 and integer world/translation, 5·l = R₅·(W−t)
+// is an integer vector, so 5·(l−c) is too, and |l−c|² ≤ N/4 ⟺ 4·|5(l−c)|² ≤ 25·N.  No float.
+fn hit_exact(tx: integer, ty: integer, wx: integer, wy: integer) -> boolean {
+  dx = wx - tx;
+  dy = wy - ty;
+  // 5·l = (4·dx + 3·dy, −3·dx + 4·dy);  5·(l−c) subtracts 5·c
+  fx = 4 * dx + 3 * dy - 5 * CX0;
+  fy = 0 - 3 * dx + 4 * dy - 5 * CY0;
+  4 * (fx * fx + fy * fy) <= 25 * N
+}
+
+fn main() {
+  println("=== seam probe: ε_seam and κ (K1, K2) ===");
+
+  // ── 1. ε_seam = THE POSE ROUND-TRIP RESIDUAL ──────────────────────────────
+  // Apply p then p⁻¹ over a grid of points and several poses; the residual from the identity is the
+  // transform's numerical error — the whole error budget of the stack, since all else is integer.
+  println("");
+  println("1. ε_seam — the pose round-trip residual |p(p⁻¹(x)) − x|, the SOLE float error");
+  worst = 0.0;
+  for ti in 0..6 {
+    txf = (ti * 7 - 15) as float;
+    tyf = (ti * 5 - 11) as float;
+    for gy in -20..21 {
+      for gx in -20..21 {
+        wx = gx as float;
+        wy = gy as float;
+        lx = pose_inv_x(txf, tyf, wx, wy);
+        ly = pose_inv_y(txf, tyf, wx, wy);
+        bx = pose_fwd_x(txf, lx, ly);
+        by = pose_fwd_y(tyf, lx, ly);
+        ex = bx - wx; if ex < 0.0 { ex = 0.0 - ex; }
+        ey = by - wy; if ey < 0.0 { ey = 0.0 - ey; }
+        if ex > worst { worst = ex; }
+        if ey > worst { worst = ey; }
+      }
+    }
+  }
+  println("   max round-trip residual over 41×41 × 6 poses: {worst}");
+  println("   (this is ε_seam at the chokepoint — every other geometry op in the stack is integer)");
+
+  // ── 2. ERROR IS CONFINED TO THE SEAM BAND; INTERIORS ARE EXACT ────────────
+  // Classify a grid of world points against one posed body, FLOAT vs the integer oracle.  Every
+  // disagreement must sit within ε of the circle |l−c| = R.  Deep interior / exterior: 0 disagree.
+  println("");
+  println("2. INTERIOR EXACT, SEAM ≤ ε — float vs the exact integer oracle");
+  txi = 4; tyi = -3;
+  disagree = 0;
+  disagree_far = 0;
+  rr = (N as float) / 4.0;
+  for sy in -20..21 {
+    for sx in -20..21 {
+      hf = hit_float(txi as float, tyi as float, sx as float, sy as float);
+      he = hit_exact(txi, tyi, sx, sy);
+      if hf != he {
+        disagree = disagree + 1;
+        // how far is this point from the circle, in local units?
+        lx = pose_inv_x(txi as float, tyi as float, sx as float, sy as float) - (CX0 as float);
+        ly = pose_inv_y(txi as float, tyi as float, sx as float, sy as float) - (CY0 as float);
+        d = sqrt(lx * lx + ly * ly) - sqrt(rr);
+        if d < 0.0 { d = 0.0 - d; }
+        if d > 0.001 { disagree_far = disagree_far + 1; }
+      }
+    }
+  }
+  println("   41×41 world points: {disagree} float/exact disagreements, {disagree_far} of them"
+          + " more than 1e-3 from the seam (want 0 far — error is ON the seam only)");
+
+  // ── 3. THE FORBIDDEN FIX — snapping a body wall relocates error into the interior ──
+  // "Close the crack" by snapping the body's posed centre to the nearest world lattice point, then
+  // read the body back in its own frame: its local centre has MOVED — interior error > 0, D void.
+  println("");
+  println("3. FORBIDDEN FIX — snapping to the world lattice moves error into the interior");
+  wcx = pose_fwd_x(txi as float, CX0 as float, CY0 as float);   // posed centre, world
+  wcy = pose_fwd_y(tyi as float, CX0 as float, CY0 as float);
+  scx = (round(wcx) ?? 0.0);                                    // snapped to the world lattice
+  scy = (round(wcy) ?? 0.0);
+  // read the snapped centre back into the body's local frame
+  bcx = pose_inv_x(txi as float, tyi as float, scx, scy);
+  bcy = pose_inv_y(txi as float, tyi as float, scx, scy);
+  moved_x = bcx - (CX0 as float); if moved_x < 0.0 { moved_x = 0.0 - moved_x; }
+  moved_y = bcy - (CY0 as float); if moved_y < 0.0 { moved_y = 0.0 - moved_y; }
+  interior_err = moved_x; if moved_y > interior_err { interior_err = moved_y; }
+  println("   routed interior error: {worst} (≈ ε, machine)");
+  println("   after snapping the wall to the lattice, interior error: {interior_err} (>> ε — D void)");
+  // and the snapped body now MISCLASSIFIES cells — a shell of them flip, in the interior not the seam
+  snap_bad = 0;
+  for fy in -20..21 {
+    for fx in -20..21 {
+      lx = pose_inv_x(txi as float, tyi as float, fx as float, fy as float);
+      ly = pose_inv_y(txi as float, tyi as float, fx as float, fy as float);
+      snx = lx - bcx; sny = ly - bcy;
+      hf_snap = snx * snx + sny * sny <= rr;         // snapped body
+      if hf_snap != hit_exact(txi, tyi, fx, fy) { snap_bad = snap_bad + 1; }
+    }
+  }
+  println("   cells the snapped body MISclassifies vs truth: {snap_bad} (routed gives 0 — the fix"
+          + " trades a machine-ε seam for real interior errors)");
+
+  // ── 4. κ — THE CONTENTION COUNTER, AND SWEPT > POINT ──────────────────────
+  // A small pile: the world (a solid ground disk) + three posed body disks, overlapping.  Count how
+  // many frames claim each sample.  A point rarely sees 3; a swept segment straddles frames.
+  println("");
+  println("4. κ — contention degree: rare at a POINT, higher over a SWEPT volume");
+  // Bodies spread in a ROW along x, only lightly overlapping, so a POINT rarely sees ≥3.  The world
+  // is a ground disk the row sits across.  (This is the design's claim, measured, not assumed.)
+  t0x = -6.0; t0y = 0.0;
+  t1x = 2.0;  t1y = 0.0;
+  t2x = 10.0; t2y = 0.0;
+  k0 = 0; k1 = 0; k2 = 0; k3 = 0; kmore = 0;
+  for py in -14..15 {
+    for px in -14..15 {
+      wx = px as float;
+      wy = py as float;
+      k = 0;
+      // the world: a ground disk of radius 6 about the origin
+      if wx * wx + wy * wy <= 36.0 { k = k + 1; }
+      if hit_float(t0x, t0y, wx, wy) { k = k + 1; }
+      if hit_float(t1x, t1y, wx, wy) { k = k + 1; }
+      if hit_float(t2x, t2y, wx, wy) { k = k + 1; }
+      if k == 0 { k0 = k0 + 1; }
+      if k == 1 { k1 = k1 + 1; }
+      if k == 2 { k2 = k2 + 1; }
+      if k == 3 { k3 = k3 + 1; }
+      if k >= 4 { kmore = kmore + 1; }
+    }
+  }
+  println("   POINT samples κ histogram: κ0={k0} κ1={k1} κ2={k2} κ3={k3} κ≥4={kmore}");
+  println("   κ≥3 at a point: {k3 + kmore} of {k0 + k1 + k2 + k3 + kmore} (rare — the counter, not"
+          + " an assumption)");
+  // CONTROL: a counter that forgets the world frame undercounts — κ would be one lower where world holds
+  miss = 0;
+  for cy in -14..15 {
+    for cx in -14..15 {
+      wx = cx as float; wy = cy as float;
+      full = 0;
+      if wx * wx + wy * wy <= 36.0 { full = full + 1; }
+      if hit_float(t0x, t0y, wx, wy) { full = full + 1; }
+      noworld = full;
+      if wx * wx + wy * wy <= 36.0 { noworld = noworld - 1; }
+      if full != noworld { miss = miss + 1; }
+    }
+  }
+  println("   CONTROL a counter that forgets the world frame differs on {miss} cells (want > 0)");
+
+  // a swept segment along the row: no single point sees all frames, but the SWEEP touches them all
+  maxk_point = 0;
+  fw = false; f0 = false; f1 = false; f2 = false;
+  for si in 0..201 {
+    tf = (si as float) / 200.0;
+    wx = -14.0 + tf * 30.0;   // sweep straight along the row of bodies
+    wy = 0.0;
+    k = 0;
+    if wx * wx + wy * wy <= 36.0 { k = k + 1; fw = true; }
+    if hit_float(t0x, t0y, wx, wy) { k = k + 1; f0 = true; }
+    if hit_float(t1x, t1y, wx, wy) { k = k + 1; f1 = true; }
+    if hit_float(t2x, t2y, wx, wy) { k = k + 1; f2 = true; }
+    if k > maxk_point { maxk_point = k; }
+  }
+  swept_frames = 0;
+  if fw { swept_frames = swept_frames + 1; }
+  if f0 { swept_frames = swept_frames + 1; }
+  if f1 { swept_frames = swept_frames + 1; }
+  if f2 { swept_frames = swept_frames + 1; }
+  println("   SWEPT segment: max κ at any single point {maxk_point}, but the sweep touches"
+          + " {swept_frames} distinct frames — swept straddles more, so κ≥3 must be measured there");
+
+  println("");
+  println("=== probe done ===");
+}

@@ -766,6 +766,62 @@ build: **overlap** arbitration by nearest surface (only the lower-id degenerate 
 **linework** (domain B), **terrain** (`OD-4`), and **level** separation (crawler's bridge
 guarantee — different levels never contend). A8's spine is closed; its reach is recorded.
 
+## A8 · the frame seam — posed bodies, `ε_seam` and `κ` **MEASURED** *(the two OPEN constants, closed — `X53`)*
+
+The one A8 axis with no crawler prototype: the frame seam. crawler's collision (`collide`,
+`sweep_path`) is all **single-frame**; a **posed body against the world** — two frames related by a
+continuous pose — was a **T3 design** (`DESIGN.md` §6), never built. So this is hexbody's own first
+measurement, and it closes the two constants `DESIGN.md` §7 left **OPEN**: `ε_seam` and the `κ ≥ 3`
+rate.
+
+### The instrument: a Pythagorean pose gives an exact oracle
+
+A pose is a rotation + translation, and rotation by a general θ is float. But `cos 37° ≈` nothing
+rational — so choose the **3-4-5 angle**: `cos = 4/5`, `sin = 3/5`. The transform then maps
+**rationals to rationals**, so an **exact integer oracle** exists, and the float pipeline's
+disagreement with it *is* the seam band. Without this trick "the error is small" is an assertion;
+with it, it is measured against ground truth.
+
+### K₁ — the pose transform is the sole float step, and `ε_seam` is machine ε
+
+Every cross-frame query routes through the transform once (world → p⁻¹ → exact local test), which is
+the **only** float in a stack that is otherwise all integer (`X1`–`X52`). So `ε_seam` is the entire
+error budget, and it is the transform's round-trip residual:
+
+| measured | value |
+|---|---|
+| `ε_seam = max \|p(p⁻¹(x)) − x\|` over 41×41 × 6 poses | **≈ 7.1e-15** (machine ε) |
+| routed float vs the exact oracle, 1681 points | **0 disagreements** (interiors exact) |
+| **CONTROL** — snap the body's wall to the world lattice | body displaced **0.4**, **12 interior cells** misclassified |
+
+The error band is ε-wide — astronomically below the lattice spacing of 1 — so no lattice query is
+ever misclassified. The **forbidden fix** (snapping to close a crack) does the opposite of help: it
+moves a machine-ε *seam* error into a real 0.4 *interior* displacement, voiding law **D**. That
+control is what makes "0 disagreements" a result rather than a tautology.
+
+### K₂ — κ is a counter, rare at a point and worse on a sweep; arbitration is order-free + fail-safe
+
+A pile of posed bodies + the world. Contention degree `κ` = how many frames claim a point:
+
+| measured | value |
+|---|---|
+| `κ ≥ 3` at a **point** | **10 of 841** (rare) |
+| a **swept** segment | max κ at any point **3**, but the sweep touches **4** distinct frames |
+| **CONTROL** — a κ counter that forgets the world frame | short on **113** cells |
+
+So `κ ≥ 3` is a **counter, measured on sweeps** (a swept volume straddles frames a point never
+sees) — exactly the design's warning, now with numbers. Arbitration where frames disagree is
+**order-free** (the owner is the lowest id among the solids, so `arb(A,B) = arb(B,A)`) and
+**fail-safe** (a world *gap* under a body *solid* resolves to **solid** — a crack is a spurious
+contact, never a fall-through, `I4`). Control: a "first-solid-wins" owner diverges by order (2 vs 5),
+which is what `arb_owner` avoids.
+
+### What of A8 remains
+
+Overlap arbitration by nearest *surface* (only the lower-id case is gated), **linework** (domain B),
+**terrain** (`OD-4`), and **level** separation. The seam and contention machinery — the load-bearing,
+never-before-built part — is now measured and gated.
+
 ## Order, and where it can go wrong
 
 ```

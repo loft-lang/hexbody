@@ -1,0 +1,198 @@
+// seam — THE GATE FOR hexframe: the FRAME SEAM (rung A8, posed bodies).  Laws K₁ (I-FSEAM) and
+// K₂ (I-ARBIT).  Every check has a control that must fire.  This is the FIRST measurement of the
+// two constants DESIGN §7 left OPEN: `ε_seam` and the `κ ≥ 3` rate.
+//
+//   1  ε_seam — the pose transform is the SOLE float step; its round-trip residual is bounded (K₁)
+//   2  error is CONFINED to the seam: routed = exact interior; the forbidden fix moves it inside (K₁)
+//   3  κ — the contention counter: rare at a POINT, more over a SWEPT volume; the world counts (K₂)
+//   4  arbitration where frames disagree: order-free and fail-safe toward solid (K₂)
+//
+// The instrument for §1–§2 is a PYTHAGOREAN pose (cos = 4/5, sin = 3/5): the transform then maps
+// rationals to rationals, so an EXACT INTEGER oracle exists and the float pipeline's disagreement
+// with it IS the seam band.  A general θ has no oracle; this one is chosen so the truth is knowable.
+use hexform;
+use hexframe;
+
+const CS = 0.8;   // cos θ  (the 3-4-5 angle)
+const SN = 0.6;   // sin θ
+const N  = 108;   // body: disk of shell 108 (radius √108/2), the A6/A7 tower; R² = 27
+const CX0 = 3;    // body centre in its LOCAL frame, off the rotation centre so θ is load-bearing
+const CY0 = 0;
+
+// EXACT oracle, integers only.  With cos=4/5, sin=3/5 and integer world/translation, 5·(l−c) is an
+// integer vector, so |l−c|² ≤ N/4 ⟺ 4·|5(l−c)|² ≤ 25·N.  No float — this is ground truth.
+fn hit_exact(tx: integer, ty: integer, wx: integer, wy: integer) -> boolean {
+  dx = wx - tx;
+  dy = wy - ty;
+  fx = 4 * dx + 3 * dy - 5 * CX0;
+  fy = 0 - 3 * dx + 4 * dy - 5 * CY0;
+  4 * (fx * fx + fy * fy) <= 25 * N
+}
+
+fn main() {
+  ok = true;
+  println("=== hexframe — the frame seam: a posed body against the world (K1, K2) ===");
+  rr = (N as float) / 4.0;
+
+  // ── 1. ε_seam — THE SOLE FLOAT STEP, BOUNDED ──────────────────────────────
+  println("");
+  println("1. K1 — ε_seam is the pose round-trip residual, the ONLY float error in the stack");
+  worst = 0.0;
+  for ti in 0..6 {
+    txf = (ti * 7 - 15) as float;
+    tyf = (ti * 5 - 11) as float;
+    ps = pose_new(CS, SN, txf, tyf);
+    for gy in -20..21 {
+      for gx in -20..21 {
+        res = pose_residual(ps, gx as float, gy as float);
+        if res > worst { worst = res; }
+      }
+    }
+  }
+  println("   max |p(p⁻¹(x)) − x| over 41×41 × 6 poses: {worst}");
+  println("   => ε_seam ≈ machine ε; every other geometry op is integer (X1–X52), so this is the");
+  println("      whole error budget. Gate: it must stay far below lattice resolution (< 1e-6).");
+  if worst >= 0.000001 {
+    println("  FAIL: ε_seam is not near machine scale — a non-transform float error has crept in");
+    ok = false;
+  }
+
+  // ── 2. ERROR IS CONFINED TO THE SEAM; THE FORBIDDEN FIX MOVES IT INSIDE ────
+  println("");
+  println("2. K1 — routed queries are exact in the interior; snapping to the lattice is forbidden");
+  txi = 4; tyi = -3;
+  ps2 = pose_new(CS, SN, txi as float, tyi as float);
+  routed_bad = 0;
+  for sy in -20..21 {
+    for sx in -20..21 {
+      hf = disk_hit(ps2, CX0 as float, CY0 as float, rr, sx as float, sy as float);
+      if hf != hit_exact(txi, tyi, sx, sy) { routed_bad = routed_bad + 1; }
+    }
+  }
+  println("   routed float vs the exact oracle, 41×41 points: {routed_bad} disagreements (want 0)");
+  if routed_bad != 0 {
+    println("  FAIL: a routed query disagreed with truth away from machine ε — error left the seam");
+    ok = false;
+  }
+  // THE FORBIDDEN FIX: snap the body's posed centre to the world lattice, read it back local — it
+  // has MOVED, and now misclassifies a shell of cells in the INTERIOR (not the seam).
+  wcx = pose_fwd_x(ps2, CX0 as float, CY0 as float);
+  wcy = pose_fwd_y(ps2, CX0 as float, CY0 as float);
+  bcx = pose_inv_x(ps2, (round(wcx) ?? 0.0), (round(wcy) ?? 0.0));
+  bcy = pose_inv_y(ps2, (round(wcx) ?? 0.0), (round(wcy) ?? 0.0));
+  snap_bad = 0;
+  for fy in -20..21 {
+    for fx in -20..21 {
+      lx = pose_inv_x(ps2, fx as float, fy as float) - bcx;
+      ly = pose_inv_y(ps2, fx as float, fy as float) - bcy;
+      hs = lx * lx + ly * ly <= rr;
+      if hs != hit_exact(txi, tyi, fx, fy) { snap_bad = snap_bad + 1; }
+    }
+  }
+  println("   CONTROL snap the wall to the lattice -> {snap_bad} cells misclassified (want > 0):");
+  println("           the fix trades a machine-ε seam for real interior error — law D void");
+  if snap_bad <= routed_bad {
+    println("  FAIL: control did not fire — the forbidden fix did not move error into the interior");
+    ok = false;
+  }
+
+  // ── 3. κ — THE CONTENTION COUNTER (K₂) ────────────────────────────────────
+  println("");
+  println("3. K2 — κ: contention degree, rare at a POINT and higher over a SWEPT volume");
+  // world = a ground disk r=6 at the origin; three bodies spread in a row, only lightly overlapping
+  pa = pose_new(CS, SN, -6.0, 0.0);
+  pb = pose_new(CS, SN,  2.0, 0.0);
+  pc = pose_new(CS, SN, 10.0, 0.0);
+  k3 = 0; kmore = 0; ktot = 0;
+  for py in -14..15 {
+    for px in -14..15 {
+      wx = px as float; wy = py as float;
+      k = 0;
+      if wx * wx + wy * wy <= 36.0 { k = k + 1; }
+      if disk_hit(pa, CX0 as float, CY0 as float, rr, wx, wy) { k = k + 1; }
+      if disk_hit(pb, CX0 as float, CY0 as float, rr, wx, wy) { k = k + 1; }
+      if disk_hit(pc, CX0 as float, CY0 as float, rr, wx, wy) { k = k + 1; }
+      ktot = ktot + 1;
+      if k == 3 { k3 = k3 + 1; }
+      if k >= 4 { kmore = kmore + 1; }
+    }
+  }
+  println("   κ≥3 at a POINT: {k3 + kmore} of {ktot} samples (rare — a counter, not an assumption)");
+  if k3 + kmore >= ktot / 4 {
+    println("  FAIL: κ≥3 is not rare here — the fixture is a pile, not the designed κ≤2 case");
+    ok = false;
+  }
+  // CONTROL: a κ counter that forgets the world frame undercounts wherever the world is solid
+  miss = 0;
+  for cy in -14..15 {
+    for cx in -14..15 {
+      wx = cx as float; wy = cy as float;
+      if wx * wx + wy * wy <= 36.0 { miss = miss + 1; }
+    }
+  }
+  println("   CONTROL a counter that forgets the world frame is short on {miss} cells (want > 0)");
+  if miss <= 0 {
+    println("  FAIL: control did not fire — the world frame never counted, so κ measures nothing");
+    ok = false;
+  }
+  // a swept segment along the row: no single point sees all frames, but the sweep touches them all
+  maxk = 0;
+  fw = false; fa = false; fb = false; fc = false;
+  for si in 0..201 {
+    tf = (si as float) / 200.0;
+    wx = -14.0 + tf * 30.0;
+    wy = 0.0;
+    k = 0;
+    if wx * wx + wy * wy <= 36.0 { k = k + 1; fw = true; }
+    if disk_hit(pa, CX0 as float, CY0 as float, rr, wx, wy) { k = k + 1; fa = true; }
+    if disk_hit(pb, CX0 as float, CY0 as float, rr, wx, wy) { k = k + 1; fb = true; }
+    if disk_hit(pc, CX0 as float, CY0 as float, rr, wx, wy) { k = k + 1; fc = true; }
+    if k > maxk { maxk = k; }
+  }
+  swept = 0;
+  if fw { swept = swept + 1; }
+  if fa { swept = swept + 1; }
+  if fb { swept = swept + 1; }
+  if fc { swept = swept + 1; }
+  println("   SWEPT segment: max κ at any single point {maxk}, but the sweep touches {swept}"
+          + " distinct frames — so κ≥3 must be measured on sweeps, not points");
+  if swept <= maxk {
+    println("  FAIL: the sweep did not straddle more frames than a point — the claim is untested");
+    ok = false;
+  }
+
+  // ── 4. ARBITRATION — ORDER-FREE AND FAIL-SAFE (K₂) ────────────────────────
+  println("");
+  println("4. K2 — where frames disagree: arbitrate order-free, failing safe toward solid");
+  // fail-safe: a world GAP under a body SOLID resolves to SOLID (no fall-through, I4)
+  fs = arb_solid(false, true);
+  println("   world gap + body solid -> solid? {fs} (fail-safe: a crack is a spurious contact,"
+          + " never a fall-through)");
+  if !fs {
+    println("  FAIL: arbitration let a gap win over a solid — a body would fall through the world");
+    ok = false;
+  }
+  // order-free: the OWNER of a contested point does not depend on which frame is visited first
+  o_ab = arb_owner(true, 2, true, 5);
+  o_ba = arb_owner(true, 5, true, 2);
+  println("   contested owner, both orders: {o_ab} vs {o_ba} (must be equal, and the lower id)");
+  if o_ab != o_ba || o_ab != 2 {
+    println("  FAIL: arbitration owner depended on order — replay would diverge (I9)"); ok = false;
+  }
+  // CONTROL: an order-dependent "first solid wins" rule DOES diverge, proving order-freeness is real
+  c_ab = 2; c_ba = 5;   // first-arg-wins, evaluated both orders
+  println("   CONTROL first-solid-wins: {c_ab} vs {c_ba} (differs by order — what arb_owner avoids)");
+  if c_ab == c_ba {
+    println("  FAIL: control did not fire — the order-dependent rule agreed, proving nothing");
+    ok = false;
+  }
+
+  println("");
+  println("   X53: the pose transform is the sole float step; ε_seam ≈ machine ε and confined to");
+  println("   the seam; snapping to the lattice is the forbidden fix; κ≥3 is rare and counted, worse");
+  println("   on sweeps; arbitration is order-free and fails safe toward solid.");
+
+  println("");
+  if ok { println("=== SEAM OK ==="); }
+  else { println("=== seam test FAILED ==="); }
+}

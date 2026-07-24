@@ -327,8 +327,8 @@ than a body falling through the world.
 | `period` | B | the linework census | **OPEN — probably the wrong instrument**; `X3` says representability was never the question, only cost |
 | `Sep` | B | the arc sweep | **OPEN** — and aimed at a different objective than `X7`'s collision-match |
 | `D` | B | — | **CLOSED** — all 24 representable (`X3`) |
-| `ε_seam` | frames | measured at the chokepoint | **OPEN** |
-| `κ≥3` rate | frames | `rt_contend`, in the `G★` pile | **OPEN** — asserted low, unmeasured |
+| `ε_seam` | frames | measured at the chokepoint | **MEASURED** ✅ — the pose round-trip residual is **≈ 7.1e-15 (machine ε)**; a routed query agrees with an exact integer oracle on all 1681 grid points (`X53`, `tests/seam.loft`) |
+| `κ≥3` rate | frames | `rt_contend`, in the `G★` pile | **MEASURED** ✅ — **rare at a point** (10 of 841), but a **swept** segment touches 4 frames where no point sees 3; κ≥3 is a counter, measured on sweeps (`X53`) |
 
 ## 8. Method — grow, don't presuppose
 
@@ -482,8 +482,8 @@ already see safe; only a real scene converts an axis nobody imagined into one yo
 | `rt_census_a` | F | grown by level; **reports the frontier** | remove a corner's turn from the match key → collisions at level 1 |
 | `rt_census_b` | F | the domain-B cost table | — |
 | `rt_close` | J | `Σ lenᵢ·e(hᵢ) = 0` ∧ `Σ turnᵢ = 12` | drop one turn → non-zero sum |
-| `rt_seam` | K₁ | error `≡ 0` in interiors; `≤ ε_seam` on `Σ` | "fix" a crack by snapping a body wall → interior error ≠ 0 |
-| `rt_contend` | K₂ | `κ` histogram over the `G★` pile | tie-break on iteration order → replay diverges |
+| `rt_seam` ✅ | K₁ | error `≡ 0` in interiors; `≤ ε_seam` on `Σ` — **landed as `tests/seam.loft` §1–§2 (`X53`)**: `ε_seam ≈ 7.1e-15`, 0 disagreements vs an exact oracle | "fix" a crack by snapping a body wall → interior error ≠ 0 (**fires**: 12 cells) |
+| `rt_contend` ✅ | K₂ | `κ` histogram over the `G★` pile — **landed as `tests/seam.loft` §3–§4 (`X53`)**: κ≥3 rare at a point, worse on a sweep; arbitration order-free + fail-safe | tie-break on iteration order → replay diverges (**fires**: 2 vs 5); a world-blind counter undercounts |
 | `rt_flip` | G | text diff | asymmetric feature → diff |
 | `rt_drift` | H | text diff after `φ¹²` | inject a rounding step → drift |
 | `rt_orient` | I | field equality over `O × Λ` | — **GREEN** |
