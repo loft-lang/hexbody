@@ -28,7 +28,7 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 | **G2** | the fit: every wall renders as **one** flat quad (its analytic surface), not the strip | `eave_spread(fitted)=0` + `make shot` straightens |
 | **G3** | interaction: two bodies of different scale interact iff swept volumes cross, at any `dt` | interaction gate |
 | **G4** | the train: a coupled car+wagon follows a curve, wheels `= travel/radius`, wagon in line, detaches on decouple | vehicle gates |
-| **G5** | editor: a building in every orientation from **one authoring pass**, seated on terrain, residual flagged | editor + placement gates |
+| **G5** ◑ | editor: a building in every orientation from **one authoring pass**, seated on terrain, residual flagged | editor + placement gates. **The seating half is gated** (`X59`, `tests/terrain.loft`): the `height` slot is orthogonal to the footprint so the round trip is untouched, and the residual is **returned**, not absorbed — control: a seating that clips the footprint breaks the trip |
 | **G6** | destruction: ruins/crumble/floor-to-hill re-derive the proxy; a wall becomes a floor under tilt (two-patch) | destruction gates |
 | **G★** | **DEMO (first full-stack acceptance):** a coupled train off the rails tumbles, piles, settles to a **deterministic** rest, interiors rolling; a cold viewer reads it as a train wreck | dynamics gates + human read |
 | **G✦** | capstone: the colossus — procedural, climbable, crushes buildings, loses a decoupled limb | full-stack, at scale |
@@ -134,6 +134,7 @@ items marked ⚠ below depend on one.
    | `arb.loft` | **I-ARBIT**, **K-PROXY** — overlap arbitration by nearest surface (`cut_arb`): each boundary edge → its nearest analytic surface, order-free, ties to lower id (`X54`) |
    | `line.loft` | **I-DOMAIN**, **I-ARBIT** — stencil against linework: the cut spans domains A/B, and an E–W world line recovers exactly straight, eave_spread 0 (`X55`) |
    | `censusb.loft` | **I-DOMAIN**, **I-QUANT**, **K-FIT** — the domain-B cost table on three axes: period classes (6/6/12), the angle split, and **`δ` — whether a direction links to the house angles unconditionally** (`X56`) |
+   | `terrain.loft` | **G5**, **I-RT** — seating on terrain: the `height` slot is orthogonal to the footprint, so `rebuild` is untouched; the residual is returned and flagged (`X59`) |
    | `level.loft` | **I-ARBIT**, **I-DOMAIN** — the bridge guarantee: a level filters before the cut, so different sheets never fuse, arbitrate or contend; level 0 is free (`X58`) |
    | `flip.loft` | **I-FLIP**, **I-CLOSED-OPS** — linework under the 12 orientations: the 24 directions are closed, and a wall segment's mirror reverses traversal (`d → −d` at the mirrored far end); in-between directions included (`X57`) |
    | `text.loft` | **I-EXACT** — `write(read(T)) = T` as a byte diff, no ε (`X39`); **C1–C5** |

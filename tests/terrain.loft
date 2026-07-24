@@ -1,0 +1,214 @@
+// terrain — SEATING A STENCIL ON TERRAIN (rung A8, `OD-4`'s open half).
+// Every check has a control that must fire.
+//
+// `OD-4` was half-closed already: terrain is the foxel's **`height`** slot (`DESIGN` §10 — *"same
+// slot as roofs; the two were always one question"*).  What stayed open is **seating** — a stencil
+// is authored flat, and the ground under it is not.  `SPEC` **G5** names the answer's shape:
+// *"seated on terrain, **residual flagged**"*.
+//
+//   1  ORTHOGONALITY — seating writes `height`, so the footprint and the ROUND TRIP are untouched
+//   2  the RESIDUAL is real, measured, and returned rather than swallowed
+//   3  the seat policy changes the residual and NOT the recoverability
+//   4  CONTROL — a seating that clips the footprint to the ground breaks the round trip
+//
+// §4 is what makes §1 a result rather than a tautology: terrain *could* have changed the footprint,
+// and if it does, `rebuild` stops recovering the stencil.
+use hex_field;
+use hexform;
+use formtext;
+use formfit;
+use housedraw;
+use hexseat;
+
+const W = 31;
+const H = 31;
+const Q0 = -15;
+const R0 = -15;
+
+// a flat ground, and a ground that slopes with q — the same region, two terrains
+fn flat_ground(t: Heights) {
+  for r in R0..R0 + H { for q in Q0..Q0 + W { height_set(t, q, r, 4.0); } }
+}
+fn sloped_ground(t: Heights) {
+  for r2 in R0..R0 + H {
+    for q2 in Q0..Q0 + W { height_set(t, q2, r2, 4.0 + (q2 as float) * 0.75); }
+  }
+}
+
+fn cellcount(s: HexSet) -> integer {
+  n = 0;
+  for r in R0..R0 + H { for q in Q0..Q0 + W { if hexset_get(s, q, r) { n = n + 1; } } }
+  n
+}
+
+fn cell_diff(a: HexSet, b: HexSet) -> integer {
+  n = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W { if hexset_get(a, q, r) != hexset_get(b, q, r) { n = n + 1; } }
+  }
+  n
+}
+
+fn edge_diff(x: EdgeSet, y: EdgeSet) -> integer {
+  n = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      for d in 0..6 {
+        nq = nb_q(q, r, d);
+        nr = nb_r(q, r, d);
+        if edge_mat(x, q, r, nq, nr) != edge_mat(y, q, r, nq, nr) { n = n + 1; }
+      }
+    }
+  }
+  n / 2
+}
+
+fn main() {
+  ok = true;
+  println("=== terrain — seating a stencil on ground that is not flat (A8, OD-4) ===");
+
+  // One stencil, authored once, from its canonical text.  NO trailing newline: the parser refuses
+  // a malformed record rather than repairing it (`X39`), and `form_write` emits none — the corpus
+  // loader trims for the same reason.
+  src = "stencil t1 h0 0\nside 0 len 4 turn 4\nside 1 len 4 turn 4\nside 2 len 4 turn 4";
+  f = form_read(src);
+
+  // ── 1. ORTHOGONALITY — the footprint and the round trip are untouched ─────
+  println("");
+  println("1. ORTHOGONALITY — seating writes `height`, so cells, edges and rebuild are untouched");
+  cflat = hexset_chunk(Q0, R0, W, H);
+  form_fill(f, 0, 0, cflat);
+  eflat = edgeset_new(Q0, R0, W, H);
+  draw_walls(cflat, eflat, 1);
+  tflat = heights_new(Q0, R0, W, H);
+  flat_ground(tflat);
+  zflat = seat_height(cflat, tflat, SEAT_MEAN);
+  seat_write(cflat, tflat, zflat);
+
+  cslope = hexset_chunk(Q0, R0, W, H);
+  form_fill(f, 0, 0, cslope);
+  eslope = edgeset_new(Q0, R0, W, H);
+  draw_walls(cslope, eslope, 1);
+  tslope = heights_new(Q0, R0, W, H);
+  sloped_ground(tslope);
+  zslope = seat_height(cslope, tslope, SEAT_MEAN);
+  seat_write(cslope, tslope, zslope);
+
+  dc = cell_diff(cflat, cslope);
+  de = edge_diff(eflat, eslope);
+  println("   footprint {cellcount(cflat)} cells: flat vs sloped -> {dc} cell diffs, {de} edge diffs");
+  if dc != 0 || de != 0 {
+    println("  FAIL: the ground changed the footprint — terrain is not orthogonal to the stencil");
+    ok = false;
+  }
+  tx_flat = rebuild_construct_text(cflat, "t1");
+  tx_slope = rebuild_construct_text(cslope, "t1");
+  println("   rebuild on flat  : {tx_flat != \"\"} and identical to the sloped rebuild:"
+          + " {tx_flat == tx_slope}");
+  println("   rebuild == the authored text: {tx_flat == src}");
+  if tx_flat == "" || tx_flat != tx_slope {
+    println("  FAIL: the ground changed what `rebuild` recovers"); ok = false;
+  }
+  if tx_flat != src {
+    println("  FAIL: `rebuild` did not recover the authored text even on flat ground — the fixture"
+            + " is wrong, not the terrain claim"); ok = false;
+  }
+
+  // ── 2. THE RESIDUAL IS REAL, AND RETURNED ─────────────────────────────────
+  println("");
+  println("2. THE RESIDUAL — a stencil seated at ONE height cannot match ground that varies");
+  rflat = seat_residual(cflat, tflat, zflat);
+  // measure the residual against the ORIGINAL ground, before seating overwrote it
+  tslope2 = heights_new(Q0, R0, W, H);
+  sloped_ground(tslope2);
+  rslope = seat_residual(cslope, tslope2, zslope);
+  println("   seat height: flat {zflat:5.2}, sloped {zslope:5.2}");
+  println("   residual (max |ground − seat| under the footprint): flat {rflat:5.3},"
+          + " sloped {rslope:5.3}");
+  if rslope <= 0.0 {
+    println("  FAIL: no residual on a slope — then seating is silently absorbing the mismatch,"
+            + " which is exactly what G5 forbids"); ok = false;
+  }
+  // CONTROL: on flat ground the residual must be 0, or the measurement means nothing
+  println("   CONTROL flat ground residual is 0: {rflat == 0.0} (else the ruler is broken)");
+  if rflat != 0.0 {
+    println("  FAIL: control did not fire — a flat ground reported a residual"); ok = false;
+  }
+
+  // ── 3. THE POLICY MOVES THE RESIDUAL, NOT THE RECOVERABILITY ──────────────
+  //
+  // Which height to seat at is a CHOICE (lowest / mean / highest).  It changes how much cut-and-fill
+  // the placement owes and changes nothing about what comes back — the same split `A6` found
+  // between `Sep` (recoverability) and `X7` (a policy).
+  println("");
+  println("3. POLICY — lowest / mean / highest change the residual, not what is recovered");
+  zlo = seat_height(cslope, tslope2, SEAT_LOW);
+  zme = seat_height(cslope, tslope2, SEAT_MEAN);
+  zhi = seat_height(cslope, tslope2, SEAT_HIGH);
+  rlo = seat_residual(cslope, tslope2, zlo);
+  rme = seat_residual(cslope, tslope2, zme);
+  rhi = seat_residual(cslope, tslope2, zhi);
+  println("   low  z {zlo:5.2} residual {rlo:5.3}");
+  println("   mean z {zme:5.2} residual {rme:5.3}   <- smallest");
+  println("   high z {zhi:5.2} residual {rhi:5.3}");
+  if rme > rlo || rme > rhi {
+    println("  FAIL: the mean seat is not the smallest residual — the policies are not ordered as"
+            + " described"); ok = false;
+  }
+  if rlo == rhi && rlo == rme {
+    println("  FAIL: every policy gave the same residual — then the policy axis is not real here");
+    ok = false;
+  }
+  // all three seat heights leave the SAME footprint, so the same text comes back
+  cpol = hexset_chunk(Q0, R0, W, H);
+  form_fill(f, 0, 0, cpol);
+  tpol = heights_new(Q0, R0, W, H);
+  sloped_ground(tpol);
+  seat_write(cpol, tpol, zhi);
+  println("   seated at the HIGH policy, rebuild still gives the authored text:"
+          + " {rebuild_construct_text(cpol, \"t1\") == src}");
+  if rebuild_construct_text(cpol, "t1") != src {
+    println("  FAIL: the seat policy changed what came back — policy must not touch recoverability");
+    ok = false;
+  }
+
+  // ── 4. CONTROL — THE FORBIDDEN SEATING ────────────────────────────────────
+  //
+  // Terrain COULD have changed the footprint: a seating that clips the stencil to the ground (drop
+  // every cell whose ground is above the seat) does exactly that.  It breaks the round trip, which
+  // is what makes §1 a result rather than a restatement of the construction.
+  println("");
+  println("4. CONTROL — a seating that CLIPS the footprint to the ground breaks the round trip");
+  cclip = hexset_chunk(Q0, R0, W, H);
+  form_fill(f, 0, 0, cclip);
+  nclip = 0;
+  for rr in R0..R0 + H {
+    for qq in Q0..Q0 + W {
+      if hexset_get(cclip, qq, rr) && height_get(tslope2, qq, rr) > zme {
+        hexset_set(cclip, qq, rr, false);
+        nclip = nclip + 1;
+      }
+    }
+  }
+  tx_clip = rebuild_construct_text(cclip, "t1");
+  println("   clipped {nclip} cells; footprint now differs by {cell_diff(cslope, cclip)} cells");
+  println("   rebuild after clipping == the authored text: {tx_clip == src} (must be false)");
+  if nclip <= 0 {
+    println("  FAIL: control did not fire — the clip removed nothing, so it tests nothing");
+    ok = false;
+  }
+  if tx_clip == src {
+    println("  FAIL: control did not fire — clipping the footprint still round-tripped, so §1"
+            + " proves nothing about terrain leaving the cells alone"); ok = false;
+  }
+
+  println("");
+  println("   OD-4's open half answered: SEATING WRITES THE `height` SLOT and nothing else, so a");
+  println("   stencil round-trips identically on flat ground and on a slope — terrain and stencil");
+  println("   are orthogonal slots. What the slope costs is a RESIDUAL, returned and flagged (G5),");
+  println("   and which height to seat at is a POLICY that moves the residual, never the recovery.");
+
+  println("");
+  if ok { println("=== TERRAIN OK ==="); }
+  else { println("=== terrain test FAILED ==="); }
+}

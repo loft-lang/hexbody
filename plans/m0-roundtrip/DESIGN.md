@@ -464,7 +464,7 @@ already see safe; only a real scene converts an axis nobody imagined into one yo
 | **houses** | polygonal stencils, features, `H₁₂` | the ladder's spine |
 | **a tower** | **arcs**, immediately with features — the **doored-tower defect** (`design/FEATURES.md` §3): a wall with a door fitting **3 arcs instead of 1** | arcs move from the last rung to the middle; the defect is a named law **D** failure |
 | **trees** | a class with **no verb** | **OD-3** |
-| **the landscape** | terrain with **no production**, plus seating | **OD-4** |
+| **the landscape** | terrain with **no production**, plus seating | **OD-4** — the *seating* half is now CLOSED (`X59`): seating writes the `height` slot, so terrain and stencil are orthogonal and the round trip is untouched; the residual is returned and flagged. Terrain *generation* remains unbuilt (crawler's plan #8 is *"Future — nothing built"*), but it is a **producer**, not a round-trip question |
 
 ## 9. Proposed gates
 

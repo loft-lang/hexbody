@@ -1056,6 +1056,56 @@ use.
 and the level-crossing field reproduced exactly. Without it, §2's separation could be an artefact of
 the fixture rather than of the sheet.
 
+## A8 · terrain — **DONE**, and A8 with it *(`OD-4`'s open half — `X59`)*
+
+`OD-4` came in two halves and only one had been closed. **Storage** was settled — terrain *is* the
+foxel's `height` slot, *"the same slot as roofs; the two were always one question"*. What stayed
+open was **seating**: a stencil is authored flat, and the ground is not. `SPEC` **G5** already
+required the answer to leave a *"residual flagged"*.
+
+### Seating writes the `height` slot — and nothing else
+
+That is the whole construction, and it is why the round trip does not notice terrain: **recovery
+reads cells, seating writes heights.** A 15-cell stencil, over flat ground and over a `0.75/q` slope:
+
+| | cells | edges | `rebuild` |
+|---|---|---|---|
+| flat vs sloped | **0 diffs** | **0 diffs** | identical, **and equal to the authored text** |
+
+### What the slope costs is a residual, and it is returned
+
+A stencil seated at *one* height cannot match ground that varies under it. That gap is real and is
+**returned rather than absorbed** (`G5`): `0.000` flat, **`1.650`** on the slope. The seat height is
+a **policy**, and it moves the residual while leaving recovery alone — the same split `A6` found
+between `Sep` (recoverability) and `X7` (a choice):
+
+| policy | seat `z` | residual | recovers the authored text |
+|---|---|---|---|
+| low | 4.00 | 3.000 | ✅ |
+| **mean** | 5.35 | **1.650** — smallest | ✅ |
+| high | 7.00 | 3.000 | ✅ |
+
+**Control:** a seating that **clips** the footprint to the ground (9 of 15 cells dropped) **breaks**
+the round trip. Without it, "terrain leaves the cells alone" would be a restatement of the
+construction rather than a result.
+
+### The pattern, now visible three times
+
+- a **door** is a *material*, not a hole (`X51`)
+- a **level** is a *filter before the cut*, not an arbitration after it (`X58`)
+- **terrain** is a *height*, not a change of footprint (`X59`)
+
+> **The round trip survives a new feature exactly when that feature lands in a slot the recovery
+> does not read.** Each time the temptation was to change the cells, and each time the control was
+> to do so and watch recovery break.
+
+### A note on the fixture, not the subject
+
+The gate first reported **0 cells** — an inline canonical text with a **trailing newline**, which the
+parser refuses rather than repairs (`X39`, and the corpus loader trims for the same reason). The
+assertion that caught it was written to say so in as many words: *"the fixture is wrong, not the
+terrain claim."* Fourth time a first red has been the measurement rather than the subject.
+
 ## Order, and where it can go wrong
 
 ```
