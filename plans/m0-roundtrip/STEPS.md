@@ -1129,20 +1129,31 @@ the round trip — so orthogonality is a result, not a restatement.
 `rt_trip` does not notice** — precisely the site the design flagged as the one whose omission is
 silent. **`OD-13` is not closed.** It is closed when dropping the wall makes `rt_trip` fail.
 
-### ⚠ Two things observed and not explained
+### The reader — exact, and needing no fit
 
-- **Only 4 of 12** in-between directions admit a whole period wholly inside the stencil. Widening
-  the anchor search `±14 → ±26` (8.5 min instead of 13 s) found **the same four**, and doubling the
-  stencil 61 → 127 cells changed nothing either. **Structural, not a search artefact** — unexplained.
-- **Three reader instruments for recovering `(d, anchor, p)` were tried and all three were wrong**:
-  an unoriented edge sum; an oriented edge sum (`X47`'s instrument — but that is for form-boundary
-  side runs along `H₁₂`, *not* a `d24` chain crossing a fill); and an ends-extraction that
-  contradicted the gated `wall_chain_ends`. Nothing about recovery is asserted, because nothing
-  about it is understood yet.
+A run's two chain **ends** *are* its endpoints. `X32` says the marking is one chain; the endpoints
+are hex vertices; the doorstep (§10.10) put the authored ones exactly there. So `wall_read_run`
+recovers `(d, anchor, p)` by a **degree count and one integer division** — no averaging, no
+tolerance, nothing to fit. Gated over the whole pipeline (stencil walls + embedded run → **extract
+the interior edges** → read): **6/6 runs recover the same segment exactly**, and a **fragmented**
+marking is **refused** rather than averaged into an answer (`P4`).
 
-**The rule that kept this honest:** do not gate what you cannot explain. Three wrong instruments in
-a row is a signal to stop building instruments and report the frontier, not to keep guessing until
-one goes green.
+### ⚠ One root cause behind four separate failures — and a retracted claim
+
+Three reader instruments were wrong, and then the interior extraction broke *after* the reader was
+right. All four had **one cause**: mixing **`nb_q`/`nb_r`** (hex_field's neighbour order) with
+**`hex_edge_corners`** (hex_grid's). The two enumerate the same six neighbours in a *different
+order*, so scanning "directions 0..2" picks a different canonical set and the corner lookup reads a
+different edge. **`SPEC` L11's named hazard, and `X26`'s exact failure mode: the counts stay
+plausible while the geometry is nonsense.**
+
+It also produced a **false finding that was recorded as fact**: *"only 4 of 12 in-between directions
+fit — structural, unexplained."* With one convention throughout, **all 12 fit.** Worse, that claim
+had been "confirmed" by widening the anchor search `±14 → ±26` at a cost of 8.5 minutes — and the
+widened search shared the broken helper.
+
+> **A slow, expensive confirmation of a bad measurement is still a bad measurement.** When a result
+> is surprising, re-derive the *instrument* before spending effort confirming the *number*.
 
 ## Order, and where it can go wrong
 

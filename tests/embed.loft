@@ -16,6 +16,13 @@
 //   2  the embedded wall is really there, wholly interior, and a WELL-FORMED chain (`X32`)
 //   3  CONTROL — an embedded wall drawn by REMOVING cells breaks the round trip
 //
+// ⚠ ONE CONVENTION THROUGHOUT: `hex_neighbor` (hex_grid) with `hex_edge_corners`, never
+// `nb_q`/`nb_r` (hex_field).  Both enumerate the same six neighbours in a DIFFERENT ORDER, so
+// mixing them scans a different set of three canonical directions and reads the corners of a
+// different edge.  That single mistake produced three wrong reader instruments and then, after the
+// reader was right, silently broke the interior extraction as well — `SPEC` **L11**, `X26`'s
+// failure mode: the counts stay plausible while the geometry is nonsense.
+//
 // ⚠ NOT gated here, and deliberately: **recovering** the embedded wall's `(d, anchor, p)` back out
 // of the field.  Three reader instruments were tried and all three were wrong (see `STEPS.md`), so
 // nothing about recovery is asserted — only that the chain the reader will consume is well-formed
@@ -25,6 +32,7 @@ use hexform;
 use formtext;
 use formfit;
 use housedraw;
+use hex_grid;
 use hexwall;
 
 const W = 41;
@@ -45,8 +53,7 @@ fn interior_count(cells: HexSet, ew: EdgeSet) -> integer {
   for r in R0..R0 + H {
     for q in Q0..Q0 + W {
       for d in 0..3 {
-        nq = nb_q(q, r, d);
-        nr = nb_r(q, r, d);
+        (nq, nr) = hex_neighbor(q, r, d);
         if edge_mat(ew, q, r, nq, nr) != 0
            && hexset_get(cells, q, r) && hexset_get(cells, nq, nr) { n = n + 1; }
       }
@@ -108,8 +115,7 @@ fn main() {
       for r2 in R0..R0 + H {
         for q2 in Q0..Q0 + W {
           for d2 in 0..3 {
-            nq2 = nb_q(q2, r2, d2);
-            nr2 = nb_r(q2, r2, d2);
+            (nq2, nr2) = hex_neighbor(q2, r2, d2);
             if edge_mat(ew, q2, r2, nq2, nr2) != 0 {
               edge_set_mat(efield, q2, r2, nq2, nr2, EMBED);
             }
@@ -126,13 +132,14 @@ fn main() {
   }
   println("   {ntested} in-between directions embedded, {nbad} that failed any of:"
           + " cells unchanged / text unchanged / wholly interior / 2 ends / 0 branches");
-  // ⚠ OBSERVED, NOT EXPLAINED: only 4 of the 12 admit a whole 1-period run wholly inside this
-  // stencil — and it is STRUCTURAL, not a search artefact.  Widening the anchor search from ±14 to
-  // ±26 (8.5 min instead of 13 s) found the same four and no more; doubling the stencil from 61 to
-  // 127 cells changed nothing either.  Recorded rather than asserted: what is gated is that every
-  // direction which DOES fit behaves, not that all twelve fit.
-  println("   (4 of 12 fit a whole period wholly inside; widening the search ±14 -> ±26 and");
-  println("    doubling the stencil both found the same four — structural, and unexplained)");
+  // ALL TWELVE embed.  An earlier run of this gate reported only 4 of 12 and recorded it as
+  // "structural, unexplained" — it was neither: `interior_count` was scanning with `nb_q`/`nb_r`
+  // while the corner lookup used hex_grid's order, so the containment test was reading the wrong
+  // edges.  An 8.5-minute widened search "confirmed" the wrong number because it shared the broken
+  // helper.  A slow, expensive confirmation of a bad measurement is still a bad measurement.
+  if ntested != 12 {
+    println("  FAIL: {ntested} of 12 in-between directions embedded — all twelve should"); ok = false;
+  }
   if ntested <= 0 {
     println("  FAIL: no in-between wall fitted inside the stencil — nothing was tested"); ok = false;
   }
@@ -156,8 +163,7 @@ fn main() {
   for r3 in R0..R0 + H {
     for q3 in Q0..Q0 + W {
       for d3 in 0..3 {
-        nq3 = nb_q(q3, r3, d3);
-        nr3 = nb_r(q3, r3, d3);
+        (nq3, nr3) = hex_neighbor(q3, r3, d3);
         if edge_mat(ec, q3, r3, nq3, nr3) != 0 && hexset_get(cclip, q3, r3) {
           hexset_set(cclip, q3, r3, false);
           ndel = ndel + 1;
@@ -176,12 +182,99 @@ fn main() {
             + " nothing about the wall leaving the footprint alone"); ok = false;
   }
 
+  // ── 4. THE READER — recover (d, anchor, p) from the interior chain ────────
+  //
+  // The blocker `X60` left open.  A run's two chain ENDS are its endpoints (`X32` says the marking
+  // is one chain), those endpoints are hex vertices, and the doorstep put the authored ones exactly
+  // there — so recovery is a degree count and one integer division.  Exact, no tolerance.
+  //
+  // The pipeline is gated whole: build the field with the stencil's OWN walls plus the embedded
+  // one, EXTRACT the interior edges (both cells in the footprint), then read.
+  println("");
+  println("4. THE READER — recover (d, anchor, p) from the interior chain, exactly");
+  println("      d   p   authored -> recovered            same segment?");
+  nread = 0; badread = 0;
+  for dr in [3, 5, 15, 17] {
+    for pr in 1..3 {
+      ba2 = 0; bb2 = 0; f2 = false;
+      for ta2 in -14..15 {
+        for tb2 in -14..15 {
+          if !f2 && wall_run_ok(dr, ta2, tb2, pr) {
+            et = edgeset_new(Q0, R0, W, H);
+            wt = wall_from_run(dr, ta2, tb2, pr, EMBED);
+            nt = wall_write(wt, et, Q0, R0, W, H);
+            if nt > 0 && interior_count(cells, et) == nt { ba2 = ta2; bb2 = tb2; f2 = true; }
+          }
+        }
+      }
+      if f2 {
+        // the full field: the stencil's own walls AND the embedded run
+        ef = edgeset_new(Q0, R0, W, H);
+        draw_walls(cells, ef, 1);
+        ew2 = edgeset_new(Q0, R0, W, H);
+        w2 = wall_from_run(dr, ba2, bb2, pr, EMBED);
+        wall_write(w2, ew2, Q0, R0, W, H);
+        for ra in R0..R0 + H {
+          for qa in Q0..Q0 + W {
+            for da in 0..3 {
+              (nqa, nra) = hex_neighbor(qa, ra, da);
+              if edge_mat(ew2, qa, ra, nqa, nra) != 0 {
+                edge_set_mat(ef, qa, ra, nqa, nra, EMBED);
+              }
+            }
+          }
+        }
+        // EXTRACT the interior edges — what a `rebuild` pass would isolate
+        ei = edgeset_new(Q0, R0, W, H);
+        for rb2 in R0..R0 + H {
+          for qb2 in Q0..Q0 + W {
+            for db2 in 0..3 {
+              (nqb, nrb) = hex_neighbor(qb2, rb2, db2);
+              if edge_mat(ef, qb2, rb2, nqb, nrb) == EMBED
+                 && hexset_get(cells, qb2, rb2) && hexset_get(cells, nqb, nrb) {
+                edge_set_mat(ei, qb2, rb2, nqb, nrb, EMBED);
+              }
+            }
+          }
+        }
+        (gd, ga, gb, gp, gok) = wall_read_run(ei, Q0, R0, W, H);
+        // the same SEGMENT: the endpoint pair must match as a set
+        fa2 = wall_end_a(dr, ba2, pr); fb2 = wall_end_b(dr, bb2, pr);
+        ha = wall_end_a(gd, ga, gp); hb = wall_end_b(gd, gb, gp);
+        same = gok && ((ga == ba2 && gb == bb2 && ha == fa2 && hb == fb2)
+                    || (ga == fa2 && gb == fb2 && ha == ba2 && hb == bb2));
+        nread = nread + 1;
+        if !same { badread = badread + 1; }
+        println("      {dr:>2}  {pr:>2}   d={dr} ({ba2},{bb2}) p={pr} -> d={gd} ({ga},{gb}) p={gp}"
+                + "      {same}");
+      }
+    }
+  }
+  println("   {nread} runs read back, {badread} that did not describe the same segment (want 0)");
+  if nread <= 0 { println("  FAIL: nothing was read back"); ok = false; }
+  if badread != 0 {
+    println("  FAIL: the reader did not recover the authored run exactly"); ok = false;
+  }
+  // CONTROL: an unreadable marking must be REFUSED, never approximated (P4)
+  ejunk = edgeset_new(Q0, R0, W, H);
+  (j1q, j1r) = hex_neighbor(0, 0, 0);
+  (j2q, j2r) = hex_neighbor(5, 5, 0);
+  edge_set_mat(ejunk, 0, 0, j1q, j1r, EMBED);
+  edge_set_mat(ejunk, 5, 5, j2q, j2r, EMBED);
+  (jd, ja, jb, jp, jok) = wall_read_run(ejunk, Q0, R0, W, H);
+  println("   CONTROL two disconnected edges -> readable? {jok} (must be false — a fragmented"
+          + " marking is REFUSED, not averaged into an answer)");
+  if jok {
+    println("  FAIL: control did not fire — the reader invented a run from a broken chain");
+    ok = false;
+  }
+
   println("");
   println("   The load-bearing half of OD-13 holds: a stencil CAN carry a wall in any in-between");
   println("   direction as interior-edge material, with the footprint and the round trip untouched,");
   println("   and the chain a reader would consume is well-formed (2 ends, 0 branches — X32).");
-  println("   OD-13 is NOT closed: `rebuild` still does not READ that chain, so an embedded wall is");
-  println("   silently dropped — and rt_trip would not notice. That is the next step.");
+  println("   The READER now exists and is exact (section 4). OD-13 is still not closed: `rebuild`");
+  println("   does not yet CALL it, so an embedded wall is dropped and rt_trip does not notice.");
 
   println("");
   if ok { println("=== EMBED OK ==="); }

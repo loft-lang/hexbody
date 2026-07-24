@@ -814,3 +814,86 @@ pub fn wall_mesh_segments(edges: EdgeSet, q0: integer, r0: integer,
   }
   n
 }
+
+// ── READING A RUN BACK OUT OF THE FIELD ────────────────────────────────────
+//
+// The reader `OD-13` needs, and it is exact: **a run's two chain ENDS are its endpoints.**  A
+// marked run is one connected chain with exactly two degree-1 vertices (`X32`), those vertices are
+// hex VERTICES on the triangle lattice, and the doorstep put the authored endpoints on exactly
+// those points (§10.10).  So recovery is a degree count and one integer division — no averaging, no
+// tolerance, nothing to fit.
+//
+// ⚠ **USE `hex_neighbor` WITH `hex_edge_corners`, NEVER `nb_q`/`nb_r`.**  Both enumerate the same
+// six neighbours but in a DIFFERENT ORDER, so pairing `hex_edge_corners(d)` — indexed by hex_grid's
+// order — with `nb_q(q,r,d)` reads the corners of a different edge.  Three separate reader
+// instruments were wrong for exactly this reason before it was found, and it is `SPEC` **L11**'s
+// named hazard and `X26`'s failure mode: the counts stay plausible while the geometry is nonsense.
+
+// The two degree-1 vertices of the marked chain, in triangle coordinates.  `ok` is false unless
+// there are exactly two — a fragmented or branching marking is REFUSED, never averaged into an
+// answer.
+pub fn wall_read_ends(edges: EdgeSet, q0: integer, r0: integer, wq: integer, hq: integer)
+                      -> (integer, integer, integer, integer, boolean) {
+   va: vector<integer> = [];
+  vb: vector<integer> = [];
+  for rr in r0..r0 + hq {
+    for qq in q0..q0 + wq {
+      for dd in 0..3 {
+        (nq, nr) = hex_neighbor(qq, rr, dd);
+        if edge_mat(edges, qq, rr, nq, nr) != 0 {
+          (k1, k2) = hex_edge_corners(dd);
+          va += [hex_corner_tri_a(qq, rr, k1)];
+          vb += [hex_corner_tri_b(qq, rr, k1)];
+          va += [hex_corner_tri_a(qq, rr, k2)];
+          vb += [hex_corner_tri_b(qq, rr, k2)];
+        }
+      }
+    }
+  }
+  n = 0;
+  a1 = 0; b1 = 0; a2 = 0; b2 = 0;
+  for i in 0..len(va) {
+    first = true;
+    for k in 0..i {
+      if (va[k] ?? 0) == (va[i] ?? 0) && (vb[k] ?? 0) == (vb[i] ?? 0) { first = false; }
+    }
+    if first {
+      deg = 0;
+      for j in 0..len(va) {
+        if (va[j] ?? 0) == (va[i] ?? 0) && (vb[j] ?? 0) == (vb[i] ?? 0) { deg = deg + 1; }
+      }
+      if deg == 1 {
+        n = n + 1;
+        if n == 1 { a1 = va[i] ?? 0; b1 = vb[i] ?? 0; }
+        if n == 2 { a2 = va[i] ?? 0; b2 = vb[i] ?? 0; }
+      }
+    }
+  }
+  (a1, b1, a2, b2, n == 2)
+}
+
+// Recover the whole run: direction, anchor and period count, all exact integers.  One period of
+// `d24` displaces a run by `3·tri(d24)`, so the endpoint displacement pins both `d24` and `p`; the
+// answer is canonicalised to the end that gives `p > 0`.  `ok` is false when the marking is not a
+// single chain, or when no direction divides the displacement — an unreadable field is REFUSED, not
+// approximated (law **P4**).
+pub fn wall_read_run(edges: EdgeSet, q0: integer, r0: integer, wq: integer, hq: integer)
+                     -> (integer, integer, integer, integer, boolean) {
+  (a1, b1, a2, b2, okends) = wall_read_ends(edges, q0, r0, wq, hq);
+  if !okends { return (0, 0, 0, 0, false); }
+  for d in 0..24 {
+    ta = tri_a(d);
+    tb = tri_b(d);
+    da = a2 - a1;
+    db = b2 - b1;
+    // parallel? exact integer cross product
+    if da * tb - db * ta == 0 {
+      p = 0;
+      if ta != 0 { p = (da / (3 * ta)) ?? 0; } else { p = (db / (3 * tb)) ?? 0; }
+      if p > 0 && a1 + 3 * p * ta == a2 && b1 + 3 * p * tb == b2 {
+        return (d, a1, b1, p, true);
+      }
+    }
+  }
+  (0, 0, 0, 0, false)
+}

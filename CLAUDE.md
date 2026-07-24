@@ -411,12 +411,20 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   (the same wall as a *gap* breaks the trip). **`rebuild` still does not READ that chain**, so an
   embedded wall is **silently dropped and `rt_trip` does not notice** — the exact site the design
   flagged. It is closed when dropping the wall makes `rt_trip` FAIL.
-- ⚠ **Two things unexplained, recorded not asserted:** only **4 of 12** in-between directions fit a
-  whole period inside the stencil (widening the search ±14→±26 and doubling the stencil both found
-  the same four — structural); and **three reader instruments for `(d, anchor, p)` were all wrong**,
-  including `X47`'s edge-sum, which is for form-boundary side runs along `H₁₂`, **not** a `d24`
-  chain crossing a fill. **Three wrong instruments in a row = stop building instruments and report
-  the frontier.** Do not gate what you cannot explain.
+- **The READER is done and exact (`X60`, `wall_read_run`):** a run's two chain **ends** ARE its
+  endpoints (`X32` gives one chain; the doorstep put the authored ends on hex vertices), so
+  `(d, anchor, p)` comes back by a **degree count and one integer division** — no fit, no tolerance.
+  6/6 over the whole pipeline; a fragmented marking is **refused** (`P4`).
+- ⚠ **ONE ROOT CAUSE BEHIND FOUR FAILURES — `SPEC` L11, `X26`'s exact mode.** Three wrong reader
+  instruments, then a broken interior extraction *after* the reader was right, all from mixing
+  **`nb_q`/`nb_r`** (hex_field order) with **`hex_edge_corners`** (hex_grid order). Same six
+  neighbours, **different order**, so "directions 0..2" is a different canonical set and the corner
+  lookup reads a different edge. **Use `hex_neighbor` with `hex_edge_corners`, always.**
+- ⚠ **It also produced a FALSE FINDING that got recorded as fact:** *"only 4 of 12 in-between
+  directions fit — structural, unexplained."* With one convention throughout, **all 12 fit** — and
+  that claim had been "confirmed" by an 8.5-minute widened search which shared the broken helper.
+  **A slow, expensive confirmation of a bad measurement is still a bad measurement: when a result
+  surprises you, re-derive the INSTRUMENT before confirming the NUMBER.**
 - **`OD-13` — THE IN-BETWEEN 12 MUST BE FIRST CLASS.** User, 2026-07-24: *"the normal 12 directions
   are fine but a city/castle needs more directions to be believable so the other 12 need to be first
   class."* This is a **requirement**, not an open question — and it **contradicts `ROUNDTRIP` §2.2**
