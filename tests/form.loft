@@ -25,6 +25,8 @@ use hex_field;
 use hex_grid;
 use hexform;
 use housedraw;
+use hexsurf;
+use housedraw;
 
 // The doubled-coordinate delta from (q,r) to its neighbour in direction d.
 fn iabs2(v: integer) -> integer { if v < 0 { -v } else { v } }
@@ -718,24 +720,108 @@ fn main() {
     println("  FAIL: control did not fire — three sides already cover the boundary"); ok = false;
   }
 
-  // ── 17. S4 — CORNER PARTS 2 AND 4, WRITTEN NOW, ENFORCED AT S8 ────────────
+  // ── 17. S4 — CORNER PARTS 2 AND 4, NOW ENFORCED ──────────────────────────
   //
-  // The corner ANGLE (part 2) and the MITER POINT (part 4) need the fitted analytic surface,
-  // which does not exist until S8. They are written here as a TRIPWIRE rather than as a
-  // permanently red assertion: a suite that is red every run stops being a signal, but a check
-  // that goes red the moment the surface lands cannot be forgotten either.
+  // Written at S4 as a TRIPWIRE because both need the fitted analytic surface.  That surface landed
+  // at S4b (`X47`) and gained its EXTENT at `G2` (`X61`), so the tripwire is now cashed in.
+  //
+  // PART 2 — the corner ANGLE — is EXACT and needs no float: `surface_heading` returns a heading
+  // index, so the angle between adjacent fitted surfaces is a difference of integers.  A `Plan` is
+  // a rectangle, so that difference must be 3 (= 90°) at every corner, in every orientation.
+  //
+  // PART 4 — the MITER POINT — was written as *"sits on the exact model corner"*.  **That wording
+  // is wrong, and measuring it is what showed why.**  `Plan` is CONTINUOUS, THEN RASTERISED
+  // (centre-in-region, `OD-11`), so the surface is fitted to the CELLS, and the cells are a
+  // quantisation of the rectangle.  The miter recovers the **cell-region** corner exactly; the
+  // continuous rectangle's corner is **not recoverable** — the same answer `X48` (feature `t`),
+  // `X49` (arc radius) and `X50`/I-QUANT already gave for every other continuous parameter.
+  //
+  // So part 4 is checked as what it can be: the miter is a UNIFORM offset from the continuous
+  // corner — a bias, not scatter, exactly as `X29` distinguishes — and the mitered outline CLOSES.
   println("");
-  println("17. CORNER PARTS 2 AND 4 — pending the fitted surface (S8)");
-  if SURFACE_LANDED {
-    println("  FAIL: the fitted surface has landed, so corner parts 2 (exact angle) and 4"
-            + " (miter point on the exact corner) must now be CHECKED here, not pending");
-    ok = false;
-  } else {
-    println("   PENDING part 2 — the corner angle is exact: 90 deg for a Plan, 60/120 for a");
-    println("           rhombus. Needs the two fitted lines; fails if they meet at the wrong");
-    println("           angle. Turn on by flipping hexform::SURFACE_LANDED at S8.");
-    println("   PENDING part 4 — the miter point, where the two fitted surfaces intersect, sits");
-    println("           on the exact model corner; fails if the recovered corner drifts.");
+  println("17. CORNER PARTS 2 AND 4 — the fitted surface has landed, so these are CHECKED");
+  if !SURFACE_LANDED {
+    println("  FAIL: SURFACE_LANDED is false, but the fitted surface exists (X47/X61) and parts 2"
+            + " and 4 are written below — the tripwire is stale"); ok = false;
+  }
+  cang = 0; cwind = 0; cclose = 0; clo = 1.0e9; chi = -1.0e9; cspan = 0.0; ncorner = 0;
+  for crot in 0..6 {
+    for cmi in 0..2 {
+      xcp = plan_new(0, 0, 5, 4, crot, cmi == 1);
+      xcc = hexset_chunk(-20, -20, 41, 41);
+      xct = labels_new(-20, -20, 41, 41);
+      draw_floor(xcp, xcc, xct, 1);
+      chw = plan_hw(xcp);
+      chd = plan_hd(xcp);
+      for ci in 0..4 {
+        cj = (ci + 1) % 4;
+        ncorner = ncorner + 1;
+        // PART 2: exact integer angle
+        cha = surface_heading(surface_of(xcp, xcc, ci));
+        chb = surface_heading(surface_of(xcp, xcc, cj));
+        cdh = ((chb - cha) % 12 + 12) % 12;
+        // 3 twelfths = 90 deg turning one way, 9 = 90 deg turning the other.  A MIRROR reverses
+        // the winding (`X2`'s h -> 6-h acting on the sides), so the mirrored six wind the other
+        // way — the ANGLE is 90 deg in all twelve, only its sign follows the handedness.
+        if cdh != 3 && cdh != 9 { cang = cang + 1; }
+        if cmi == 0 && cdh != 3 { cwind = cwind + 1; }
+        if cmi == 1 && cdh != 9 { cwind = cwind + 1; }
+        // PART 4a: the mitered outline closes — side i ends where side j starts
+        (xq0, xq1, xq2, xq3) = surface_quad(xcp, xcc, ci, 4);
+        (xr0, xr1, xr2, xr3) = surface_quad(xcp, xcc, cj, 4);
+        cgap = sqrt((xq2 - xr0) * (xq2 - xr0) + (xq3 - xr1) * (xq3 - xr1)) ?? 0.0;
+        if cgap > 0.000000001 {
+          cclose = cclose + 1;
+        }
+        // PART 4b: the offset from the CONTINUOUS corner is a uniform bias
+        (mx, my, mok) = surface_miter(xcp, xcc, ci, cj);
+        cbest = 1.0e9;
+        for ck in 0..4 {
+          clu = chw; clv = chd;
+          if ck == 1 { clu = 0.0 - chw; }
+          if ck == 2 { clu = 0.0 - chw; clv = 0.0 - chd; }
+          if ck == 3 { clv = 0.0 - chd; }
+          (cex, cey) = plan_to_world(xcp, clu, clv);
+          cdd = sqrt((mx - cex) * (mx - cex) + (my - cey) * (my - cey)) ?? 0.0;
+          if cdd < cbest { cbest = cdd; }
+        }
+        if cbest < clo { clo = cbest; }
+        if cbest > chi { chi = cbest; }
+        // the CONTROL: the UNmitered spans do not close
+        (sa2, sb2, sc2, sd2) = surface_span(xcp, xcc, ci);
+        (ta2, tb2, tc2, td2) = surface_span(xcp, xcc, cj);
+        cg = sqrt((sc2 - ta2) * (sc2 - ta2) + (sd2 - tb2) * (sd2 - tb2)) ?? 0.0;
+        if cg > cspan { cspan = cg; }
+      }
+    }
+  }
+  println("   part 2 — the corner angle, over {ncorner} corners in 12 orientations:"
+          + " {cang} not 90 deg (exact integers, no float)");
+  if cang != 0 {
+    println("  FAIL: two adjacent fitted surfaces meet at the wrong angle"); ok = false;
+  }
+  println("            winding: {cwind} corners wound against their handedness (want 0) — the six"
+          + " mirrored orientations turn the other way, and consistently");
+  if cwind != 0 {
+    println("  FAIL: the winding is not consistent with the orientation's handedness"); ok = false;
+  }
+  println("   part 4 — the MITERED outline closes: {cclose} corners with a gap (want 0)");
+  if cclose != 0 {
+    println("  FAIL: the mitered quads do not share their corner — the outline has a gap"); ok = false;
+  }
+  println("   part 4 — offset from the CONTINUOUS model corner: {clo:8.6} .. {chi:8.6},"
+          + " spread {chi - clo}");
+  println("            a UNIFORM BIAS, not scatter: the miter recovers the CELL-REGION corner;");
+  println("            the continuous rectangle's corner is quantised away (I-QUANT, X50).");
+  if chi - clo > 0.000000001 {
+    println("  FAIL: the offset is SCATTER, not a uniform bias — then the surfaces really are"
+            + " drifting and part 4's original wording was right after all"); ok = false;
+  }
+  println("   CONTROL the UNMITERED spans leave a gap of {cspan:6.3} wu — mitering is doing real"
+          + " work, and this is what the fitted render showed");
+  if cspan < 0.001 {
+    println("  FAIL: control did not fire — the unmitered spans already closed, so the miter"
+            + " changes nothing"); ok = false;
   }
 
   println("");

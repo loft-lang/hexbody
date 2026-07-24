@@ -124,12 +124,13 @@ fn main() {
       // THE WALLS, AS G2 REQUIRES: one flat quad per side — its analytic surface — not one
       // strip per stored edge.  The surface is exact (`X47`) and `surface_span` gives its extent,
       // so the zigzag the strip used to draw never reaches the picture: 38 stored edges become 4
-      // quads, at `eave_spread(fitted) = 0`.
+      // quads, at `eave_spread(fitted) = 0`, each running MITER TO MITER so the outline closes
+      // with no corner gap (`I-CORNER` part 4).
       //
       // A feature is then what `FEATURES` says it is — an INTERVAL on that surface — drawn as a
       // sub-span of the same line rather than as the edge it happens to be stored on.
       for gside in 0..4 {
-        (sx0, sy0, sx1, sy1) = surface_span(p, cells, gside);
+        (sx0, sy0, sx1, sy1) = surface_quad(p, cells, gside, 4);
         strip(cv, sx0, sy0, sx1, sy1, ox, oy, 0.24, wall_col);
         gsr = side_edges(p, cells, gside);
         for gi in 0..side_run_len(gsr) {

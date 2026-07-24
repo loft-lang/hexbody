@@ -38,7 +38,7 @@ crawler's prototypes and design docs are **design tries** — input, not authori
 | **T3 · designed** | a doc argues a construction | **input to design, never truth** |
 | **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
 
-**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X61`** — eight of them re-measured *here*, and
+**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X62`** — eight of them re-measured *here*, and
 `X26`–`X31` **discovered here**. Everything else the design leans on is still a try or a schema
 (notably the whole foxel schema, `X11`–`X15`), and the census is where it gets re-measured. Citing a T2 number as settled is
 the specific mistake to avoid — in either direction: re-deriving what is genuinely gated wastes
@@ -73,7 +73,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X61` **with trust tiers** | **authoritative** on any object or map |
+| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X62` **with trust tiers** | **authoritative** on any object or map |
 | **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
@@ -138,14 +138,24 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 
 ## State (2026-07-24)
 
-- **`G2` is half done, `X61`.** The wall now renders as **ONE flat quad per side** — its analytic
+- **`G2` is DONE (`X61` + `X62`).** The wall renders as **ONE flat quad per side** — its analytic
   surface — not one strip per stored edge: **38 stored edges → 4 quads**, `eave_spread(fitted)` is
   **exactly 0**, and `make shot` straightens (features draw as **intervals on the surface**, which is
   `FEATURES`' own model). Control: the strip it replaces spreads by `X47`'s band (0.866 / 0.5 wu).
-- ⚠ **The fitted render made the missing CORNER MITER visible** — adjacent quads do not miter, so a
-  rotated house shows corner gaps. That is `I-CORNER` parts 2/4, the **`SURFACE_LANDED` tripwire S4
-  left standing for exactly this moment** — not a new defect. Flipping that flag fails the gate
-  until the real corner checks are written, which is the design.
+- **The corners MITER, and the `SURFACE_LANDED` tripwire is cashed in (`X62`).** The fit made the
+  missing miter visible; `I-CORNER` parts 2/4 then closed it. **Part 2** — adjacent surfaces differ
+  by heading `3` (unmirrored) or `9` (mirrored), **exactly 90°**, 48/48, in integer indices with no
+  float. **Part 4** — `surface_quad` cuts both quads at the line intersection and the outline gap is
+  **exactly 0**, 48/48; control, the un-mitered spans leave **11.592 wu**. `hexform::SURFACE_LANDED`
+  is now `true`.
+- ⚠ **Part 4's spec wording was WRONG and is corrected** — it said the miter *"sits on the exact
+  model corner"*. Drift is `0.4794643` at **every** corner, spread `1.33e-15`: a **uniform bias, not
+  scatter**, the tell that it is a definition difference. `Plan` is continuous-then-rasterised, so
+  its corner is **quantised away** (`I-QUANT`/`X50`); the miter recovers the **cell-region** corner,
+  the only one the field holds.
+- ⚠ **Fourth consecutive step whose red was MY measurement** — part 2 first tested only difference
+  `3` and failed 24/48, because mirrored orientations wind the other way. Same rule: a count off an
+  established one by a clean factor (here exactly half) is a bug in the counter.
 - **`plans/m0-roundtrip/shots/house12.png` was regenerated** — a review image (`L9`), not a gated
   baseline; `make test` never checked it.
 
@@ -192,10 +202,12 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   loop** (`ends 0, branches 0, loops 1`, seven shapes; a hole shows as 2 loops — **X35**), the four
   side runs **partition** it so a corner edge is claimed exactly once (**X36**), and a band wall
   eats the floor an edge wall keeps (**X37**, `I3`'s control).
-- **Corner parts 2 and 4 are a TRIPWIRE, not a red suite** — they need the fitted surface (S8).
-  `hexform::SURFACE_LANDED` is `false`; the gate prints them PENDING, and **flipping it at S8
-  fails the gate** until the real checks are written. Deliberate reading of `DESIGN.md` §10.4,
-  which says "write them red": a permanently red suite stops being a signal.
+- **Corner parts 2 and 4 WERE a tripwire, and it worked** — they needed the fitted surface, so
+  `SURFACE_LANDED` stayed `false` and the gate printed them PENDING until `G2` existed. Flipping it
+  did fail the gate, the real checks replaced the pending branch, and it is now `true` (`X62`). The
+  deviation from `DESIGN.md` §10.4's literal *"write them red"* was deliberate and is vindicated: a
+  permanently red suite stops being a signal, whereas the tripwire fired on the exact step it was
+  aimed at. **Use this pattern for the next requirement that outruns its machinery.**
 - **Green:** `tests/census.loft` (**S5**) — `rt_census_a` at n=1. **660 proposed, law J admits 30,
   3 distinct shapes, 183 collisions, 0 unexplained: law F HOLDS at level 1** (**X38**). The digest
   quotients by orientation and translation (law I) and is **exact**, never hashed — a hash
@@ -335,7 +347,7 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   collision is all single-frame; a **posed body against the world** (two frames, a continuous pose)
   was a T3 design, never built. hexbody's first measurement closes the two constants `DESIGN.md` §7
   left OPEN. The **pose transform is the sole float step** (`src/hexframe.loft`); everything else is
-  integer (`X1`–`X61`), so `ε_seam` is the whole error budget.
+  integer (`X1`–`X62`), so `ε_seam` is the whole error budget.
 - **The instrument is a Pythagorean pose** (cos 4/5, sin 3/5): the transform maps rationals to
   rationals, so an **exact integer oracle** exists and the float pipeline's disagreement with it IS
   the seam band. `ε_seam ≈ 7.1e-15` (machine ε); a routed query agrees with the oracle on all 1681
@@ -498,8 +510,8 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   unnecessary" by free poses) · **OD-5** is the flip exact (`X2` says yes) · **OD-9** does a door
   survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
   relocated into the schema, and rung A5's real question.
-- **Constraints are in `ROUNDTRIP.md` §7 (X1–X61) with trust tiers.** T1 now holds `X1`, `X2`,
-  `X19`–`X22`, `X24`–`X61`; do not re-derive those. Everything else is still a try or a schema.
+- **Constraints are in `ROUNDTRIP.md` §7 (X1–X62) with trust tiers.** T1 now holds `X1`, `X2`,
+  `X19`–`X22`, `X24`–`X62`; do not re-derive those. Everything else is still a try or a schema.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their

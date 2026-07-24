@@ -492,7 +492,13 @@ pub fn boundary_loops(cells: HexSet) -> integer {
 
 // ── PARTS 2 AND 4 — WRITTEN NOW, ENFORCED LATER ────────────────────────────
 //
-// The corner ANGLE (part 2) and the MITER POINT (part 4) need the fitted analytic surface, which
+// CASHED IN.  The corner ANGLE (part 2) and the MITER POINT (part 4) needed the fitted analytic
+// surface; it landed at S4b (`X47`) and gained its extent at `G2` (`X61`), so `tests/form.loft` §17
+// now CHECKS them.  Part 4's original wording — *"the miter sits on the exact model corner"* — turned
+// out to be wrong: `Plan` is continuous-then-rasterised, so the continuous corner is quantised away
+// (I-QUANT) and what the miter recovers exactly is the CELL-REGION corner.  History kept below.
+//
+// (was) The corner ANGLE (part 2) and the MITER POINT (part 4) need the fitted analytic surface, which
 // does not exist until S8.  `DESIGN.md` §10.4 says to write them into the gate red at S4.
 //
 // A PERMANENTLY RED SUITE IS NOT A SIGNAL, so instead of failing every run from here to S8 they
@@ -500,7 +506,7 @@ pub fn boundary_loops(cells: HexSet) -> integer {
 // nothing about them; flipping this to true at S8 makes the gate FAIL until the real checks are
 // written.  They cannot be forgotten, and `make test` stays a live signal in the meantime.
 // (If a red suite is wanted instead, flip this today — the gate section is already written.)
-pub const SURFACE_LANDED = false;
+pub const SURFACE_LANDED = true;
 
 // The same discipline for `rebuild` (S8), which `tests/trip.loft` is written against BEFORE it
 // exists (`DESIGN.md` §8.0).  While this is false the trip gate is legitimately RED, and the

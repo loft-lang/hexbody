@@ -1178,6 +1178,50 @@ widened search shared the broken helper.
 > **A slow, expensive confirmation of a bad measurement is still a bad measurement.** When a result
 > is surprising, re-derive the *instrument* before spending effort confirming the *number*.
 
+## `G2` · the fitted wall, and the corner miter — **DONE** *(`X61`, `X62`)*
+
+The surface was already exact (`X47`: direction exactly a heading, position an exact rational).
+What `G2` needed was its **extent** — so a renderer emits one quad per side instead of one strip
+per stored edge — and then, immediately, its **ends**.
+
+### The fit exposed the next defect, which is what a fit is for
+
+`surface_span` projects the run's corners onto the mean line and takes the extremes, so both
+endpoints lie **on** the line and the quad's own perpendicular spread is **exactly 0**. On the 5×4
+house: **38 stored edges → 4 fitted quads**. Control: the strip being replaced spreads by `X47`'s
+band (`0.8660` / `0.5000` wu) — if that were 0 the fit would remove nothing.
+
+Drawing it made the *next* problem visible at once: adjacent quads **did not miter**, so a rotated
+house showed corner gaps. That was not a new defect — it is `I-CORNER` parts 2 and 4, the
+`SURFACE_LANDED` tripwire `S4` left standing for exactly this moment.
+
+### The tripwire cashed in — and it cost one wrong measurement to do it
+
+Flipping `hexform::SURFACE_LANDED` to `true` made the gate red on the PENDING branch, as designed.
+The real checks that replaced it:
+
+| part | what is measured | result | control |
+|---|---|---|---|
+| 2 · the angle | heading difference between adjacent fitted surfaces | `3` unmirrored, `9` mirrored — **exactly 90°**, 48/48, integer indices, no float | a difference off `3`/`9`, or an inconsistent winding within one handedness, fails |
+| 4 · the miter | gap in the mitered outline at each corner | **exactly 0**, 48/48 | the un-mitered spans leave **11.592 wu** |
+
+⚠ **The first version of part 2 failed 24 of 48** — it tested only difference `3`. The mirrored
+orientations wind the other way and give `9`. That is the **fourth** consecutive time a red was my
+measurement rather than the subject, so the standing rule applied again: a count that disagrees
+with an already-gated number by a clean factor (here exactly half) is a bug in the counter. The fix
+also added a per-handedness winding check, so accepting `3` **or** `9` did not weaken the test.
+
+### Part 4's own wording was wrong, and the bias is the tell
+
+§10.4 said the miter point *"sits on the exact model corner"*. It does not — measured drift is
+`0.4794643204817` at **every** corner, spread `1.33e-15`. **Uniform bias, not scatter**, which is
+the signature of a definition difference rather than an error: `Plan` is continuous-then-rasterised,
+so the continuous rectangle's corner is **quantised away** (`I-QUANT`, `X50`) before any surface
+exists. The field holds only the **cell-region** corner, and the miter recovers *that* one exactly.
+
+`make shot` now draws the miter-to-miter segment (`surface_quad`), with each feature as an interval
+on that surface. The rot-0 panels close cleanly; the closure itself is gated over all 12.
+
 ## Order, and where it can go wrong
 
 ```

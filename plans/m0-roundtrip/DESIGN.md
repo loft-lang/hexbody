@@ -873,11 +873,21 @@ building corner"*) and that `WALLS.md` reports its 2D prototype passing (*"rect 
 | 1 | the boundary is **one closed loop** — no gap at a corner | a run ends before the corner cell |
 | 2 | the corner **angle is exact** — 90° for a `Plan`, 60°/120° for a rhombus | the two fitted lines meet at the wrong angle |
 | 3 | the corner cell is claimed **exactly once** — not doubled, not dropped | adjacent runs both own it, or neither does |
-| 4 | the **miter point** — where the two fitted surfaces intersect — is at the exact corner | the recovered corner drifts off the model corner |
+| 4 | the **miter point** — where the two fitted surfaces intersect — closes the outline | a gap or an overlap remains at the corner |
 
 Parts 1 and 3 are checkable at S4 on the strip alone. Parts 2 and 4 need the fitted surface, so
 they land with recovery (S8) — but they should be **written into the gate red at S4**, the same
 way `rt_trip` is written before `rebuild` exists.
+
+> **RESOLVED (`X62`), and part 4's row above is a CORRECTION.** It first read *"is at the exact
+> **model** corner — the recovered corner drifts off the model corner"*. Measured, it does drift,
+> by `0.4794643204817` at **every** corner with a spread of `1.33e-15` — a **uniform bias, not
+> scatter**, and that is the tell: it is a difference of *definition*, not an error. `Plan` is
+> continuous-then-rasterised, so its continuous corner is **quantised away** (`I-QUANT`, `X50`)
+> before any surface exists; the field holds only the **cell-region** corner, and the miter
+> recovers *that* one exactly — 0 gap at all 48 corners. Part 2 is exact in **integer headings**:
+> adjacent surfaces differ by `3` (unmirrored) or `9` (mirrored), both = 90°. Writing only the
+> `3` case accepted 24/48 and looked like a real defect; the two values are the two windings.
 
 ### Two primitives, not one — and that is the honest shape
 
@@ -1612,6 +1622,15 @@ PENDING with their failure modes, and flipping the constant at S8 makes the gate
 real checks replace the pending branch. The requirement cannot be forgotten, and the suite stays a
 live signal in the meantime. *(This is a deliberate reading of §10.4, not a quiet drop — flipping
 the constant today gives the literal red the doc asks for.)*
+
+> **CASHED IN (`X62`).** The tripwire worked as designed: at `G2` the fitted surfaces existed, the
+> constant flipped to `true`, the gate went red on the PENDING branch, and the real checks replaced
+> it — angle exact in integer headings (48/48), miter gap exactly 0 (48/48), control 11.592 wu of
+> un-mitered gap. **What it cost to keep the tripwire honest:** the first version of part 2 tested
+> only heading difference `3` and failed 24 of 48; the mirrored orientations wind the other way and
+> give `9`. A red that is *my* measurement rather than the subject, for the fourth time — the same
+> rule applies (check a new number against an established one before believing it), and the fix
+> also added a per-handedness winding check, so accepting `3` **or** `9` did not weaken it.
 
 ### The slip worth recording
 
