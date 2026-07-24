@@ -123,11 +123,14 @@ survives `read → draw → rebuild → write` byte-identically* — holds over 
   line **recovers exactly straight** — its edge midpoints share one `y`, so **eave_spread = 0**, the
   phase-B verify (`X55`). Control: the same ruler reads 6.75 over the curved rim.
 
-- **Domain B's census (`rt_census_b`).** `D` was closed by `X3`, so the open constant was **cost**,
-  not representability: a **three-class** period table — 6 directions at `√3` wu and 6 at `1` wu
-  (both angle-exact), 12 at `√21` wu = **3.969 m** and `4.1066°` off (`X56`). It **corrected
-  §10.9's ladder**, whose period column was 3× too small; the ratios were unaffected, so `X31`'s
-  conclusion stands and is now T1 — today's in-between vector is **dominated**.
+- **Domain B's census (`rt_census_b`), and the in-between vector SETTLED.** `D` was closed by `X3`,
+  so the open constant was **cost**: a three-class table — 6 at `√3` wu, 6 at `1` wu (both
+  angle-exact), 12 in-between at `√39` wu = **5.408 m**, `1.1021°` off (`X56`). The census found a
+  **third axis** §10.9's ladder never had — **`δ`**, whether a direction preserves the hex-vertex
+  class and so links to the house angles *unconditionally*. That **reversed** the "today's vector is
+  dominated" verdict, and the in-between vector was switched to **`N = 39` `(7,−2)`**: same `3.7×`
+  accuracy as `N = 13`, but `N = 13` would have spent the linking. Also corrected §10.9's period
+  column, which was 3× too small.
 
 **Rungs A1–A7 and S0–S8 + S4b are closed; A8's adjacency, frame-seam, nearest-surface and linework
 axes with them, and phase B's census.** Still open on A8: stencil on **terrain** (`OD-4`) and

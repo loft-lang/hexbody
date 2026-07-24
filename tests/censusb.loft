@@ -2,32 +2,48 @@
 // Every check has a control that must fire.
 //
 // `D` is CLOSED — all 24 directions are representable (`X3`) — so domain B's open constant was never
-// representability but **COST**: what does each direction cost in PERIOD (how far a run must go
-// before it lands back on a hex vertex) and in ANGLE ERROR (how far it sits from its nominal 15°·d)?
-// A census REPORTS a table; the assertions pin its structure.
+// representability but **COST**. A census REPORTS a table; the assertions pin its shape.
 //
 //   1  the cost table over all 24 — three period classes, and the even/odd angle split
 //   2  the period, measured: it settles a 3× disagreement between two design docs
-//   3  the `X31` ladder (T2 → T1) — today's in-between vector is DOMINATED, and a real trade exists
+//   3  **δ — the LINKING axis**: does a direction preserve the hex-vertex class, or cycle it?
+//   4  the ladder, on all THREE axes — why `N = 39` and not the finer-looking `N = 13`
 //
-// The period primitives (`wall_run_len`, `wall_min_p`) are the gated ones, so the measurement
-// decides; no doc number is copied in.
+// §3 is the axis `X31`'s ladder never had. `δ = (tri_a − tri_b) mod 3` decides whether every
+// multiple of a direction's period is an admissible run (δ = 0) or one in three lands on a hex
+// CENTRE and is refused (δ ≠ 0) — and, because a house wall can leave you on either vertex class,
+// it decides whether world linework links to the house angles unconditionally or conditionally.
 use hexwall;
 
-const DEG = 57.29577951308232;      // 180/π
+const DEG = 57.29577951308232;
 const SQ3 = 1.7320508075688772;
+const WU  = 0.8660254037844386;      // 1 world unit in metres
 
-// A candidate in-between vector in doubled (k,m) coords: its N, angle and period.
-//   N = (3k² + m²)/4      angle = atan2(m, k√3)      period = √N world units
-// The N=21 row is anchored against the GATED direction 1 below, which is what ties this arithmetic
-// to the measured lattice rather than to §10.9's table.
+fn absf(v: float) -> float { if v < 0.0 { return 0.0 - v; } v }
+
+fn gcd2(x: integer, y: integer) -> integer {
+  g = x; if g < 0 { g = 0 - g; }
+  h = y; if h < 0 { h = 0 - h; }
+  while h != 0 { t = (g % h) ?? 0; g = h; h = t; }
+  g
+}
+
+// A candidate in-between vector in doubled (k,m): its N, angle, period and δ.
+//   N = (3k² + m²)/4        angle = atan2(m, k√3)        period = √N world units
+// δ needs the REDUCED triangle vector, since reduction changes the residues.
 fn cand_n(k: integer, m: integer) -> integer { (3 * k * k + m * m) / 4 }
 fn cand_angle(k: integer, m: integer) -> float {
   (atan2((m as float), (k as float) * SQ3) ?? 0.0) * DEG
 }
 fn cand_period(k: integer, m: integer) -> float { sqrt((cand_n(k, m) as float)) ?? 0.0 }
-
-fn absf(v: float) -> float { if v < 0.0 { return 0.0 - v; } v }
+fn cand_delta(k: integer, m: integer) -> integer {
+  ta = 3 * k;
+  tb = (3 * (m - k) / 2) ?? 0;
+  g = gcd2(ta, tb);
+  ra = (ta / g) ?? 0;
+  rb = (tb / g) ?? 0;
+  (((ra - rb) % 3) + 3) % 3
+}
 
 fn main() {
   ok = true;
@@ -51,19 +67,18 @@ fn main() {
     }
     if absf(err) < 0.0001 { n_exact = n_exact + 1; }
     else {
-      if absf(absf(err) - 4.1066) < 0.001 { n_offby = n_offby + 1; }
+      if absf(absf(err) - 1.1021) < 0.001 { n_offby = n_offby + 1; }
       else { nbad = nbad + 1; }
     }
-    // the three period classes
     if absf(per - SQ3) < 0.0001 { p_edge = p_edge + 1; }
     if absf(per - 1.0) < 0.0001 { p_vert = p_vert + 1; }
-    if absf(per - 4.5826) < 0.001 { p_between = p_between + 1; }
+    if absf(per - 6.2450) < 0.001 { p_between = p_between + 1; }
   }
   println("   ... (24 rows; the pattern repeats every 4)");
-  println("   angle: {n_exact} exact, {n_offby} off by 4.1066 deg, {nbad} neither");
-  println("   period classes: {p_edge} at sqrt3, {p_vert} at 1, {p_between} at sqrt21");
+  println("   angle: {n_exact} exact, {n_offby} off by 1.1021 deg, {nbad} neither");
+  println("   period classes: {p_edge} at sqrt3, {p_vert} at 1, {p_between} at sqrt39");
   if n_exact != 12 || n_offby != 12 || nbad != 0 {
-    println("  FAIL: the even/odd angle split is not 12 exact + 12 at 4.1066 deg (X29)"); ok = false;
+    println("  FAIL: the even/odd angle split is not 12 exact + 12 at 1.1021 deg"); ok = false;
   }
   if p_edge != 6 || p_vert != 6 || p_between != 12 {
     println("  FAIL: the period classes are not 6 / 6 / 12 — the cost table's shape is wrong");
@@ -71,72 +86,116 @@ fn main() {
   }
 
   // ── 2. THE PERIOD, MEASURED — settling a 3x disagreement ───────────────────
-  //
-  // Two design docs disagree by exactly 3 on the in-between period, and a clean factor is the
-  // signature of a counter bug, so the gated primitive decides.
   println("");
   println("2. THE PERIOD, MEASURED — the in-between 12");
   per1 = wall_run_len(1, 1);
-  sq21 = sqrt(21.0) ?? 0.0;
-  println("   direction 1: one period = {per1} wu = {per1 * 0.866} m");
-  println("   sqrt(21) = {sq21} wu; DESIGN 10.9's ladder column says 1.528 wu = sqrt(21)/3");
-  if absf(per1 - sq21) > 0.001 {
-    println("  FAIL: the measured in-between period is not sqrt(21) wu"); ok = false;
+  nb = tri_n2(1);
+  sqn = sqrt((nb as float)) ?? 0.0;
+  println("   direction 1: N = {nb}, one period = {per1} wu = {per1 * WU} m");
+  println("   sqrt(N) = {sqn} wu.  DESIGN 10.9's ladder column used sqrt(N)/3 = {sqn / 3.0}");
+  if absf(per1 - sqn) > 0.001 {
+    println("  FAIL: the measured period is not sqrt(N) wu"); ok = false;
   }
-  if absf(per1 - sq21 / 3.0) < 0.001 {
-    println("  FAIL: the measured period matched sqrt(21)/3 — then 10.10's 3.969 m is the wrong one");
+  if absf(per1 - sqn / 3.0) < 0.001 {
+    println("  FAIL: the measured period matched sqrt(N)/3 — then 10.10's metre figure is wrong");
     ok = false;
   }
-  println("   => the measured period is sqrt(21) = 4.5826 wu = 3.969 m, agreeing with 10.10 and");
-  println("      the gated doorstep; 10.9's ladder period column is 3x too small.");
+  println("   => the period is sqrt(N), agreeing with 10.10 and the gated doorstep; 10.9's ladder");
+  println("      period column was 3x too small until this gate measured it.");
 
-  // ── 3. THE X31 LADDER — today's vector is DOMINATED ───────────────────────
+  // ── 3. δ — THE LINKING AXIS ───────────────────────────────────────────────
   //
-  // Candidates in doubled (k,m).  The N=21 row must reproduce the GATED direction-1 angle and
-  // period, which is what anchors this arithmetic to the measured lattice.
+  // A run of p periods from a vertex of class c ends on class (c + p·δ) mod 3, and class 0 is a hex
+  // CENTRE, which the doorstep refuses.  So δ = 0 preserves the class (every multiple admissible,
+  // from either class) and δ ≠ 0 cycles it (one in three refused, and the shortest legal run depends
+  // on where you started).  A house wall can leave you on EITHER class, so this is exactly whether
+  // world linework links to the house angles unconditionally.
   println("");
-  println("3. THE LADDER (X31) — is today's in-between vector the best available?");
-  println("    (k,m)      N   angle     err vs 15   period(wu)");
-  a21 = cand_angle(5, 3);   p21 = cand_period(5, 3);
-  a7  = cand_angle(3, 1);   p7  = cand_period(3, 1);
-  a13 = cand_angle(4, 2);   p13 = cand_period(4, 2);
-  a181 = cand_angle(15, 7); p181 = cand_period(15, 7);
-  println("    (5,3)  {cand_n(5,3):>5} {a21:>8.3} {a21 - 15.0:>10.4} {p21:>11.4}   <- today");
-  println("    (3,1)  {cand_n(3,1):>5} {a7:>8.3} {a7 - 15.0:>10.4} {p7:>11.4}");
-  println("    (4,2)  {cand_n(4,2):>5} {a13:>8.3} {a13 - 15.0:>10.4} {p13:>11.4}");
-  println("   (15,7)  {cand_n(15,7):>5} {a181:>8.3} {a181 - 15.0:>10.4} {p181:>11.4}");
-  // the anchor: N=21 must BE the gated direction 1
-  if cand_n(5, 3) != 21 || absf(a21 - wall_angle_actual(1)) > 0.001 || absf(p21 - per1) > 0.001 {
-    println("  FAIL: the ladder's N=21 row does not reproduce the gated direction 1 — the ladder"
+  println("3. δ — THE LINKING AXIS: does the direction preserve the hex-vertex class?");
+  nuncond = 0; ncond = 0;
+  for d2 in 0..24 {
+    dl = (((tri_a(d2) - tri_b(d2)) % 3) + 3) % 3;
+    a1 = wall_min_p(d2, 3, 0);
+    a2 = wall_min_p(d2, 0, 3);
+    if dl == 0 {
+      nuncond = nuncond + 1;
+      if a1 != 1 || a2 != 1 {
+        println("  FAIL: d={d2} has delta 0 but min_p {a1}/{a2} — delta 0 must mean min 1 from both");
+        ok = false;
+      }
+    } else {
+      ncond = ncond + 1;
+      if a1 == a2 {
+        println("  FAIL: d={d2} has delta {dl} but the same min_p from both classes — then the"
+                + " class does not cycle and delta measures nothing"); ok = false;
+      }
+    }
+  }
+  println("   {nuncond} directions link UNCONDITIONALLY (delta 0, every multiple, min 1 from both)");
+  println("   {ncond} link CONDITIONALLY (delta != 0, 1 in 3 refused, min depends on the class)");
+  d_between = (((tri_a(1) - tri_b(1)) % 3) + 3) % 3;
+  println("   the IN-BETWEEN 12: delta = {d_between}, min_p {wall_min_p(1, 3, 0)}/"
+          + "{wall_min_p(1, 0, 3)} — must be 0 and 1/1, so linework meets houses unconditionally");
+  if d_between != 0 || wall_min_p(1, 3, 0) != 1 || wall_min_p(1, 0, 3) != 1 {
+    println("  FAIL: the in-between direction links conditionally — from half of all house corners"
+            + " its shortest legal run doubles"); ok = false;
+  }
+  // CONTROL: the measurement must be able to SEE a conditional direction, or delta proves nothing.
+  // The N=1 house family (30/90/150) is delta != 0 and its min_p differs by class.
+  println("   CONTROL the N=1 house family (d=2): delta {(((tri_a(2) - tri_b(2)) % 3) + 3) % 3},"
+          + " min_p {wall_min_p(2, 3, 0)}/{wall_min_p(2, 0, 3)} (must differ — the ruler works)");
+  if wall_min_p(2, 3, 0) == wall_min_p(2, 0, 3) {
+    println("  FAIL: control did not fire — no direction links conditionally, so 'unconditional'"
+            + " is vacuous"); ok = false;
+  }
+  if ncond <= 0 {
+    println("  FAIL: no conditional directions at all — delta is not measuring anything"); ok = false;
+  }
+
+  // ── 4. THE LADDER, ON ALL THREE AXES ──────────────────────────────────────
+  println("");
+  println("4. THE LADDER — angle, period AND delta");
+  println("    (k,m)      N   angle    err     period(m)  delta  links");
+  a21 = cand_angle(5, 3);   a13 = cand_angle(4, 2);   a39 = cand_angle(7, 3);
+  p21 = cand_period(5, 3);  p13 = cand_period(4, 2);  p39 = cand_period(7, 3);
+  d21 = cand_delta(5, 3);   d13 = cand_delta(4, 2);   d39 = cand_delta(7, 3);
+  println("    (5,3)  {cand_n(5,3):>5} {a21:>8.3} {a21 - 15.0:>8.4} {p21 * WU:>10.3}      {d21}"
+          + "    uncond   <- the old choice");
+  println("    (4,2)  {cand_n(4,2):>5} {a13:>8.3} {a13 - 15.0:>8.4} {p13 * WU:>10.3}      {d13}"
+          + "    COND     <- finer, but spends linking");
+  println("    (7,3)  {cand_n(7,3):>5} {a39:>8.3} {a39 - 15.0:>8.4} {p39 * WU:>10.3}      {d39}"
+          + "    uncond   <- CHOSEN");
+  // the anchor: the chosen row must BE the gated direction 1
+  if cand_n(7, 3) != 39 || absf(absf(a39 - 15.0) - 1.1021) > 0.001
+     || absf(p39 - per1) > 0.001 || d39 != 0 {
+    println("  FAIL: the ladder's N=39 row does not reproduce the gated direction 1 — the ladder"
             + " arithmetic is not anchored to the measured lattice"); ok = false;
   }
-  // (3,1): the SAME error magnitude, a shorter period -> today's choice is dominated
-  same_err = absf(absf(a7 - 15.0) - absf(a21 - 15.0)) < 0.001;
-  println("   (3,1) has the same |error| as today: {same_err}, and period {p7:.4} < {p21:.4}");
-  if !same_err || p7 >= p21 {
-    println("  FAIL: (3,1) does not dominate today's vector on period at equal error"); ok = false;
-  }
-  // (4,2): BOTH better -> dominated outright
-  better_both = absf(a13 - 15.0) < absf(a21 - 15.0) && p13 < p21;
-  println("   (4,2) is better on BOTH axes (angle and period): {better_both}");
-  if !better_both {
-    println("  FAIL: (4,2) does not dominate today's vector outright — X31's recommendation fails");
+  // N=39 buys the whole angle improvement over the old choice
+  if absf(a39 - 15.0) >= absf(a21 - 15.0) {
+    println("  FAIL: N=39 is not more accurate than the old N=21 — the switch bought nothing");
     ok = false;
   }
-  // CONTROL: a genuine TRADE must exist, or "dominated" is a word with no content
-  trade = absf(a181 - 15.0) < absf(a21 - 15.0) && p181 > p21;
-  println("   CONTROL (15,7) is a genuine TRADE — better angle but LONGER period: {trade}"
-          + " (so 'dominated' means something)");
-  if !trade {
-    println("  FAIL: control did not fire — every candidate dominated, so the ladder is not"
-            + " measuring a trade-off at all"); ok = false;
+  // and it keeps what N=13 spends
+  if d21 != 0 || d13 == 0 {
+    println("  FAIL: the delta column is wrong — N=21 must be unconditional and N=13 conditional");
+    ok = false;
+  }
+  // CONTROL: there must be NO free lunch — N=13 must genuinely beat N=39 on period, or the
+  // choice was not a trade and the third axis was not doing any work.
+  println("   CONTROL N=13 is genuinely finer than N=39: {p13 < p39} (so the choice IS a trade —"
+          + " N=39 pays {p39 * WU - p13 * WU:.3} m of period for unconditional linking)");
+  if p13 >= p39 {
+    println("  FAIL: control did not fire — N=39 was free, so nothing was traded and the third"
+            + " axis decided nothing"); ok = false;
   }
 
   println("");
-  println("   X56: domain B's cost is a THREE-CLASS table — 6 directions at period sqrt3 (exact),");
-  println("   6 at period 1 (exact), 12 at period sqrt21 = 3.969 m and 4.1066 deg off nominal. The");
-  println("   in-between vector (5,3)/N=21 is DOMINATED: (3,1) matches its error at a 42% shorter");
-  println("   period, (4,2) beats it on both. Changing it stays a live proposal (I-EXTEND).");
+  println("   X56: domain B's cost is a THREE-CLASS table over THREE axes. 6 directions at period");
+  println("   sqrt3 and 6 at 1 (both angle-exact); 12 in-between at sqrt39 = 5.408 m, 1.1021 deg");
+  println("   off, and delta = 0 — so linework links to the house angles UNCONDITIONALLY. The");
+  println("   ladder's two-axis reading called the old N=21 'dominated'; on the linking axis it");
+  println("   was not, and N=13 would have spent it.");
 
   println("");
   if ok { println("=== CENSUSB OK ==="); }

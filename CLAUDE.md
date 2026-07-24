@@ -353,20 +353,38 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   world line is exactly collinear: **eave_spread = 0**, the phase-B verify. **The control matters
   here**: the same ruler over the curved rim reads **6.75**, so 0 is a result and not a dead
   instrument.
-- **Phase B is CLOSED, `X56` — the domain-B census.** `D` was closed by `X3`, so the open constant
-  was **cost**, not representability. The period table has **three classes**: 6 directions at `√3` wu
-  (1.5 m) and 6 at `1` wu (0.866 m), both **angle-exact**; **12** at `√21` wu = **3.969 m**, all
-  `4.1066°` off nominal (12 exact + 12 off, 0 neither — `X29` from the other side).
-- ⚠ **The census CORRECTED a design doc, and the clean factor was the tell.** `DESIGN.md` §10.9's
-  ladder listed the period as `√N/3`; §10.10 said `3.969 m`. Exactly **3×** apart — the signature of
-  a counter bug — so the gate measured with the gated `wall_run_len` instead of picking a side. The
-  period is **`√N`**; §10.9's column is now fixed. **The ratios were unaffected**, so `X31`'s ladder
-  conclusion stands and is now **T1**: today's `(5,3)`/`N=21` is **dominated** — `(3,1)` matches its
-  error at a 42% shorter period, `(4,2)` beats it on both axes. Changing it stays a **live proposal**
-  (`I-EXTEND`), since it would re-spell every stored in-between wall.
+- **Phase B is CLOSED, `X56` — the domain-B census, and the in-between vector is SETTLED at
+  `N = 39`.** `D` was closed by `X3`, so the open constant was **cost**. Three classes: 6 directions
+  at `√3` wu (1.5 m) and 6 at `1` wu (0.866 m), both **angle-exact**; **12** in-between at `√39` wu =
+  **5.408 m**, `1.1021°` off nominal.
+- ⚠ **`δ = (tri_a − tri_b) mod 3` is the LINKING axis, and the ladder never had it.** A run of `p`
+  periods from a vertex of class `c` ends on class `(c + p·δ) mod 3`; class 0 is a hex **centre**,
+  which the doorstep refuses. `δ = 0` **preserves** the class (every multiple admissible, from
+  either); `δ ≠ 0` **cycles** it (1 in 3 refused, shortest run depends where you started). A house
+  wall can leave you on **either** class, so `δ` is exactly whether linework links to the house
+  angles unconditionally. **18 directions do, 6 do not** (the `N=1` house family, 30/90/150°).
+- ⚠ **That REVERSED `X31`'s verdict.** §10.9 called the old `N = 21` "dominated outright" — on the
+  linking axis it was **on the frontier** (only `N = 21, 39, 291` have `δ = 0`). So the vector went to
+  **`N = 39` `(7,−2)`**, not the finer-looking `N = 13`: both give the same `3.7×` accuracy, but
+  `N = 13` is `δ = 2` and would spend the linking, exactly where two domains meet. `N = 39` pays
+  2.29 m of period to keep it. Exhaustive over `N ≤ 400`: **no vector improves the angle while
+  keeping both today's grid and `δ = 0`.** Switched while domain B had **no stored content** (the
+  corpus is all `H₁₂` stencils), so it cost nothing; later it would be unmigratable (`A₂`).
+- ⚠ **The census also corrected §10.9's period column by exactly 3×** (`√N/3` → `√N`). A clean factor
+  between two numbers is the signature of a counter bug — here the bug was in the doc, caught by the
+  gate. `X29`'s stated value moved with the vector (`4.1066°` → `1.1021°`); what it actually gates is
+  that the bias is **uniform, not scatter**, which survives a change of vector.
 - **A census that only prints a table cannot go red** — `DESIGN.md` §9 listed `rt_census_b`'s control
-  as "—". Two were written: a genuine **trade** must exist among the candidates (else "dominated" is
-  empty), and the measured period must **not** equal `√N/3`.
+  as "—". Three were written: a **conditional** direction must exist with a class-dependent `min_p`
+  (else "unconditional" is vacuous); `N = 13` must genuinely beat `N = 39` on period (else nothing
+  was traded); and the measured period must **not** equal `√N/3`.
+- **The 5.408 m in-between quantum is accepted on ONE condition, from the user (2026-07-24): the
+  longer minimal stretches are fine *"as long as they are clearly visible inside the editor"*.** So
+  the coarse quantum is a **presentation** obligation, not a geometry problem — recorded in `SPEC`
+  **K-FIT**. The mechanism already exists and is gated (`tests/wall.loft` §8): `wall_snap_p` offers a
+  different admissible length when one is refused, `snap_run_d24`/`snap_run_p` take an arbitrary
+  point to a legal line, and `run_end_dist` is the residual to display. What remains is the editor
+  *showing* it — consumer side of the `L6` seam, not hexbody's to build.
 - **A8 still open:** stencil on **terrain** (`OD-4`, no terrain production yet) and **level**
   separation (crawler's bridge guarantee — different levels never contend, needs the layer axis).
   Already gated and not to be re-derived: the 24 directions (`X26`–`X32`), the averaged surface

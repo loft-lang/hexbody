@@ -324,7 +324,7 @@ than a body falling through the world.
 | constant | domain | produced by | status |
 |---|---|---|---|
 | `Cyc` | A | the stencil census, grown by level (§8) | **OPEN** |
-| `period` | B | the linework census | **MEASURED** ✅ — a **three-class** table: 6 directions at `√3` wu, 6 at `1` wu (both exact in angle), 12 at `√21` wu = **3.969 m** and `4.1066°` off nominal. `X3` was right that the question was **cost**, not representability (`X56`, `tests/censusb.loft`) |
+| `period` | B | the linework census | **MEASURED + SETTLED** ✅ — a **three-class** table: 6 directions at `√3` wu, 6 at `1` wu (both exact in angle), 12 in-between at `√39` wu = **5.408 m**, `1.1021°` off nominal and `δ = 0` (they link unconditionally). `X3` was right that the question was **cost**, not representability; the in-between vector was switched from `N = 21` to `N = 39` on the strength of it (`X56`, `tests/censusb.loft`) |
 | `Sep` | B | the arc sweep | **OPEN** — and aimed at a different objective than `X7`'s collision-match |
 | `D` | B | — | **CLOSED** — all 24 representable (`X3`) |
 | `ε_seam` | frames | measured at the chokepoint | **MEASURED** ✅ — the pose round-trip residual is **≈ 7.1e-15 (machine ε)**; a routed query agrees with an exact integer oracle on all 1681 grid points (`X53`, `tests/seam.loft`) |
@@ -1110,32 +1110,57 @@ The current in-between direction is the **shortest** one — the sum of the two 
 `N = 21`, off by `4.1066°`. That error is a *choice of period*, not a law. Longer primitive vectors
 approach 15° as closely as wanted:
 
-| vector | `N` | period | angle | error vs 15° | vs today |
-|---|---|---|---|---|---|
-| `(5,−1)` | **21** | 4.583 wu | 19.107° | **+4.1066°** | ***current*** |
-| `(3,−1)` | 7 | 2.646 wu | 10.893° | −4.1066° | same error, **43% shorter period** |
-| `(4,−1)` | **13** | **3.606 wu** | 16.102° | **+1.1021°** | **3.7× better, 21% shorter** |
-| `(11,−3)` | 97 | 9.849 wu | 14.705° | −0.2953° | 13.9× |
-| `(15,−4)` | 181 | 13.454 wu | 15.079° | +0.0791° | 51.9× |
-| `(56,−15)` | 2521 | 50.209 wu | 15.006° | +0.0057° | 722.8× |
+| vector | `N` | period | angle | error vs 15° | `δ` | links |
+|---|---|---|---|---|---|---|
+| `(5,−1)` | **21** | 4.583 wu | 19.107° | **+4.1066°** | **0** | uncond. — *the old choice* |
+| `(3,−1)` | 7 | 2.646 wu | 10.893° | −4.1066° | 1 | cond. |
+| `(4,−1)` | **13** | **3.606 wu** | 16.102° | **+1.1021°** | 2 | cond. |
+| `(7,−2)` | **39** | 6.245 wu | 13.898° | **−1.1021°** | **0** | **uncond. — CHOSEN** |
+| `(11,−3)` | 97 | 9.849 wu | 14.705° | −0.2953° | 2 | cond. |
+| `(15,−4)` | 181 | 13.454 wu | 15.079° | +0.0791° | 1 | cond. |
+| `(19,−5)` | 291 | 17.059 wu | 15.295° | −0.2953° | **0** | uncond. |
+| `(56,−15)` | 2521 | 50.209 wu | 15.006° | +0.0057° | 2 | cond. |
 
-> **The period column was wrong by exactly 3× until `tests/censusb.loft` measured it** (`X56`). It
-> read `√N/3`; the period is `√N` world units, which is what the gated `wall_run_len` returns and
-> what §10.10's `3.969 m` for the in-between 12 has always said. The *ratios* — and therefore every
-> conclusion below — are unaffected, since all six rows were scaled alike. Recorded rather than
-> quietly corrected, because a clean factor between two numbers is the signature of a counter bug,
-> and here the bug was in this table.
+> **Two corrections, both found by `tests/censusb.loft` (`X56`) rather than at the desk.**
+>
+> **The period column was wrong by exactly 3×.** It read `√N/3`; the period is `√N` world units,
+> which is what the gated `wall_run_len` returns and what §10.10's metre figure always said. The
+> ratios were unaffected. A clean factor between two numbers is the signature of a counter bug — and
+> here the bug was in this table.
+>
+> **The `δ` column did not exist, and it changes the conclusion.** `δ = (a − b) mod 3` decides
+> whether a direction **preserves** the hex-vertex class (`δ = 0`: every multiple of the period is an
+> admissible run, from either class) or **cycles** it (`δ ≠ 0`: one run in three lands on a hex
+> centre and is refused, and the shortest legal run depends on which class you started from). Since a
+> house wall can leave you on either class, `δ` is exactly whether world linework links to the house
+> angles **unconditionally**. Only `N = 21`, `39` and `291` do.
+>
+> So the two-axis reading below — *"today's choice is dominated outright"* — was **wrong**: on the
+> linking axis the old `N = 21` was on the frontier. `N = 7`'s "43% shorter period" is likewise
+> misleading: it is `δ = 1`, so one run in three is refused and its effective grid is only **13%**
+> finer, not 43%.
 
-Note the second row: the current vector is **not even the shortest at its own accuracy**. Summing
-the two adjacent headings lands on `(5,−1)`, `N = 21`; the mirror `(3,−1)`, `N = 7`, has the *same*
-`4.1066°` error with a period 43% shorter. So today's choice is dominated outright.
+**SETTLED — the vector is now `N = 39`, `(7,−2)`** (`X56`, gated in `tests/censusb.loft`; switched
+in `hexwall`'s `between_k`/`between_m` while domain B still had **no stored content**, so it cost
+nothing — after linework exists it would be unmigratable under law `A₂`).
 
-**The recommendation is `N = 13`, the vector `(4,−1)`.** It is 3.7× more accurate than today *and*
-21% shorter in period, so it is strictly better on both axes — there is no trade to make. Period is
-what matters for short runs: a house wall of 7.5 m is 8.66 wu, so `N = 13` gives **~2.4 repeats** of
-the wobble while `N = 181` gives **fewer than one** — at which point the run no longer *reads* as
-that direction at all. The long vectors are only usable for roads and cliffs, where runs are long.
-*(These counts are on the corrected periods above; the pre-`X56` table made them 3× too generous.)*
+It was chosen on the **three** axes above, not the two this section originally weighed:
+
+| | angle | period | links |
+|---|---|---|---|
+| `N = 21` *(old)* | 4.1066° | 3.969 m | unconditional |
+| `N = 13` | **1.1021°** | **3.122 m** | **conditional** — 6.245 m minimum from half of all house corners |
+| **`N = 39`** *(chosen)* | **1.1021°** | 5.408 m | **unconditional** |
+
+`N = 13` and `N = 39` buy the identical **3.7×** accuracy improvement. `N = 13` is also the finer
+grid — but it is `δ = 2`, so it spends the unconditional linking, and it spends it precisely where
+two domains have to meet, which is the hardest place to reason about later. `N = 39` pays **2.29 m**
+of period for keeping that property. **There is no vector that improves the angle while keeping both
+today's grid and unconditional linking** — the search is exhaustive over `N ≤ 400`.
+
+*(The earlier text here recommended `N = 13` on the grounds that it was "strictly better on both
+axes — there is no trade to make". That was true of the two axes then measured and false overall; the
+correction is kept visible rather than rewritten away.)*
 
 This is a **live proposal, not a decision** — changing the in-between vector changes every stored
 in-between wall, so it belongs to the extension contract (`I-EXTEND`) and wants deciding before the

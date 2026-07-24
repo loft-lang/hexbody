@@ -43,15 +43,73 @@ pub struct Wall {
 
 // The direction of `d24` as a doubled-coordinate vector, before normalising.
 //
-// Even: the heading itself.  Odd: the sum of the two adjacent headings — which is the
-// wobble's mean, and is the inexact one.
+// Even `d24`: the heading itself, exact.  Odd: the in-between vector below, which is inexact —
+// no lattice vector points at an odd multiple of 15° at all (`X31`).
+//
+// ── THE IN-BETWEEN VECTOR (odd `d24`) — `N = 39`, the vector `(7,−2)` ──────
+//
+// This used to be the SUM of the two adjacent headings — `(5,3)` here, `(5,−1)` reduced, `N = 21` —
+// which put every in-between direction **4.1066°** off its nominal angle.  `N = 39` is **3.7× more
+// accurate (1.1021°)** and is one of only two vectors in the whole neighbourhood that keeps
+// **`δ = 0`**.  Changed while domain B still had **no stored content** (the corpus is all `H₁₂`
+// stencils), so it cost nothing; once linework exists it would be unmigratable (law `A₂`).
+//
+// **`δ = (tri_a − tri_b) mod 3` is the axis that decides LINKING**, and it is why `N = 39` and not
+// the finer-looking `N = 13`.  A run of `p` periods from a vertex of class `c` ends on class
+// `(c + p·δ) mod 3`, and class 0 is a hex CENTRE, which `wall_run_ok` refuses:
+//
+//   δ = 0  →  the vertex class is PRESERVED: every multiple is admissible from every vertex (9/9)
+//   δ ≠ 0  →  the class CYCLES: one run in three lands on a centre and is refused (6/9), and the
+//             shortest legal run depends on which class you started from
+//
+// A house wall can leave you on either class — the `N = 1` family (30/90/150°) changes it — so a
+// `δ ≠ 0` in-between direction links to the house angles *conditionally*: from half of all house
+// corners its shortest legal run doubles.  `N = 13` is finer (3.122 m against 5.408 m) and equally
+// accurate, but it spends exactly that property.  `N = 39` buys the whole angle improvement and
+// leaves linework-meets-house behaving as it does today.  `X31`'s ladder compared only angle and
+// period, so it could not see this axis at all.
+//
+// The vectors are **vertex**-lattice vectors, not cell-to-cell ones (`m` need not be a multiple of
+// 3).  That is fine: `wall_step_*` feeds only `wall_new` (which normalises to a unit direction),
+// `wall_angle_actual` (angle only) and `tri_a`/`tri_b` (which convert to triangle coordinates and
+// reduce) — nothing steps cell by cell along it.  The one requirement is `m ≡ k (mod 2)`, so
+// `tri_b`'s `(m − k)/2` stays integral; every entry satisfies it.
+//
+// Entries 6..11 are the negation of 0..5, because `d` and `d + 12` are opposite directions.  The
+// first six come from rotating `d = 1` by the exact 60° lattice map, and `d = 3` from reflecting
+// then rotating — so the table is one vector, turned, not twelve independent choices.
+fn between_k(i: integer) -> integer {
+  j = i;
+  s = 1;
+  if i >= 6 { j = i - 6; s = 0 - 1; }
+  kk = 7;
+  if j == 1 { kk = 5; }
+  if j == 2 { kk = 2; }
+  if j == 3 { kk = 0 - 2; }
+  if j == 4 { kk = 0 - 5; }
+  if j == 5 { kk = 0 - 7; }
+  s * kk
+}
+
+fn between_m(i: integer) -> integer {
+  j = i;
+  s = 1;
+  if i >= 6 { j = i - 6; s = 0 - 1; }
+  mm = 3;
+  if j == 1 { mm = 9; }
+  if j == 2 { mm = 12; }
+  if j == 3 { mm = 12; }
+  if j == 4 { mm = 9; }
+  if j == 5 { mm = 3; }
+  s * mm
+}
+
 pub fn wall_step_k(d24: integer) -> integer {
   n = ((d24 % D24) + D24) % D24;
   h = n / 2;
   a = head_step(h);
   if n % 2 == 0 { return a.0; }
-  b = head_step(h + 1);
-  a.0 + b.0
+  between_k((n - 1) / 2)
 }
 
 pub fn wall_step_m(d24: integer) -> integer {
@@ -59,8 +117,7 @@ pub fn wall_step_m(d24: integer) -> integer {
   h = n / 2;
   a = head_step(h);
   if n % 2 == 0 { return a.1; }
-  b = head_step(h + 1);
-  a.1 + b.1
+  between_m((n - 1) / 2)
 }
 
 // An even d24 is one of the 12 exact headings; an odd one is an in-between.

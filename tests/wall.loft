@@ -416,8 +416,8 @@ fn main() {
           + "  — one hex step, every multiple, from any vertex");
   println("     N=1  (30/90/150/...)  step {wall_run_len(2, 1) * 0.8660254037844386:6.4} m"
           + "  — but 1 in 3 is a hex CENTRE and is refused");
-  println("     N=21 (the odd 12)     step {wall_run_len(1, 1) * 0.8660254037844386:6.4} m"
-          + "  — every multiple, and far too coarse for a building");
+  println("     N=39 (the odd 12)     step {wall_run_len(1, 1) * 0.8660254037844386:6.4} m"
+          + "  — every multiple (delta 0), and far too coarse for a building");
 
   // CONTROL 1: a start that is a hex CENTRE must be refused outright, in every direction.
   ncentre = 0;

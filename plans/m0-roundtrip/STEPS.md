@@ -897,35 +897,61 @@ never representability but **cost**: what does each direction cost in **period**
 go before landing back on a hex vertex) and in **angle error**? A census *reports* a table; the
 assertions pin its shape.
 
-### The cost table has three classes
+### The cost table has three classes — and three axes
 
-| class | count | period | angle |
+| class | count | period | angle | `δ` — links? |
+|---|---|---|---|---|
+| edge | **6** | `√3` wu = 1.5 m | **exact** | 0 — unconditional |
+| vertex | **6** | `1` wu = 0.866 m | **exact** | 1 — **conditional** |
+| in-between | **12** | `√39` wu = **5.408 m** | **1.1021° off** | 0 — unconditional |
+
+**18 directions link unconditionally, 6 conditionally.**
+
+### The third axis, which the ladder never had
+
+`δ = (tri_a − tri_b) mod 3`. A run of `p` periods from a vertex of class `c` ends on class
+`(c + p·δ) mod 3`, and class 0 is a hex **centre**, which `wall_run_ok` refuses. So:
+
+- **`δ = 0`** — the class is *preserved*: every multiple of the period is admissible, from either
+  vertex class.
+- **`δ ≠ 0`** — the class *cycles*: one run in three lands on a centre and is refused, and the
+  shortest legal run depends on which class you started from.
+
+A house wall can leave you on **either** class (the `N=1` family, 30/90/150°, changes it), so `δ` is
+exactly whether world linework links to the house angles **unconditionally**. That is a cost the
+two-axis ladder could not see.
+
+### Two doc corrections, and a reversed conclusion
+
+**The period column was 3× too small.** §10.9's ladder said `√N/3`, §10.10 said the metre figure. A
+clean factor between two numbers is the signature of a counter bug, so the gate measured with the
+gated `wall_run_len` rather than picking a side. The period is `√N`.
+
+**The `δ` column did not exist — and that reversed the verdict.** §10.9 called the old `N = 21`
+*"dominated outright"*. On the linking axis it was **on the frontier**: only `N = 21`, `39` and `291`
+have `δ = 0` in the whole neighbourhood. `N = 7`'s "43% shorter period" is `δ = 1`, so one run in
+three is refused and its effective grid is only **13%** finer.
+
+### The vector was switched — to `N = 39`, not `N = 13`
+
+| | angle | period | links |
 |---|---|---|---|
-| edge | **6** | `√3` wu = 1.5 m | **exact** |
-| vertex | **6** | `1` wu = 0.866 m *(one start-class in three needs 2 periods)* | **exact** |
-| in-between | **12** | `√21` wu = **3.969 m** | **4.1066° off** nominal |
+| `N = 21` *(old)* | 4.1066° | 3.969 m | unconditional |
+| `N = 13` | **1.1021°** | **3.122 m** | conditional — 6.245 m min from half of all house corners |
+| **`N = 39`** *(chosen)* | **1.1021°** | 5.408 m | **unconditional** |
 
-12 exact + 12 off by `4.1066°`, 0 neither — `X29` re-confirmed from the other side.
+Both buy the same **3.7×** accuracy. `N = 13` is also finer, but spends the linking property — and
+spends it exactly where two domains meet, the hardest thing to reason about later. `N = 39` pays
+2.29 m of period to keep it. Exhaustive over `N ≤ 400`: **nothing improves the angle while keeping
+both today's grid and `δ = 0`.** Switched while domain B had **no stored content**, so it cost
+nothing; after linework exists it would be unmigratable (`A₂`).
 
-### It corrected a design doc, and the factor was the tell
+### The gate had no control in the plan; it has three now
 
-Two docs disagreed on the in-between period by **exactly 3** — §10.9's ladder said `√N/3 = 1.528 wu`,
-§10.10 said `3.969 m`. A clean factor between two numbers is the signature of a counter bug, so the
-gate measured with the **gated primitive** (`wall_run_len`) rather than picking a side. The period is
-**`√N`**; §10.9's column was 3× too small and is now fixed.
-
-**The ratios were unaffected** — all six rows were scaled alike — so **`X31`'s ladder conclusion
-stands, and is now T1**: today's `(5,3)`/`N=21` is **dominated**. `(3,1)`/`N=7` matches its
-`4.1066°` error at a **42% shorter** period; `(4,2)`/`N=13` beats it on **both** axes. Changing it
-stays a **live proposal**, not a decision (`I-EXTEND`) — it would re-spell every stored in-between
-wall.
-
-### The gate had no control in the plan; it has two now
-
-`DESIGN.md` §9 listed `rt_census_b`'s control as "—". A census that only prints a table can never go
-red, so two were written: **a genuine trade must exist** among the candidates (`(15,7)` — better
-angle, *longer* period), or "dominated" is a word with no content; and **the measured period must not
-equal `√N/3`**, or §10.10's `3.969 m` would be the wrong number instead.
+`DESIGN.md` §9 listed `rt_census_b`'s control as "—", and a census that only prints a table can never
+go red. So: **a conditional direction must exist** and show a class-dependent `min_p`, or
+"unconditional" is vacuous; **`N = 13` must genuinely beat `N = 39` on period**, or nothing was
+traded and the third axis decided nothing; and **the measured period must not equal `√N/3`**.
 
 ## Order, and where it can go wrong
 
