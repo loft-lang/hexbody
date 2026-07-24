@@ -1343,7 +1343,47 @@ a bad `t` and a bad shell, so *"accepts every level"* is a statement about level
 the checker. Making all four look symmetrical by inventing a restriction is the over-unification the
 design protocol warns about, and it was declined.
 
-### ⚠ The one fork the doorstep cannot close
+### The fork CLOSED — the voxel is the ceiling
+
+> *"I will never want to add more world information than in the limited moros voxels. We can have
+> other tables outside that for limited areas but those should also be time limited."*
+> — user, 2026-07-24
+
+Now `SPEC` **L13** (moros's `Hex` is the storage of record; `𝕄*` is seven integers per hex per
+storey; where the two schemas disagree the **narrower** binds) and **L14** (a side table is
+area-limited *and* time-limited — a third category beside `L3`'s two: **stored, local, mortal**).
+
+**moros had already fixed the unit**, so the remaining sub-choice was not hexbody's:
+`HEIGHT_SCALE = 0.25` wu per height unit = **0.2165 m**, a storey = 12 units = 3.0 wu.
+
+The gate **could not** lean on hexbody's own storage to show this — HXF's f64 keeps everything,
+which is exactly why the hole was silent. It rounds through the **voxel** instead
+(`units × HEIGHT_SCALE`): 81 heights swept, 21 admitted, **0 false accepts, 0 disagreements**.
+
+| producer | on the grid? |
+|---|---|
+| `SEAT_LOW`, `SEAT_HIGH` | yes |
+| `SEAT_MEAN` | **no — exactly half a unit off**; refused *with an offer*, not truncated |
+| the roof (eave 2.54) | **no at every cell**, but by ≤ `0.0041` wu = **3.55 mm** |
+
+⚠ *Mechanism* **T1**; the constant `0.25` is still **T4** — moros's value, read off untested code,
+named once in `hexfit` so a change is one line with a gate behind it.
+
+### The comparison also found a hole going the OTHER way
+
+moros's `h_wall_n/ne/se` are full integers; `hex_field`'s `EdgeSet.eg_mat` is a **`u8`**. Material
+**256 reads back as 0 — no wall** — in memory, before storage is involved (`X68`). **Silent
+deletion, not a snap**, which is strictly worse than the quantisation `I-QUANT` was written for.
+Being *narrower* than the voxel is permitted (`L13` caps information, it does not require using all
+of it); erasing a wall silently is not. `MAT_MAX = 255` is now refused.
+
+⚠ **And that refusal makes NO offer — the reason generalises.** `K-FIT`'s *"offer the nearest
+fitting alternative"* quietly presumes an **ordinal** parameter, where "nearest" means "almost what
+you asked for". A material id is **nominal**: 255 is not *"nearly 256"*, it is a **different
+material**, and offering it would look like a small correction while changing what the wall is made
+of. **For a nominal parameter the doorstep names its restriction and stops.**
+
+### ~~The one fork the doorstep cannot close~~ *(superseded above — kept for the reasoning)*
 
 moros's `Hex.h_height` is an **integer**; hexbody's gated storage (`X63`) is f64. Priced rather than
 argued: **2 of the 3 seat policies produce fractional heights**, including `SEAT_MEAN` — the one

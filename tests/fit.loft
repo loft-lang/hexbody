@@ -18,7 +18,8 @@
 //   2  FEATURES — accepts exactly what recovers, and the refusal carries an offer + residual
 //   3  ARCS — accepts exactly the realisable shells, and offers the nearest
 //   4  LEVELS — measured to have nothing to refuse, and shown not to be a vacuous `true`
-//   5  TERRAIN — the same, plus the OPEN FORK (moros's `h_height` is an integer) priced
+//   5  TERRAIN — the voxel's integer grid, now that the fork is closed
+//   6  MATERIAL IDS — hexbody's wall slot is narrower than moros's, and overflow ERASES a wall
 use hex_field;
 use housedraw;
 use hexarc;
@@ -259,27 +260,55 @@ fn main() {
             + " statement about the checker, not about levels"); ok = false;
   }
 
-  // ── 5. TERRAIN — NOTHING TO REFUSE HERE, AND THE OPEN FORK PRICED ─────────
+  // ── 5. TERRAIN — THE VOXEL'S GRID, AND THE FORK NOW CLOSED ───────────────
+  //
+  // THE DECISION (user, 2026-07-24): *"I will never want to add more world information than in the
+  // limited moros voxels."*  So moros's `Hex` is the storage of record, `h_height` is an INTEGER,
+  // and the quantum is moros's own `HEIGHT_SCALE = 0.25` wu.
+  //
+  // The gate cannot lean on hexbody's f64 storage to show this — that slot keeps everything, which
+  // is exactly why the hole was silent.  So it rounds through the VOXEL: `h_height` as an integer,
+  // read back as `units * HEIGHT_SCALE`.  Off-grid must NOT survive; on-grid must.
   println("");
-  println("5. TERRAIN — the height slot is continuous, and the fork is priced not guessed");
-  hz = heights_new(Q0, R0, W, H);
-  nex = 0;
-  ntz = 0;
-  for z in [0.0, 1.0, 1.5, 2.54, 3.14159265358979, 0.0000001, 1234567.875] {
-    height_set(hz, 0, 0, z);
-    if height_get(hz, 0, 0) == z { nex = nex + 1; }
-    ntz = ntz + 1;
-    if seat_fits(z) != FIT_OK {
-      println("  FAIL: a finite height was refused, but the slot stores it exactly"); ok = false;
-    }
+  println("5. TERRAIN — the doorstep accepts exactly what survives the VOXEL");
+  println("   the voxel grid: 1 unit = {HEIGHT_SCALE} wu = {HEIGHT_SCALE * 0.866} m,"
+          + " a storey = 12 units = {height_from_units(12)} wu");
+  zdis = 0;
+  zfalse = 0;
+  zacc = 0;
+  ztot = 0;
+  for zi in 0..81 {
+    z = (zi as float) * 0.0625;                     // quarter-steps AND the halves between them
+    verdict3 = seat_fits(z) == FIT_OK;
+    // the voxel round trip: what h_height would hold, read back
+    survives = height_from_units(height_units(z)) == z;
+    ztot = ztot + 1;
+    if verdict3 { zacc = zacc + 1; }
+    if verdict3 && !survives { zfalse = zfalse + 1; }
+    if !verdict3 && survives { zdis = zdis + 1; }
   }
-  println("   {nex} of {ntz} authored heights stored exactly; all admitted");
-  if nex != ntz {
-    println("  FAIL: a height did not survive the slot — then there IS a grid here"); ok = false;
+  println("   {ztot} heights swept: {zacc} admitted, {zfalse} false accepts, {zdis} disagreements");
+  if zfalse != 0 || zdis != 0 {
+    println("  FAIL: the height doorstep does not match what the voxel keeps"); ok = false;
   }
-  // THE FORK, PRICED.  moros's `Hex.h_height` is an INTEGER (`ROUNDTRIP` §2.4). If that becomes the
-  // storage of record, a fractional seat truncates — and the policy with the SMALLEST residual is
-  // exactly the one that produces fractional values. Measured rather than argued.
+  if zacc <= 0 || zacc >= ztot {
+    println("  FAIL: all or nothing admitted — the sweep proves nothing"); ok = false;
+  }
+  println("   CONTROL the sweep contains both: {zacc} admitted, {ztot - zacc} refused");
+  println("   the OFFER — a raw height, the voxel height it maps to, the residual:");
+  nbadz = 0;
+  for wz in [0.1, 0.375, 1.125, 2.54, 3.0] {
+    oz = seat_fit_z(wz);
+    if seat_fits(oz) != FIT_OK { nbadz = nbadz + 1; }
+    println("   z {wz:<6} -> {oz:<7} ({height_units(wz)} units), residual"
+            + " {seat_fit_residual(wz):<8} = {seat_fit_residual(wz) * 0.866} m");
+  }
+  if nbadz != 0 {
+    println("  FAIL: a height offer was itself off the voxel grid"); ok = false;
+  }
+  println("   named reason: \"{fit_reason(seat_fits(1.125))}\"");
+
+  // WHAT THE DECISION COSTS hexbody today — priced, so the cost is a number and not a worry.
   terr = heights_new(Q0, R0, W, H);
   fp = hexset_chunk(Q0, R0, W, H);
   for tr in 0..4 {
@@ -288,21 +317,83 @@ fn main() {
       height_set(terr, tq, tr, 0.75 * (tq as float));
     }
   }
-  nint = 0;
-  println("   IF moros's integer h_height became the storage of record:");
+  nong = 0;
+  println("   the SEAT policies against the voxel grid:");
   for pol in [SEAT_LOW, SEAT_MEAN, SEAT_HIGH] {
     zz = seat_height(fp, terr, pol);
-    isint = seat_is_integral(zz);
-    if isint { nint = nint + 1; }
-    println("   policy {pol}: seat {zz:<8} residual {seat_residual(fp, terr, zz):<8}"
-            + " integral {isint}");
+    fitsz = seat_fits(zz) == FIT_OK;
+    if fitsz { nong = nong + 1; }
+    println("   policy {pol}: seat {zz:<7} = {zz / HEIGHT_SCALE ?? 0.0} units, fits {fitsz},"
+            + " offer {seat_fit_z(zz)}");
   }
-  println("   => {nint} of 3 seat policies would survive an integral height slot;"
-          + " {3 - nint} would truncate SILENTLY. Open fork, DESIGN.md 10.27 — not guessed here.");
-  if nint == 3 {
-    println("  FAIL: every policy is integral, so the fork costs nothing and this section is"
-            + " describing a problem that does not exist"); ok = false;
+  println("   => {nong} of 3 policies land on the grid; SEAT_MEAN lands exactly HALF a unit off,"
+          + " so it is refused with an offer rather than truncated silently");
+  if nong == 3 {
+    println("  FAIL: every policy is on-grid, so the doorstep is describing a problem that does"
+            + " not exist"); ok = false;
   }
+  // and the roof, the other producer of heights
+  rc = hexset_chunk(Q0, R0, W, H);
+  draw_floor(p, rc, labels_new(Q0, R0, W, H), 9);
+  rh = heights_new(Q0, R0, W, H);
+  draw_roof(p, rc, rh, 2.54, 1.0, 0);
+  roff = 0;
+  rtot = 0;
+  rworst = 0.0;
+  for rr3 in R0..R0 + H {
+    for rq3 in Q0..Q0 + W {
+      if hexset_get(rc, rq3, rr3) {
+        rz = height_get(rh, rq3, rr3);
+        rtot = rtot + 1;
+        if seat_fits(rz) != FIT_OK {
+          roff = roff + 1;
+          if seat_fit_residual(rz) > rworst { rworst = seat_fit_residual(rz); }
+        }
+      }
+    }
+  }
+  println("   the ROOF (eave 2.54, pitch 1.0): {roff} of {rtot} heights off the grid,"
+          + " worst residual {rworst} wu = {rworst * 0.866} m");
+  if roff <= 0 {
+    println("  FAIL: the roof is entirely on-grid, so it cannot show what the decision costs");
+    ok = false;
+  }
+
+  // ── 6. MATERIAL IDS — NARROWER THAN moros, AND SILENT DELETION ───────────
+  //
+  // The rule is never to carry MORE information than the voxel holds; hexbody's wall slot holds
+  // LESS — `EdgeSet.eg_mat` is a `u8` where moros's `h_wall_n` is an integer.  Being narrower is
+  // allowed; DELETING a wall silently is not.
+  println("");
+  println("6. MATERIAL IDS — hexbody's wall slot is a u8, and overflow ERASES the wall");
+  mdis = 0;
+  mfalse = 0;
+  macc = 0;
+  for m in [1, 2, 100, 200, 254, 255, 256, 257, 300, 70000] {
+    verdict4 = mat_fits(m) == FIT_OK;
+    me = edgeset_new(Q0, R0, W, H);
+    edge_set_mat(me, 1, 1, nb_q(1, 1, 0), nb_r(1, 1, 0), m);
+    kept = edge_mat(me, 1, 1, nb_q(1, 1, 0), nb_r(1, 1, 0)) == m;
+    if verdict4 { macc = macc + 1; }
+    if verdict4 && !kept { mfalse = mfalse + 1; }
+    if !verdict4 && kept { mdis = mdis + 1; }
+  }
+  println("   10 material ids: {macc} admitted, {mfalse} false accepts, {mdis} disagreements");
+  if mfalse != 0 || mdis != 0 {
+    println("  FAIL: the material doorstep does not match what the slot keeps"); ok = false;
+  }
+  // THE CONTROL: 256 must really vanish, or the bound is imaginary.
+  ce = edgeset_new(Q0, R0, W, H);
+  edge_set_mat(ce, 1, 1, nb_q(1, 1, 0), nb_r(1, 1, 0), 256);
+  gone = edge_mat(ce, 1, 1, nb_q(1, 1, 0), nb_r(1, 1, 0));
+  println("   CONTROL material 256 reads back as {gone} (0 = NO WALL, silent deletion)");
+  if gone != 0 {
+    println("  FAIL: 256 survived, so MAT_MAX is not the real bound and the refusal is wrong");
+    ok = false;
+  }
+  println("   named reason: \"{fit_reason(mat_fits(256))}\"");
+  println("   ⚠ NO OFFER is made: a material id is NOMINAL, not ordinal. 255 is not 'nearly 256',");
+  println("      it is a different material — offering it would look like a small correction.");
 
   println("");
   if ok { println("=== FIT OK ==="); }

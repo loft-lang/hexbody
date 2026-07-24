@@ -2282,7 +2282,7 @@ A doorstep that refuses more than the field distinguishes is **worse than none**
 models unauthorable. The temptation to invent a restriction so all four look symmetrical is exactly
 the over-unification the design protocol warns about, and it was declined.
 
-### ⚠ THE OPEN FORK — `h_height` is an integer in moros, a float here
+### ~~⚠ THE OPEN FORK~~ — **CLOSED 2026-07-24**: `h_height` is an integer, and moros fixes the unit
 
 `ROUNDTRIP` §2.4 names moros's `Hex` as the schema of record, and there:
 
@@ -2306,11 +2306,53 @@ truncation, which is precisely the failure `G5` says must be flagged rather than
 | **(b) heights quantise to an integer** — moros's `Hex` is the storage of record | `seat_fits` grows an integrality check and `seat_fit_z` an offer; `SEAT_MEAN` becomes unauthorable or must round, and the residual must absorb the rounding. Needs a **unit** decided too — an integer of *what*? `L8` gives 1 wu = 0.866 m, so an integer height is a very coarse quantum |
 | **(c) a scaled integer** — store `round(z · k)` for a fixed `k` | keeps moros's integer slot *and* a usable quantum. Needs `k` chosen and gated, and it is a real `I-QUANT` grid, so the doorstep would refuse off-grid seats and offer the nearest |
 
-**Not decided here.** `seat_fits` accepts every finite height, which is correct for the storage
-hexbody actually gates, and `seat_is_integral` exists so the fork's cost stays measurable rather
-than rhetorical. The decision belongs with whoever settles whether moros's `Hex` or hex_field's HXF
-is the foxel of record — which is the same question `X63` deliberately split when it moved the
-*mechanism* to T1 and left the *palette* at T4.
+### The decision, and it went further than the fork
+
+> *"I will never want to add more world information than in the limited moros voxels. We can have
+> other tables outside that for limited areas but those should also be time limited."*
+> — user, 2026-07-24
+
+That settles **(b)/(c)** and more besides. It is now `SPEC` **L13** (the voxel is the ceiling on
+permanent world state) and **L14** (a side table is area-limited *and* time-limited — a third
+category beside `L3`'s two: stored, local, and mortal).
+
+**And moros already fixed the unit, so the choice between (b) and (c) was not hexbody's to make.**
+`moros_render::HEIGHT_SCALE = 0.25` world units per height unit, used as
+`h_height as float * HEIGHT_SCALE` in `moros_sim::collide`; with **L8** that is **0.2165 m**, and
+moros's own comment puts a storey at **12 units = 3.0 wu**. So it is option **(c)** with `k = 4`,
+already decided upstream.
+
+**What it costs, measured** (`X67`, `tests/fit.loft` §5):
+
+| producer | on the grid? |
+|---|---|
+| `SEAT_LOW`, `SEAT_HIGH` | yes |
+| `SEAT_MEAN` | **no — exactly half a unit off** (`1.125` = 4.5 units). Refused *with an offer* rather than truncated |
+| the roof (eave 2.54, pitch 1.0) | **no at every cell**, but by at most `0.0041` wu = **3.55 mm** |
+
+**The gate could not lean on hexbody's own storage** to show any of this — HXF's f64 keeps
+everything, which is precisely why the hole was silent. It rounds through the **voxel**
+(`units × HEIGHT_SCALE`) instead, and that is what makes the refusal a measured necessity.
+
+⚠ **Tier split, and it matters:** the *mechanism* is **T1**; the *constant* `0.25` is **T4** —
+moros's value, read off untested code. hexbody cannot verify it is the right quantum, only that it
+is the one moros uses. It is named once in `hexfit`, so changing it is one line with a gate behind
+it.
+
+### The same comparison found a second thing, going the other way
+
+moros's `h_wall_n/ne/se` are full integers; `hex_field`'s `EdgeSet.eg_mat` is a **`u8`**. So
+hexbody's wall slot is **narrower** than the voxel's, and a material of 256 does not quantise — it
+becomes **0, which means no wall**, in memory, before storage is involved (`X68`). Being narrower is
+permitted (**L13** caps information, it does not require using all of it); deleting a wall silently
+is not.
+
+⚠ **That refusal makes NO offer, and the reason generalises.** `K-FIT` says a refusal offers *the
+nearest fitting alternative* — which quietly presumes an **ordinal** parameter, where "nearest"
+means "almost what you asked for". A material id is **nominal**: 255 is not *"nearly 256"*, it is a
+**different material**. Offering it would look like a small correction while changing what the wall
+is made of. **For a nominal parameter the doorstep names its restriction and stops** — and `K-FIT`'s
+wording should be read that way everywhere, not just here.
 
 ## 10.26 A6 — arcs: the centre is exact, the radius is a shell
 

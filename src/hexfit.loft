@@ -27,10 +27,12 @@ use hexarc;
 use hexdraft;
 
 // Continuing `hexdraft`'s codes (0..6), so one `fit_reason` covers the whole doorstep.
-pub const FIT_NO_SIDE   = 7;    // the side index is not a side, or carries no edges
-pub const FIT_BAD_T     = 8;    // a feature `t` that is not one of that side's edge centres
-pub const FIT_BAD_SPAN  = 9;    // a feature covering zero edges, or more than the side has
-pub const FIT_BAD_SHELL = 10;   // an arc radius that is not a realisable shell (3k^2 + m^2)
+pub const FIT_NO_SIDE    = 7;    // the side index is not a side, or carries no edges
+pub const FIT_BAD_T      = 8;    // a feature `t` that is not one of that side's edge centres
+pub const FIT_BAD_SPAN   = 9;    // a feature covering zero edges, or more than the side has
+pub const FIT_BAD_SHELL  = 10;   // an arc radius that is not a realisable shell (3k^2 + m^2)
+pub const FIT_BAD_HEIGHT = 11;   // a height off the voxel's integer grid — it would truncate
+pub const FIT_BAD_MAT    = 12;   // a material id the slot cannot hold (see MAT_MAX)
 
 // One reason table for the whole doorstep — `hexdraft`'s codes and these.
 pub fn fit_reason(code: integer) -> text {
@@ -41,6 +43,12 @@ pub fn fit_reason(code: integer) -> text {
   if code == FIT_BAD_SPAN { return "a feature covers at least one edge and at most the side"; }
   if code == FIT_BAD_SHELL {
     return "that radius is not a realisable shell; the disk would be the next shell down";
+  }
+  if code == FIT_BAD_HEIGHT {
+    return "the voxel stores height as a whole unit of 0.25 wu; that value would truncate";
+  }
+  if code == FIT_BAD_MAT {
+    return "that material id is outside the wall slot's range and would erase the wall";
   }
   draft_fit_reason(code)
 }
@@ -151,27 +159,67 @@ pub fn level_fits(lv: integer) -> integer {
   FIT_OK
 }
 
-// ── TERRAIN — MEASURED TO HAVE NOTHING TO REFUSE *HERE* ─────────────────────
+// ── MATERIAL IDS — hexbody's OWN slot is narrower than moros's ──────────────
 //
-// Seating writes the `height` slot and nothing else (`X59`), and hexbody's gated storage keeps a
-// height EXACTLY: `hex_field::Heights` is `vector<float>` and the HXF `HGHT` section is 8 bytes per
-// cell, so every authored value survives (`X63`).  loft cannot even produce a non-finite one —
-// `1.0/0.0` is `float?` null, not an infinity — so there is no inadmissible height to name.
+// moros's `h_wall_n/ne/se` are full integers.  hexbody's `EdgeSet.eg_mat` is a **`u8`**, and the
+// HXF `EDGE` section is one byte per slot — so a wall material of 256 does not merely quantise, it
+// becomes **0, which means NO WALL**.  Measured: `edge_set_mat(e, .., 256)` reads back `0` in
+// memory, before storage is involved at all.  Silent deletion, not a snap.
 //
-// ⚠ THE OPEN FORK, and it is why this is `seat_fits` and not `fits_always`.  `ROUNDTRIP` §2.4 names
-// moros's `Hex` as the schema of record, and there `h_height` is an **integer**.  Against THAT
-// storage a fractional seat truncates silently — and `SEAT_MEAN`, the policy with the smallest
-// residual, returns exactly such a value (`1.125` on the gated slope).  If moros's `Hex` becomes
-// the target, this function grows an integrality check and `seat_fit_z` an offer; today it would be
-// inventing a restriction the measured field does not have.  Recorded in `DESIGN.md` §10.27.
-pub fn seat_fits(z: float) -> integer {
-  if z == z { return FIT_OK; }
+// Being NARROWER than moros is allowed — the rule is never to carry MORE world information than the
+// voxel holds — but silently dropping a wall is not, so the doorstep names the bound.
+pub const MAT_MAX = 255;
+
+// ⚠ NO OFFER, AND THAT IS THE POINT.  `K-FIT` says a refusal offers *the nearest fitting
+// alternative* — which presumes an ORDINAL parameter, where "nearest" means "almost what you
+// asked for".  A material id is NOMINAL: it is a name, not a magnitude.  The nearest admissible id
+// to 256 is 255, and 255 is a *different material* — offering it would be worse than a blank no,
+// because it looks like a small correction and is not.  So this refusal names its restriction and
+// stops there.  The author must pick a material, not accept a rounding.
+pub fn mat_fits(m: integer) -> integer {
+  if m <= 0 || m > MAT_MAX { return FIT_BAD_MAT; }
   FIT_OK
 }
 
-// What an integral-height storage WOULD refuse — not wired into `seat_fits`, because the fork is
-// open.  Exposed so the cost of the fork is measurable rather than argued about: run it over the
-// seat policies and read how many are lost.
-pub fn seat_is_integral(z: float) -> boolean {
-  ((z as integer) as float) == z
+// ── TERRAIN — THE GRID moros FIXES, and the fork it closes ──────────────────
+//
+// **THE FORK IS CLOSED** (user, 2026-07-24): *"I will never want to add more world information than
+// in the limited moros voxels."*  So moros's `Hex` is the storage of record, and there
+// `h_height` is an **integer** — hexbody's f64 is the wider slot, and the narrower one binds.
+//
+// moros already fixes the unit, so this is not a choice hexbody gets to make:
+// `moros_render::HEIGHT_SCALE = 0.25` world units per height unit, used as
+// `h_height as float * HEIGHT_SCALE` in `moros_sim::collide`.  With `SPEC` **L8** (1 wu = 0.866 m)
+// that is **0.2165 m** per unit, and moros's own comment puts a storey at 12 units = 3.0 wu.
+//
+// ⚠ **TIER.** The *mechanism* below is T1 — gated in `tests/fit.loft`, where a height off the grid
+// is shown NOT to survive a voxel round trip while an on-grid one does.  The *value* `0.25` is
+// **T4**: it is moros's constant, read off untested code.  hexbody cannot verify it is the right
+// quantum, only that it is the one moros uses — so it lives here, named once, and a change to it is
+// a one-line change with a gate behind it.
+pub const HEIGHT_SCALE = 0.25;
+
+// The voxel's own value for a height: what `h_height` would hold.
+pub fn height_units(z: float) -> integer {
+  k = z / HEIGHT_SCALE ?? 0.0;
+  if k < 0.0 { return (k - 0.5) as integer; }
+  (k + 0.5) as integer
 }
+
+pub fn height_from_units(u: integer) -> float { (u as float) * HEIGHT_SCALE }
+
+// THE DOORSTEP.  A height must land exactly on the voxel's grid; off it, the store truncates and
+// `X59`'s returned residual would be wrong by the truncation — which is the one thing `SPEC` **G5**
+// says must never happen silently.
+pub fn seat_fits(z: float) -> integer {
+  if height_from_units(height_units(z)) == z { return FIT_OK; }
+  FIT_BAD_HEIGHT
+}
+
+// The offer, and the residual the editor must show — in world units.
+pub fn seat_fit_z(z: float) -> float { height_from_units(height_units(z)) }
+
+pub fn seat_fit_residual(z: float) -> float { abs(seat_fit_z(z) - z) }
+
+// Kept from before the fork closed, now meaning exactly "on the voxel's grid".
+pub fn seat_is_integral(z: float) -> boolean { seat_fits(z) == FIT_OK }
