@@ -13,6 +13,12 @@ measured. Do not promote a **[J]** to a fact by citing this file — that is exa
 mistake this repo exists to avoid. This is a **synthesis document**, not an authority: on any
 object or map `ROUNDTRIP.md` wins, on any target `SPEC.md` wins.
 
+> **WHAT IS STORED HERE.** Where the project stands **against its goals**, every claim marked
+> **[G]**/**[B]**/**[J]**, plus the frontier and one-line pointers to the open decisions.
+> **NOT HERE:** a new fact (→ [`ROUNDTRIP.md`](ROUNDTRIP.md) or [`SPEC.md`](SPEC.md)) · the
+> reasoning behind an open decision (→ the owning plan's `DESIGN.md`). This file **points at**
+> those; it does not hold them, and it is never the authority for either.
+
 ---
 
 ## 1. The short answer
@@ -246,44 +252,27 @@ is ungated. The gap is entirely "not built yet", which is a schedule, not a debt
 - **Where a door's OPEN/CLOSED state lives** (`DESIGN.md` §10.28) — two wall ids (**recommended**:
   free, round-trips today, collider derived at layer 2) vs an `L14` overlay. No round-trip
   consequence either way, which is why it can wait.
-- ~~**Is the joint→pose map INJECTIVE, and on what domain?**~~ **DISSOLVED the same day, by a user
-  decision that removed the question rather than settling it.** *"Treat bodies we compose like
-  meshes, so we define the bones and the limitations in the joints between the bones, never the
-  actual pose."* An authored body is a **rig** — `⟨bones, joint limits⟩` — so the body's round trip
-  is on the **rig text** (`write(read(R)) = R`, a stencil's shape) and nothing ever recovers joints
-  *from* a pose. That recovery is inverse kinematics, non-unique by nature, and the design simply
-  never asks for it. **[J] Fifth instance of the project's own pattern** (`X51`, `X58`, `X59`,
-  `X60`): the round trip survives a new feature exactly when the feature lands in a slot the
-  recovery does not read — here the feature is *motion*, landing outside the authored model
-  entirely. It also confirms **`K-JOINT`** rather than extending it, and makes the **joint limit**
-  the body's `fits?` doorstep.
-- ~~**Does a saved world persist a pose?**~~ **ANSWERED the same day, and again by dissolving the
-  fork** (`SPEC` **L15**): *"there is a separation here between the world and the game. The game
-  will have a bigger state than the world alone… we do not make that part of the world — however
-  we can aid the game with structures to efficiently store their information about the world, and
-  even make routines that act on these structures (opt-in)."* So a body's pose is **game state**,
-  like an NPC's position or the weather. `L13` never had to hold it, the world *is* reconstructable
-  from the voxels alone, and the storage question I was circling was the wrong one — the boundary
-  is **world vs game**, not *which table*.
-  **[G] And the limit arrived already defended**: `tests/scope.loft`'s content vocabulary refuses
-  `npc`, `quest`, `faction`, `biome`, `climate` as declared names in `src/`, which is exactly
-  `L15`'s violation condition. hexbody may offer the container; naming the payload is the crossing.
-  ⚠ The **opt-in** half is *not* yet checkable — it needs an offered structure to exist before
-  "nothing on the geometry path depends on it" can be measured.
-- ⚠ **NEW AND UNRESOLVED — `G4` and `G★` may no longer be hexbody's goals.** `L15`'s hard boundary
-  (*"that part of geometry can be a train, part of a robot or an airplane… we do not know and do
-  not care as an engine… we can know how a part of the world is rotated NOW, we do not care about
-  their future state"*) is difficult to reconcile with two `SPEC` goals that name a domain and a
-  time evolution: **`G4`** *"the train: a coupled car+wagon follows a curve… detaches on decouple"*
-  and **`G★`** *"a coupled train off the rails tumbles, piles, settles to a deterministic rest"*.
-  Both are behaviour over time, in a named domain. `I10`/`I11` (coupling coincidence, trailer-follow
-  stability) are the same. **[J]** The likely reading is that these stay as *demos built on* hexbody
-  — the harness thesis is *"live-test a game system before art exists"*, and a demo is a consumer —
-  but `SPEC` currently lists them as hexbody's own goals with hexbody gates, and `L1` even names
-  `G★` as the one place full rigid-body dynamics is *earned*. **This is a decision, not a
-  measurement**: it changes what the project claims, so it wants an explicit answer rather than my
-  inference. Until then `tests/scope.loft` refuses `train`/`vehicle`/`wagon` as declared names in
-  `src/`, which encodes the strict reading.
+- **The body's decisions and its one live fork now live in a plan, not here.**
+  [`plans/m1-moving-body/DESIGN.md`](plans/m1-moving-body/DESIGN.md) is the in-flight tier for M1,
+  opened 2026-07-24 because M0's `DESIGN.md` belongs to a closed plan and the body's material was
+  landing in `SPEC` rows and in this file — the formal and synthesis tiers. In one line each:
+  - **[G] A body is a RIG** — `⟨bones, joint limits⟩`, never a pose; **flex is joints**, not
+    deformation (`SPEC` **I-POSE**; DESIGN §0, §2).
+  - **[G] The game's state is not the world's** (`SPEC` **L15**; DESIGN §0, §3) — so a pose is
+    *game* state, `L13` never had to hold it, and the world stays reconstructable from the voxels.
+    The limit **arrived already defended**: `tests/scope.loft`'s vocabulary is exactly its
+    violation condition. ⚠ Its *opt-in* half is not yet checkable — it needs an offered structure
+    to exist first.
+  - ~~**Is joints → pose injective?**~~ **Dissolved**, not answered (DESIGN §1.1): joints are
+    authored and the pose is derived, so nothing ever runs that recovery — it is inverse
+    kinematics, non-unique by nature. **[J] Fifth instance of the slot pattern** (`X51`, `X58`,
+    `X59`, `X60`): motion lands outside the authored model entirely.
+  - ⚠ **UNRESOLVED — do `G4` (the train) and `G★` (the derailment) remain hexbody's goals?**
+    `L15` says the engine does not know a train from a dock and does not model future state; those
+    two goals name both, as do `I10`/`I11`, and `L1` calls `G★` the one place dynamics is *earned*.
+    **[J] Likely they become consumers in their own projects** — a harness proven by something
+    outside itself is stronger evidence — but that changes what the project claims, so it wants an
+    explicit answer. Costs of each reading: DESIGN §3.
 - **OD-1** the morph — narrowed to *probably unnecessary* by free poses.
 - **OD-5** is the flip exact — `X2` and `X57` both say yes at T1. **[J] closeable by inspection
   rather than new work.**

@@ -10,6 +10,13 @@ developer builds a car and a wagon and hitches them; the follow is computed.
 Design-protocol order: concrete target, the model, the follow kinematics, presentation, the
 honest hard parts, gates. §0's numbers are the *predicted* target — no vehicle code exists yet.
 
+> **WHAT IS STORED HERE.** Durable design prose for this area — the ***why*** and the ***how***,
+> updated in place as the code changes. **Reference only: never a build input.**
+> **NOT HERE:** anything a gate must cite. A claim something depends on belongs in
+> [`../SPEC.md`](../SPEC.md) (a target or a limit) or [`../ROUNDTRIP.md`](../ROUNDTRIP.md) (an
+> object or a law); in-flight design belongs in the active plan's `DESIGN.md`. A one-row
+> `## Open work` table here is the lightest plan (`../plans/README.md`).
+
 ---
 
 ## 0. The concrete target (the shape to pin, not yet measured)

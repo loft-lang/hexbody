@@ -90,7 +90,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 | file | role | authority |
 |---|---|---|
 | **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X70` **with trust tiers** | **authoritative** on any object or map |
-| **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
+| **`plans/<active>/DESIGN.md`** | the **in-flight half** of whichever plan is open — proposals, consequences being worked out, and the **open decisions with their costs**. Today that is **`plans/m1-moving-body/DESIGN.md`**; `plans/m0-roundtrip/DESIGN.md` is the same tier for a **closed** plan and is history | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
 | `PLAN.md` | milestone through-line (P, M0–M7); the synthesis layer, not a plan index | — |
@@ -101,6 +101,13 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 **Build and verify against `ROUNDTRIP` + `SPEC`; design in `DESIGN.md`.** If building needs a fact, it belongs there as
 a checkable item — not in a paragraph. A gate defending no spec item, or a spec item no gate
 defends, is the thing to fix.
+
+**EVERY FILE ABOVE NOW SAYS WHAT IT STORES.** Each opens with a *"WHAT IS STORED HERE"* block —
+what belongs, what does not, and which file it goes to instead. **Read that block before adding to
+a file**; the table here is the map, the block is the rule at the destination. Added 2026-07-24
+after the in-flight tier had no file for M1 and the body's decisions leaked into `SPEC` rows and
+`ASSESSMENT.md`, which is how `SPEC` **L15** reached 3 KB in a file whose own preamble asks for
+short items.
 
 ⚠ **A new measurement lands in `ROUNDTRIP.md` §7 as an `X`, and a new limit in `SPEC.md` — not
 here.** This file was allowed to become a per-commit running log once: it grew from 24 KB to 56 KB

@@ -4,6 +4,12 @@ Written for a person, not a build. The mechanism is [`ARCHITECTURE.md`](ARCHITEC
 this is the *why*, the goals, and — deliberately — the honest frontier where the thesis is a
 bet rather than a settled capability.
 
+> **WHAT IS STORED HERE.** The ***why*** — goals, intent, the honest frontier. Reference only,
+> updated in place as the project changes.
+> **NOT HERE:** anything a build or a gate must cite. A fact that something depends on belongs in
+> [`SPEC.md`](SPEC.md) (a target) or [`ROUNDTRIP.md`](ROUNDTRIP.md) (an object or a law) — if it
+> is only written here, nothing defends it.
+
 ---
 
 ## The thesis

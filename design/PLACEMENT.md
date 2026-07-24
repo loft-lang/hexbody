@@ -14,6 +14,13 @@ parts and the seam, then gates with controls. The numbers in §0 are the *predic
 there is no seating code yet, so they are the shape to pin with a probe, not measurements
 (unlike `FEATURES.md`, whose numbers came from `tests/house.loft`).
 
+> **WHAT IS STORED HERE.** Durable design prose for this area — the ***why*** and the ***how***,
+> updated in place as the code changes. **Reference only: never a build input.**
+> **NOT HERE:** anything a gate must cite. A claim something depends on belongs in
+> [`../SPEC.md`](../SPEC.md) (a target or a limit) or [`../ROUNDTRIP.md`](../ROUNDTRIP.md) (an
+> object or a law); in-flight design belongs in the active plan's `DESIGN.md`. A one-row
+> `## Open work` table here is the lightest plan (`../plans/README.md`).
+
 ---
 
 ## 0. The concrete target (the shape to pin, not yet measured)

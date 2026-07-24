@@ -8,6 +8,12 @@ measured or gated. Peer to [`SPEC.md`](SPEC.md) — `SPEC` says *what must be ac
 seam budget, the open decisions — is in
 [`plans/m0-roundtrip/DESIGN.md`](plans/m0-roundtrip/DESIGN.md).** Nothing here depends on it.
 
+> **WHAT IS STORED HERE.** An **object**, a **map**, a **law**, or a constraint **`X*` with its
+> trust tier and the evidence behind it** — once it is settled, proved or measured.
+> **NOT HERE:** a proposal or an open question (→ the active plan's `DESIGN.md`) · a target, limit
+> or check (→ [`SPEC.md`](SPEC.md)) · a judgement or a status (→ [`ASSESSMENT.md`](ASSESSMENT.md)).
+> A fact arriving here should already have a gate; if it does not, it is a proposal.
+
 ---
 
 ## 1. The lattice

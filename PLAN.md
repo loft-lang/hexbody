@@ -14,6 +14,12 @@ milestone earns its own detailed plan directory when it is *started* — the org
 imported from crawler and bound for hexbody in [`plans/README.md`](plans/README.md). This file
 is the synthesis layer (crawler's `ROADMAP.md` role), not a plan index.
 
+> **WHAT IS STORED HERE.** The **milestone through-line** — what each milestone produces, in
+> what order, and what it depends on.
+> **NOT HERE:** a plan index (the tracker is, and pre-tracker the milestone list below) · design
+> or reasoning (→ the plan directory's `DESIGN.md`) · status (→ [`ASSESSMENT.md`](ASSESSMENT.md))
+> · a checkable claim (→ [`SPEC.md`](SPEC.md) / [`ROUNDTRIP.md`](ROUNDTRIP.md)).
+
 ---
 
 ## The critical path

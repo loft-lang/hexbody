@@ -3,6 +3,11 @@
 The *why* is [`VISION.md`](VISION.md); this is *how*. It is one small core with several
 faces, not a pile of features.
 
+> **WHAT IS STORED HERE.** The ***how*** — the mechanism, in prose, durable. Reference only,
+> updated in place as the code changes.
+> **NOT HERE:** anything a build or a gate must cite (→ [`SPEC.md`](SPEC.md) /
+> [`ROUNDTRIP.md`](ROUNDTRIP.md)) · in-flight design (→ the active plan's `DESIGN.md`).
+
 ---
 
 ## One core, N faces
