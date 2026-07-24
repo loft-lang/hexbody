@@ -35,12 +35,12 @@ fn moros_dir() -> text { "{source_dir()}/../../moros" }
 // PRINTED, making a green attributable.  It is an instrument, never a check: an unreadable ref
 // means the instrument is missing, not that the schema is wrong, so nothing here sets `ok`.
 fn moros_rev() -> text {
-  head = file("{moros_dir()}/.git/HEAD").content().trim();
+  head = (file("{moros_dir()}/.git/HEAD").content() ?? "").trim();
   if head.len() <= 0 { return "unknown — no .git"; }
   // A detached HEAD holds the sha itself; otherwise it names the ref to follow.
   if !head.contains("ref: ") { return head; }
   refpath = (head.split(' ')[1] ?? "").trim();
-  sha = file("{moros_dir()}/.git/{refpath}").content().trim();
+  sha = (file("{moros_dir()}/.git/{refpath}").content() ?? "").trim();
   if sha.len() <= 0 { return "unknown — {refpath} is packed"; }
   sha
 }
@@ -102,9 +102,9 @@ fn main() {
   // ── 1. SCHEMA CHECK — against moros's own source, every run ───────────────
   println("");
   println("1. SCHEMA CHECK — ROUNDTRIP 2.4's claims, verified against moros's source");
-  types = file("{moros_dir()}/lib/moros_map/src/types.loft").content();
-  pal = file("{moros_dir()}/lib/moros_map/src/palette.loft").content();
-  rend = file("{moros_dir()}/lib/moros_render/src/moros_render.loft").content();
+  types = file("{moros_dir()}/lib/moros_map/src/types.loft").content() ?? "";
+  pal = file("{moros_dir()}/lib/moros_map/src/palette.loft").content() ?? "";
+  rend = file("{moros_dir()}/lib/moros_render/src/moros_render.loft").content() ?? "";
   if types.len() <= 0 || pal.len() <= 0 {
     println("  FAIL: moros is the STORAGE OF RECORD (SPEC L13) and its source could not be read."
             + " Expected a sibling checkout at ../moros. Without it this gate cannot check the"
@@ -216,7 +216,7 @@ fn main() {
   // is what "there is a door here" means.
   println("");
   println("4. THE DOOR — moros stores it as material 0; measured, that BREAKS the wall");
-  edsrc = file("{moros_dir()}/lib/moros_editor/src/moros_editor.loft").content();
+  edsrc = file("{moros_dir()}/lib/moros_editor/src/moros_editor.loft").content() ?? "";
   saysgap = edsrc.contains("a door is a gap");
   println("   moros's own source says so: {saysgap}");
   if !saysgap {

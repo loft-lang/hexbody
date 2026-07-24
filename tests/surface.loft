@@ -207,7 +207,10 @@ fn main() {
   fedges = edgeset_new(Q0, R0, W, H);
   draw_walls(fcells, fedges, 3);
   want_num = 7;                                     // t = 7/20, an edge centre
-  place_opening(fpl, fcells, fedges, 3, (want_num as float) / (2.0 * (fn2 as float)), 1, 9);
+  // `/` is fallible in loft, so the quotient is `float?`; `fn2` is a side's edge count and is
+  // never 0, so the default is unreachable — discharged explicitly rather than left implicit.
+  want_t = (want_num as float) / (2.0 * (fn2 as float)) ?? 0.0;
+  place_opening(fpl, fcells, fedges, 3, want_t, 1, 9);
   got = feature_find(fpl, fcells, fedges, 3, 9);
   println("   door authored at t = {want_num}/{2 * fn2} -> recovered numerators {len(got)},"
           + " first = {got[0] ?? -1}");

@@ -138,7 +138,7 @@ fn main() {
   nforeign = 0;
   for fi in 0..len(files) {
     nm1 = files[fi] ?? "";
-    ims = imports_of(file("{src_dir()}/{nm1}").content());
+    ims = imports_of(file("{src_dir()}/{nm1}").content() ?? "");
     for ui in 0..len(ims) {
       im = ims[ui] ?? "";
       nuse = nuse + 1;
@@ -183,7 +183,7 @@ fn main() {
   nbad = 0;
   for gi in 0..len(files) {
     nm2 = files[gi] ?? "";
-    ds = declared_names(file("{src_dir()}/{nm2}").content());
+    ds = declared_names(file("{src_dir()}/{nm2}").content() ?? "");
     for di in 0..len(ds) {
       dn = ds[di] ?? "";
       ndecl = ndecl + 1;
@@ -230,7 +230,7 @@ fn main() {
   nreach = 0;
   for hi in 0..len(files) {
     nm3 = files[hi] ?? "";
-    body3 = file("{src_dir()}/{nm3}").content();
+    body3 = file("{src_dir()}/{nm3}").content() ?? "";
     lines3 = body3.split('\n');
     for lm in 0..len(lines3) {
       lv = lines3[lm] ?? "";

@@ -41,7 +41,7 @@ fn main() {
     // The names are collected before any file is read — listing and I/O kept apart, which
     // reads more plainly and was once required by a loft defect (LOFT-HANDOFF H6, fixed and
     // verified on 2026.7.2; loft now carries a guard test for it).
-    names = list_dir(dir);
+    names: vector<text> = list_dir(dir) ?? [];
     picks: vector<text> = [];
     for ni in 0..len(names) {
       nm = names[ni] ?? "";
@@ -51,8 +51,8 @@ fn main() {
     for pi in 0..nlv {
       base = picks[pi] ?? "";
       cases += [base];
-      ts += [file("{dir}/{base}.t").content().trim()];
-      fs += [file("{dir}/{base}.f").content().trim()];
+      ts += [(file("{dir}/{base}.t").content() ?? "").trim()];
+      fs += [(file("{dir}/{base}.f").content() ?? "").trim()];
     }
     println("   corpus/a{lv}: {nlv} committed entries");
   }

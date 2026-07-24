@@ -141,7 +141,7 @@ fn main() {
   all: vector<FConst> = [];
   for fi in 0..len(files) {
     nm1 = files[fi] ?? "";
-    all += float_consts(file("{src_dir()}/{nm1}").content(), nm1);
+    all += float_consts(file("{src_dir()}/{nm1}").content() ?? "", nm1);
   }
   nmod = len(files);
   nfound = len(all);
@@ -254,7 +254,7 @@ fn main() {
   bad = 0;
   for gi in 0..len(files) {
     nm4 = files[gi] ?? "";
-    body = file("{src_dir()}/{nm4}").content();
+    body = file("{src_dir()}/{nm4}").content() ?? "";
     bad = bad + bad_spellings(body, CANON_S32, "0.866");
     bad = bad + bad_spellings(body, CANON_S3, "1.732");
     lines2 = body.split('\n');
