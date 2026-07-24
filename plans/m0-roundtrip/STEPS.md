@@ -1134,9 +1134,17 @@ marking is refused; a two-`wall`-line record is refused rather than repaired.
 **`Draft` is the DESCRIPTION side**; `hex_field::Stencil` is the FIELD side. Those are `OD-6`'s two
 halves, they both exist, and they must not share a name.
 
-**Still open on `OD-13`:** `fits?` does not yet refuse an off-grid anchor at the doorstep (`X56`),
-and only **one** run per stencil is supported — several need the interior edges split into connected
-components first.
+### The doorstep refuses what would not round-trip
+
+`draft_fits` returns a **named** reason — centre anchor, zero periods, bad direction, an endpoint off
+the period grid, or a run leaving the footprint — and `draft_fit_p` **offers the nearest shorter run
+that does fit** (`K-FIT`: never a blank no). The contract that matters is law **C₁**: `fits?` must
+agree with whether the model actually round-trips. Measured: **0 disagreements, 0 false accepts** —
+and a false accept is the dangerous direction, since it lets through exactly what the doorstep exists
+to refuse. A refused 9-period run is offered `p = 3`, which itself fits.
+
+**Still open on `OD-13`:** only **one** run per stencil — several need the interior edges split into
+connected components first.
 
 ### The dangerous site, as it was
 

@@ -571,7 +571,7 @@ crawler `plans/8-landform-morphogenesis/`.
 
 ---
 
-**OD-13 · the in-between 12 must be FIRST CLASS** *(contradicts `ROUNDTRIP` §2.2 — and this is a
+**OD-13 ✅ RESOLVED (one run per stencil) · the in-between 12 are FIRST CLASS** *(contradicts `ROUNDTRIP` §2.2 — and this is a
 stated requirement, not a question about whether it is wanted)*
 
 > *"the normal 12 directions are fine but a city/castle needs more directions to be believable so

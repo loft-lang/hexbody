@@ -161,3 +161,89 @@ pub fn draft_rebuild_text(cells: HexSet, edges: EdgeSet, name: text, embedmat: i
   if !ok { return base; }
   base + "\nwall d {d} a {a} b {b} p {p}"
 }
+
+// ── THE DOORSTEP (`fits?`, law C₁ / `K-FIT`) ───────────────────────────────
+//
+// `X50`/`I-QUANT`: a value off the grid the field distinguishes is **silently snapped, not
+// rejected** — so the refusal has to happen at authoring time or the round trip reports success on
+// a model nobody wrote.  `K-FIT` also fixes the FORM of a refusal: it **names its restriction** and
+// **offers the nearest fitting alternative**; never a silent snap, never a blank no.
+//
+// An embedded run inherits the line doorstep (§10.10: anchor on a hex VERTEX, a whole number of
+// periods, endpoint also a vertex — `wall_run_ok`) and adds one requirement world linework does not
+// have: **it must lie wholly INSIDE the footprint**.  A run that pokes out is not an embedded wall
+// at all — part of it lands on boundary edges, which belong to the stencil's own outline, and the
+// reader would recover something the author did not write.
+pub const FIT_OK        = 0;
+pub const FIT_NO_FORM   = 1;   // the form itself is not admissible (closed ∧ simple ∧ convex)
+pub const FIT_BAD_DIR   = 2;   // the direction is not one of the 24
+pub const FIT_BAD_P     = 3;   // a run of zero or negative periods
+pub const FIT_NO_VERTEX = 4;   // the anchor is a hex CENTRE, not a vertex
+pub const FIT_NOT_LEGAL = 5;   // whole periods, but the endpoint is not a vertex
+pub const FIT_OUTSIDE   = 6;   // the run leaves the footprint
+
+pub fn draft_fit_reason(code: integer) -> text {
+  if code == FIT_OK { return "ok"; }
+  if code == FIT_NO_FORM { return "the form is not admissible (closed, simple, convex)"; }
+  if code == FIT_BAD_DIR { return "the direction is not one of the 24"; }
+  if code == FIT_BAD_P { return "a run needs at least one period"; }
+  if code == FIT_NO_VERTEX { return "the anchor is a hex centre; a run must start on a vertex"; }
+  if code == FIT_NOT_LEGAL { return "that many periods does not end on a vertex"; }
+  if code == FIT_OUTSIDE { return "the run leaves the footprint; an embedded wall must be interior"; }
+  "unknown"
+}
+
+// Every marked edge of the run is interior to `cells` — the containment test, in one place so the
+// doorstep and the reader cannot disagree about what "inside" means.
+fn run_is_inside(cells: HexSet, d: integer, a: integer, b: integer, p: integer) -> boolean {
+  q0 = hexset_q0(cells);
+  r0 = hexset_r0(cells);
+  gw = hexset_w(cells);
+  gh = hexset_h(cells);
+  ew = edgeset_new(q0, r0, gw, gh);
+  w = wall_from_run(d, a, b, p, 1);
+  n = wall_write(w, ew, q0, r0, gw, gh);
+  if n <= 0 { return false; }
+  ins = 0;
+  for r in r0..r0 + gh {
+    for q in q0..q0 + gw {
+      for dd in 0..3 {
+        (nq, nr) = hex_neighbor(q, r, dd);
+        if edge_mat(ew, q, r, nq, nr) != 0
+           && hexset_get(cells, q, r) && hexset_get(cells, nq, nr) { ins = ins + 1; }
+      }
+    }
+  }
+  ins == n
+}
+
+// THE DOORSTEP.  `cells` is the form's own footprint.  Returns a reason code — `FIT_OK` or the
+// specific restriction, never a bare false.
+pub fn draft_fits(s: Draft, cells: HexSet) -> integer {
+  if !form_admissible(s.df_form) { return FIT_NO_FORM; }
+  if s.df_d < 0 { return FIT_OK; }
+  if s.df_d >= 24 { return FIT_BAD_DIR; }
+  if s.df_p <= 0 { return FIT_BAD_P; }
+  if !tri_is_vertex(s.df_a, s.df_b) { return FIT_NO_VERTEX; }
+  if !wall_run_ok(s.df_d, s.df_a, s.df_b, s.df_p) { return FIT_NOT_LEGAL; }
+  if !run_is_inside(cells, s.df_d, s.df_a, s.df_b, s.df_p) { return FIT_OUTSIDE; }
+  FIT_OK
+}
+
+// AND THE ALTERNATIVE THE REFUSAL OWES (`K-FIT`): the longest run from this anchor, in this
+// direction, that IS admissible and fits — searching downward so the offer is never longer than
+// what was asked for.  0 when nothing fits, which is itself a usable answer: move the anchor.
+pub fn draft_fit_p(s: Draft, cells: HexSet) -> integer {
+  if s.df_d < 0 || s.df_d >= 24 { return 0; }
+  if !tri_is_vertex(s.df_a, s.df_b) { return 0; }
+  want = s.df_p;
+  if want < 1 { want = 1; }
+  for k in 0..want {
+    try = want - k;
+    if try >= 1 && wall_run_ok(s.df_d, s.df_a, s.df_b, try)
+       && run_is_inside(cells, s.df_d, s.df_a, s.df_b, try) {
+      return try;
+    }
+  }
+  0
+}

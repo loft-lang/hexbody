@@ -409,8 +409,10 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   `write(rebuild(draw(read(T)))) = T` **byte-for-byte over all 12 in-between directions**, and —
   the point — **dropping the run FAILS the trip in 12 of 12**. The design named `rebuild` as the one
   site whose omission is *silent*; it now reads the run, so a missing wall is a text diff instead of
-  a quiet success. Remaining: `fits?` refusing off-grid anchors (`X56`), and **one** run per stencil
-  (several need the interior edges split into components first).
+  a quiet success. **The doorstep refuses what would not round-trip** (`draft_fits`): a **named** reason
+  per restriction, an **offer** of the nearest shorter run that fits (`K-FIT`), and — the contract
+  that matters (law **C₁**) — **0 disagreements and 0 false accepts** against the trip itself.
+  Remaining: **one** run per stencil; several need the interior edges split into components first.
 - ⚠ **`Draft` (description) vs `hex_field::Stencil` (field) are `OD-6`'s two halves** — *"is a stencil
   a field or a generative description?"* Both exist and must not share a name; that is why this one
   is `Draft`.
