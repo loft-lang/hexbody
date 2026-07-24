@@ -38,7 +38,7 @@ crawler's prototypes and design docs are **design tries** — input, not authori
 | **T3 · designed** | a doc argues a construction | **input to design, never truth** |
 | **T4 · schema** | a shape read from **untested** code (`../moros`) | shape real, behaviour unverified — cherry-pick, then gate here |
 
-**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X51`** — eight of them re-measured *here*, and
+**T1 holds `X1`, `X2`, `X19`–`X22`, `X24`–`X52`** — eight of them re-measured *here*, and
 `X26`–`X31` **discovered here**. Everything else the design leans on is still a try or a schema
 (notably the whole foxel schema, `X11`–`X15`), and the census is where it gets re-measured. Citing a T2 number as settled is
 the specific mistake to avoid — in either direction: re-deriving what is genuinely gated wastes
@@ -73,7 +73,7 @@ Full map with one-liners: [`README.md`](README.md) § *Lineage*.
 
 | file | role | authority |
 |---|---|---|
-| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X50` **with trust tiers** | **authoritative** on any object or map |
+| **`ROUNDTRIP.md`** | the **settled formal core** — the lattice, objects, the foxel, maps, the `D`/`E₂` contract with its **proved** propositions, the two recovery regimes, and the constraints `X1`–`X52` **with trust tiers** | **authoritative** on any object or map |
 | **`plans/m0-roundtrip/DESIGN.md`** | the **in-flight half** — proposed laws, the grammar, `fits?`, the seam, the corpus, the method, the gates, and the **open decisions**. Everything here is a proposal or a question | **cite nothing from it as fact** |
 | **`SPEC.md`** | goals **G**, limits **L**, invariants **I**, contracts **K** — short, falsifiable, each with a control | authoritative on *what must be achieved* |
 | `VISION` · `ARCHITECTURE` · `design/*` | *why* — reference only | **never the build input** |
@@ -138,8 +138,8 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 
 ## State (2026-07-24)
 
-- **Nine gates, all green** — `make test` runs `tools/run_tests.sh`.
-  Form, wall (~3 min), box, census, text, house, surface, arc (A6 + A7), trip.
+- **Ten gates, all green** — `make test` runs `tools/run_tests.sh`.
+  Form, wall (~3 min), box, census, text, house, surface, arc (A6 + A7), combine (A8), trip.
 - **Green:** `G0` / law **I** — `tests/house.loft`, 12/12 equivariant in cells *and* edges, `eave_spread
   0.0000`, every control fires. `make shot` reproduces the committed baseline byte-identically.
 - **Green:** `tests/form.loft` (**S0**/**S1**) — the 12 headings; **`X1`**/**`X2`** re-measured to **T1**
@@ -304,8 +304,24 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
 - **The "arc unchanged after annotate" check is vacuous alone** — true by construction — so it is a
   check that cannot go red. **CONTROL B (notch the cells) makes it live**: the recovery *is*
   sensitive to the disk, so "unchanged" is a result, not a tautology.
-- Next: **A8** (combination — two stencils adjacent, stencil against linework, stencil on terrain —
-  where things that work alone stop working together) — see the rung table.
+- **A8's adjacency axis is done, `X52` — and most of it was already in crawler.** *Who owns the
+  shared edge of two adjacent stencils?* **Nobody.** Combining is **"mark all, THEN cut once"**
+  (crawler's `cut_arb`, `EXTRACTION.md`; re-measured here `T2 → T1`): union the footprints, then cut
+  the boundary of the **union** once, tagging each edge by its cell's source. The shared edge is
+  interior to the union → never cut → adjacent stencils **fuse**. Order-free **by construction**
+  (reads the finished union + fixed source map, never stamp order); overlap tie-break is the **lower
+  id**, intrinsic, so it holds for overlapping stencils too. `combine_cut` / `tests/combine.loft`.
+- **Distinguishability lands exactly right (A8):** the authoring split is NOT recoverable — merged
+  composite == the single stencil of the union (canonical rep, `P1`) — but a **behavioural**
+  difference (a sealed interior wall) **is** field-distinct. That is the narrow, true law F for
+  composites (`DESIGN.md` §8.0.1), not "all composites are distinguishable" (false).
+- **The naive per-body overlay is the control, and it fires both ways:** order-dependent (7 edges)
+  and it marks a spurious seam wall (7 edges). It is *fine for one stencil* and breaks for two —
+  which is the whole point of the rung.
+- **A8 is only partly closed.** Still open: `ε_seam` / `κ ≥ 3` (posed bodies in different frames —
+  the seam here is exact because both live in the world frame), overlap arbitration by nearest
+  surface, stencil against **linework** (domain B), stencil on **terrain** (`OD-4`), **level**
+  separation. These need machinery this rung did not build.
 - **The foxel schema is the limit** (`ROUNDTRIP.md` §2.4): `layer* × point → (height, material,
   wall1, wall2, wall3, item)`. A model is admissible **iff it draws into that exactly**, which
   makes `fits?` syntactic and finite. It closed OD-2/3/4/6/7/8 — roofs and terrain are `height`,
@@ -314,8 +330,8 @@ check that `loft-libs-world` is on branch `dev` before debugging anything strang
   unnecessary" by free poses) · **OD-5** is the flip exact (`X2` says yes) · **OD-9** does a door
   survive as an *annotation* when an edge has one `material` slot — the doored-tower defect
   relocated into the schema, and rung A5's real question.
-- **Constraints are in `ROUNDTRIP.md` §7 (X1–X51) with trust tiers.** T1 now holds `X1`, `X2`,
-  `X19`–`X22`, `X24`–`X51`; do not re-derive those. Everything else is still a try or a schema.
+- **Constraints are in `ROUNDTRIP.md` §7 (X1–X52) with trust tiers.** T1 now holds `X1`, `X2`,
+  `X19`–`X22`, `X24`–`X52`; do not re-derive those. Everything else is still a try or a schema.
 - **Two unmeasured constants:** `ε_seam` and the `κ≥3` contention rate (`plans/m0-roundtrip/DESIGN.md` §7).
   `D` is **closed** — all 24 headings are representable (**X3**).
 - `hexedge` / `hexway` / `hexroof` are byte-identical copies of crawler's. No drift yet; their

@@ -1,0 +1,149 @@
+// combine — THE GATE FOR hexcombine, RUNG A8 (two stencils adjacent).  Every check has a control
+// that must fire.  A8 is the rung a single-object census cannot see: where things that work ALONE
+// stop working TOGETHER.
+//
+//   1  union-then-cut is ORDER-FREE: combine(A,B) == combine(B,A) byte-for-byte
+//   2  the shared edge FUSES: interior to the union, never cut — nobody owns it (`X52`)
+//   3  distinguishability is exactly right: the authoring split is NOT recoverable (canonical
+//      representative, P1), but a composite that BEHAVES differently (a sealed interior wall) IS
+//      field-distinct — the narrow law F claim that must hold
+//
+// The mechanism is crawler's `cut_arb` ("mark all, THEN cut once"), re-measured here float-free.
+// The controls show the naive per-body overlay — fine for one stencil — is order-dependent and
+// invents a seam wall the moment there are two.
+//
+// NOT exercised here, and named so it is not mistaken for covered: the seam is EXACT because both
+// stencils live in the world frame (no pose, no float), so `ε_seam` and the `κ ≥ 3` contention rate
+// (posed bodies, different frames) are untouched; and A8's other axes — stencil against LINEWORK
+// (domain B), stencil on TERRAIN (`OD-4`), overlapping (not adjacent) stencils, and LEVEL
+// separation — wait on machinery this rung does not build.
+use hex_field;
+use hexform;
+use housedraw;
+use hexcombine;
+
+const W = 20;
+const H = 20;
+const Q0 = -2;
+const R0 = -2;
+const MA = 1;    // stencil A's wall material
+const MB = 7;    // stencil B's wall material (distinct, so order-dependence is visible)
+const SEAL = 5;  // an authored interior wall between the two rooms
+
+// Two adjacent, disjoint blocks: A is columns 0..2, B is columns 3..5, rows 0..3.  A's east
+// column (q=2) hex-borders B's west column (q=3), so they share a run of edges.
+fn fill_a(s: HexSet) {
+  for ra in 0..4 { for qa in 0..3 { hexset_set(s, qa, ra, true); } }
+}
+fn fill_b(s: HexSet) {
+  for rb in 0..4 { for qb in 3..6 { hexset_set(s, qb, rb, true); } }
+}
+
+// Edges whose material differs between two sets, over the chunk (each counted once).
+fn edge_diff(x: EdgeSet, y: EdgeSet) -> integer {
+  n = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      for d in 0..6 {
+        nq = nb_q(q, r, d);
+        nr = nb_r(q, r, d);
+        if edge_mat(x, q, r, nq, nr) != edge_mat(y, q, r, nq, nr) { n = n + 1; }
+      }
+    }
+  }
+  n / 2
+}
+
+// Mark the edges separating an A-cell from a B-cell with `mat` — an authored interior wall.
+fn seal_between(a: HexSet, b: HexSet, e: EdgeSet, mat: integer) -> integer {
+  n = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      if hexset_get(a, q, r) {
+        for d in 0..6 {
+          nq = nb_q(q, r, d);
+          nr = nb_r(q, r, d);
+          if hexset_get(b, nq, nr) { edge_set_mat(e, q, r, nq, nr, mat); n = n + 1; }
+        }
+      }
+    }
+  }
+  n
+}
+
+fn main() {
+  ok = true;
+  println("=== hexcombine — two stencils adjacent: who owns the shared edge? (A8) ===");
+
+  a = hexset_chunk(Q0, R0, W, H); fill_a(a);
+  b = hexset_chunk(Q0, R0, W, H); fill_b(b);
+
+  // ── 1. UNION-THEN-CUT IS ORDER-FREE ───────────────────────────────────────
+  println("");
+  println("1. ORDER-FREE — combine(A,B) == combine(B,A), the composite ignores stamp order");
+  eab = edgeset_new(Q0, R0, W, H); combine_cut(a, MA, b, MB, eab);
+  eba = edgeset_new(Q0, R0, W, H); combine_cut(b, MB, a, MA, eba);
+  dfree = edge_diff(eab, eba);
+  println("   combine(A,B) vs combine(B,A): {dfree} edges differ (must be 0)");
+  if dfree != 0 {
+    println("  FAIL: union-then-cut depended on order — it is not order-free"); ok = false;
+  }
+  // CONTROL: the naive per-body overlay (last writer) IS order-dependent
+  pab = edgeset_new(Q0, R0, W, H); draw_walls(a, pab, MA); draw_walls(b, pab, MB);
+  pba = edgeset_new(Q0, R0, W, H); draw_walls(b, pba, MB); draw_walls(a, pba, MA);
+  dnaive = edge_diff(pab, pba);
+  println("   CONTROL per-body overlay (last-writer): {dnaive} edges differ by order (want > 0)");
+  if dnaive <= 0 {
+    println("  FAIL: control did not fire — order-freeness is then trivial, proving nothing");
+    ok = false;
+  }
+
+  // ── 2. THE SHARED EDGE FUSES ───────────────────────────────────────────────
+  println("");
+  println("2. FUSION — the shared edge is interior to the union, so it is never cut");
+  sfuse = shared_marked(a, b, eab);
+  println("   shared edges marked by union-then-cut: {sfuse} (want 0 — nobody owns the seam)");
+  if sfuse != 0 {
+    println("  FAIL: the seam between adjacent stencils was cut — they did not fuse"); ok = false;
+  }
+  // CONTROL: the per-body overlay marks the seam — a spurious wall, the "chain of joints"
+  snaive = shared_marked(a, b, pab);
+  println("   CONTROL per-body overlay marks the seam: {snaive} edges (want > 0 — a spurious wall)");
+  if snaive <= 0 {
+    println("  FAIL: control did not fire — then fusion is vacuous, there was no seam to remove");
+    ok = false;
+  }
+
+  // ── 3. DISTINGUISHABILITY, EXACTLY AS IT SHOULD BE ────────────────────────
+  //
+  // The authoring split (two parts vs one) is NOT recoverable — and that is correct (P1: rebuild
+  // returns the canonical representative).  But a composite that BEHAVES differently — a sealed
+  // interior wall you cannot walk through — MUST be field-distinct.  Both halves are checked.
+  println("");
+  println("3. DISTINGUISHABILITY — history is not recoverable, but behaviour is distinguishable");
+  merged = edgeset_new(Q0, R0, W, H); combine_cut(a, MA, b, MA, merged);
+  single = edgeset_new(Q0, R0, W, H); draw_walls(field_union(a, b), single, MA);
+  dhist = edge_diff(merged, single);
+  println("   merged composite == single stencil of the union: {dhist} diffs (want 0 — canonical)");
+  if dhist != 0 {
+    println("  FAIL: the merged composite is not the canonical single-stencil field"); ok = false;
+  }
+  sealed = edgeset_new(Q0, R0, W, H); combine_cut(a, MA, b, MA, sealed);
+  nseal = seal_between(a, b, sealed, SEAL);
+  dbehave = edge_diff(sealed, merged);
+  println("   sealed (an authored interior wall of {nseal} edges) vs open merged: {dbehave} diffs"
+          + " (want > 0 — behaviour is distinguishable)");
+  if dbehave <= 0 {
+    println("  FAIL: two composites that behave differently drew the same field — law F broken");
+    ok = false;
+  }
+
+  println("");
+  println("   X52: two adjacent stencils are 'mark all, THEN cut once' — order-free by");
+  println("   construction, the shared edge fuses (nobody owns it), and only a BEHAVIOURAL");
+  println("   difference survives into the field. The per-body overlay breaks all three.");
+
+  println("");
+  if ok { println("=== COMBINE OK ==="); }
+  else { println("=== combine test FAILED ==="); }
+}

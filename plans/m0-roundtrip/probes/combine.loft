@@ -1,0 +1,123 @@
+// combine — PLOT THE ANSWER FOR RUNG A8 (two stencils adjacent: who owns the shared edge?).
+//
+// crawler's cut_arb settled it (EXTRACTION.md, hexway.loft): "mark every part, THEN cut once".
+// The composite is a function of the UNION of footprints and the source map — never of stamp
+// order — so it is ORDER-FREE BY CONSTRUCTION.  Re-measured here, float-free, on the adjacency
+// case.  The three claims to read off the instance:
+//
+//   1  union-then-cut is order-free: combine(A,B) == combine(B,A), byte-for-byte
+//   2  the shared edge FUSES: interior to the union, it is never cut — nobody owns it, no seam wall
+//   3  the merged field == the single stencil with the union footprint (a canonical representative)
+//
+// and the CONTROL that these are non-trivial: the naive per-body overlay (draw A, then draw B,
+// last-writer) is ORDER-DEPENDENT and spuriously marks the interior seam — it works for one
+// stencil and breaks for two.
+use hex_field;
+use hexform;
+use housedraw;
+
+const W = 20;
+const H = 20;
+const Q0 = -2;
+const R0 = -2;
+const MA = 1;   // stencil A's wall material
+const MB = 7;   // stencil B's wall material (distinct, so order-dependence is visible)
+
+// Two adjacent, disjoint blocks: A is columns 0..2, B is columns 3..5, rows 0..3.  A's east
+// column (q=2) hex-borders B's west column (q=3), so they share a run of edges.
+fn fill_a(s: HexSet) {
+  for r in 0..4 { for q in 0..3 { hexset_set(s, q, r, true); } }
+}
+fn fill_b(s: HexSet) {
+  for r in 0..4 { for q in 3..6 { hexset_set(s, q, r, true); } }
+}
+
+// Count the edges that separate an A-cell from a B-cell — the "shared wall" run.
+fn shared_edges(a: HexSet, b: HexSet, e: EdgeSet) -> integer {
+  n = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      if hexset_get(a, q, r) {
+        for d in 0..6 {
+          nq = nb_q(q, r, d);
+          nr = nb_r(q, r, d);
+          if hexset_get(b, nq, nr) && edge_mat(e, q, r, nq, nr) != 0 { n = n + 1; }
+        }
+      }
+    }
+  }
+  n
+}
+
+// diff two edge sets over the chunk — number of edges whose material differs
+fn edge_diff(x: EdgeSet, y: EdgeSet) -> integer {
+  n = 0;
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      for d in 0..6 {
+        nq = nb_q(q, r, d);
+        nr = nb_r(q, r, d);
+        if edge_mat(x, q, r, nq, nr) != edge_mat(y, q, r, nq, nr) { n = n + 1; }
+      }
+    }
+  }
+  n / 2   // each edge visited from both cells
+}
+
+// UNION-THEN-CUT: build A|B, cut the boundary of the union once, tag each boundary edge with the
+// material of the source stencil its cell came from.  Reads only the finished union + source map.
+fn combine_cut(a: HexSet, ma: integer, b: HexSet, mb: integer, e: EdgeSet) {
+  u = hexset_chunk(Q0, R0, W, H);
+  for r in R0..R0 + H {
+    for q in Q0..Q0 + W {
+      if hexset_get(a, q, r) || hexset_get(b, q, r) { hexset_set(u, q, r, true); }
+    }
+  }
+  for r2 in R0..R0 + H {
+    for q2 in Q0..Q0 + W {
+      if hexset_get(u, q2, r2) {
+        for d in 0..6 {
+          nq = nb_q(q2, r2, d);
+          nr = nb_r(q2, r2, d);
+          if !hexset_get(u, nq, nr) {
+            m = mb;
+            if hexset_get(a, q2, r2) { m = ma; }
+            edge_set_mat(e, q2, r2, nq, nr, m);
+          }
+        }
+      }
+    }
+  }
+}
+
+fn main() {
+  println("=== combine probe (A8) ===");
+  a = hexset_chunk(Q0, R0, W, H); fill_a(a);
+  b = hexset_chunk(Q0, R0, W, H); fill_b(b);
+
+  // ── the RIGHT way: union-then-cut ────────────────────────────────────────
+  eAB = edgeset_new(Q0, R0, W, H); combine_cut(a, MA, b, MB, eAB);
+  eBA = edgeset_new(Q0, R0, W, H); combine_cut(b, MB, a, MA, eBA);
+  println("union-then-cut:");
+  println("  order-free? combine(A,B) vs combine(B,A) diffs = {edge_diff(eAB, eBA)} (want 0)");
+  println("  shared edge marked? = {shared_edges(a, b, eAB)} (want 0 — the seam fuses)");
+
+  // merged field == the single stencil with the union footprint
+  u = hexset_chunk(Q0, R0, W, H);
+  for r in R0..R0 + H { for q in Q0..Q0 + W {
+    if hexset_get(a, q, r) || hexset_get(b, q, r) { hexset_set(u, q, r, true); }
+  } }
+  eU = edgeset_new(Q0, R0, W, H); draw_walls(u, eU, MA);
+  eSame = edgeset_new(Q0, R0, W, H); combine_cut(a, MA, b, MA, eSame);
+  println("  merged (one material) == single stencil of the union? diffs = "
+          + "{edge_diff(eSame, eU)} (want 0)");
+
+  // ── the CONTROL: naive per-body overlay (last writer) ────────────────────
+  pAB = edgeset_new(Q0, R0, W, H); draw_walls(a, pAB, MA); draw_walls(b, pAB, MB);
+  pBA = edgeset_new(Q0, R0, W, H); draw_walls(b, pBA, MB); draw_walls(a, pBA, MA);
+  println("per-body overlay (last-writer):");
+  println("  order-free? draw(A;B) vs draw(B;A) diffs = {edge_diff(pAB, pBA)} (want >0: it BREAKS)");
+  println("  shared edge marked? = {shared_edges(a, b, pAB)} (want >0: a spurious seam wall)");
+
+  println("=== probe done ===");
+}

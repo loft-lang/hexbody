@@ -716,6 +716,56 @@ B**: notching the cells shows the recovery **is** sensitive to the disk, so "unc
 result, not a tautology — confirmed by a falsification probe (a door that deletes its cells flips
 `found` from true to false). The one-loop check is made live the same way by **CONTROL A**.
 
+## A8 · two stencils adjacent — **adjacency axis DONE** *(the rung the single-object census cannot see — `X52`)*
+
+A8 is *combination* — where things that work **alone** stop working **together**. It has several
+axes; this step closes the first and most concrete, **"who owns the shared edge?"**, and names the
+rest so they are not mistaken for covered.
+
+### Most of the work was already done — in crawler
+
+crawler settled the mechanism (`EXTRACTION.md`; `cut_arb` in its `hexway.loft`) and stated it in one
+line: **"mark every part, THEN cut once."** Do not draw each stencil's walls and overlay them —
+**union the footprints, then cut the boundary of the union once**, tagging each edge with its cell's
+source material. It is a **T2** prototype there; re-measured here float-free, it becomes **T1**.
+
+### Who owns the shared edge? Nobody — and that is the answer
+
+The shared edge of two adjacent stencils is **interior to the union**, so cutting the union's
+boundary never marks it. The two stencils **fuse** into one fabric. Three claims, measured on two
+adjacent blocks (`combine_cut` vs the naive per-body overlay):
+
+| claim | union-then-cut | per-body overlay (the control) |
+|---|---|---|
+| **order-free** — `combine(A,B) == combine(B,A)` | **0 diffs** | **7 diffs** — last-writer, order-dependent |
+| **the seam fuses** — shared edges marked | **0** | **7** — a spurious seam wall |
+| **merged == single stencil of the union** | **0 diffs** (canonical rep, P1) | — |
+| **a sealed wall is field-distinct** | **7 diffs** (behaviour survives) | — |
+
+So the per-body overlay — which is *fine for one stencil* — is **order-dependent and invents a
+seam** the moment there are two. `combine_cut` is order-free **by construction** (it reads the
+finished union and a fixed source map, never stamp order), and the overlap tie-break is the **lower
+material id** — intrinsic, so order-freeness holds for overlapping stencils too, not only the gated
+disjoint case (verified by a falsification probe on two overlapping blocks).
+
+### Distinguishability lands exactly where the design predicted
+
+The **authoring split is not recoverable** — the merged composite is field-identical to the single
+stencil of the union — and that is *correct* (`P1`: `rebuild` returns the canonical representative;
+which two parts were authored is not fabric). What **must** survive is a **behavioural** difference:
+a composite with a *sealed* interior wall is field-distinct from the open merged one. Both halves
+are gated — the narrow, true form of law **F** for composites (DESIGN §8.0.1), not the false
+"all composites are distinguishable."
+
+### What this rung does NOT cover — named, not skipped
+
+The seam here is **exact** because both stencils live in the **world frame** (no pose, no float), so
+`ε_seam` and the `κ ≥ 3` contention rate — which need **posed** bodies in different frames — are
+untouched and stay open (`DESIGN.md` §6–§7). The other A8 axes wait on machinery this rung does not
+build: **overlap** arbitration by nearest surface (only the lower-id degenerate case is here),
+**linework** (domain B), **terrain** (`OD-4`), and **level** separation (crawler's bridge
+guarantee — different levels never contend). A8's spine is closed; its reach is recorded.
+
 ## Order, and where it can go wrong
 
 ```

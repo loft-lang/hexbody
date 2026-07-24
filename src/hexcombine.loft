@@ -1,0 +1,95 @@
+// hexcombine — TWO STENCILS ADJACENT: WHO OWNS THE SHARED EDGE? (rung A8, the combination rung).
+//
+// The rung the single-object census cannot see: where things that work ALONE stop working TOGETHER.
+// crawler settled the mechanism (EXTRACTION.md, `cut_arb` in its `hexway.loft`) and it is re-
+// measured here, float-free.  The design in one line:
+//
+//   "MARK EVERY PART, THEN CUT ONCE."
+//
+// Do NOT draw each stencil's walls and overlay them.  Union the footprints first, then cut the
+// boundary of the UNION once, tagging each boundary edge with the material of the source stencil
+// its cell came from.  Two consequences, both the point of the rung:
+//
+//   ORDER-FREE BY CONSTRUCTION.  The result reads only the finished union and the fixed source
+//   map — never which stencil was stamped when — so `combine_cut(a, b) == combine_cut(b, a)`.  The
+//   naive per-body overlay is last-writer, hence order-DEPENDENT: it works for one stencil and
+//   breaks for two.  (This is `X4` / law K₂: same-level overlap arbitrates deterministically and
+//   order-freely.)
+//
+//   THE SHARED EDGE FUSES.  Between two adjacent stencils the shared edge is INTERIOR to the union,
+//   so cutting the union's boundary never marks it — nobody owns it, and there is no seam wall.
+//   Two adjacent stencils become one fabric (crawler's FORMS.md, DESIGN §8.0.1: "seated fabric may
+//   merge").  Which two parts were authored is not recoverable from the fabric, and by law P1 need
+//   not be — `rebuild` returns the canonical representative.
+//
+// Exact and float-free: the "nearest source" of a boundary edge is simply its own bordering cell's
+// stencil, so no distance and no float enter.  This is the κ ≤ 2 case; N stencils are the same
+// construction (union all, cut once, nearest source).  Different LEVELS never contend at all
+// (crawler's bridge guarantee) — that axis waits on the layer machinery and is not gated here.
+use hex_field;
+use hexform;
+
+// The union footprint of two stencils sharing `a`'s chunk — a fresh HexSet, `a ∪ b`.
+pub fn field_union(a: HexSet, b: HexSet) -> HexSet {
+  u = hexset_chunk(hexset_q0(a), hexset_r0(a), hexset_w(a), hexset_h(a));
+  for r in hexset_r0(a)..hexset_r0(a) + hexset_h(a) {
+    for q in hexset_q0(a)..hexset_q0(a) + hexset_w(a) {
+      if hexset_get(a, q, r) || hexset_get(b, q, r) { hexset_set(u, q, r, true); }
+    }
+  }
+  u
+}
+
+// Combine two same-level stencils: union the footprints, cut the boundary of the union ONCE, and
+// tag each boundary edge with the material of the source stencil its bordering cell came from.
+// Order-free by construction (reads the finished union + source map, never stamp order); the shared
+// interior edge is never cut, so adjacent stencils fuse.  Returns the number of edges cut.
+//
+// The tie-break is INTRINSIC, not positional: a cell in BOTH stencils (an overlap) takes the LOWER
+// material id, so `combine_cut(a,b) == combine_cut(b,a)` for overlapping stencils too, not only
+// disjoint ones — otherwise "order-free" would quietly hold only for the adjacency case gated here.
+// (crawler's full `cut_arb` breaks the same tie by nearest SURFACE then lower id; with no surfaces
+// in play the lower id is the whole rule.  Overlap itself is a separate, ungated A8 axis.)
+pub fn combine_cut(a: HexSet, ma: integer, b: HexSet, mb: integer, e: EdgeSet) -> integer {
+  u = field_union(a, b);
+  n = 0;
+  for r in hexset_r0(u)..hexset_r0(u) + hexset_h(u) {
+    for q in hexset_q0(u)..hexset_q0(u) + hexset_w(u) {
+      if hexset_get(u, q, r) {
+        for d in 0..6 {
+          nq = nb_q(q, r, d);
+          nr = nb_r(q, r, d);
+          if !hexset_get(u, nq, nr) {
+            ina = hexset_get(a, q, r);
+            inb = hexset_get(b, q, r);
+            m = ma;
+            if inb && !ina { m = mb; }
+            if ina && inb && mb < ma { m = mb; }   // overlap: lower id, order-free
+            edge_set_mat(e, q, r, nq, nr, m);
+            n = n + 1;
+          }
+        }
+      }
+    }
+  }
+  n
+}
+
+// How many marked edges separate an `a`-cell from a `b`-cell — the "shared wall" run.  Zero after
+// `combine_cut` (the seam fuses); non-zero after a per-body overlay (a spurious seam wall).  This
+// is the measurable form of "who owns the shared edge?": nobody, if the parts were combined right.
+pub fn shared_marked(a: HexSet, b: HexSet, e: EdgeSet) -> integer {
+  n = 0;
+  for r in hexset_r0(a)..hexset_r0(a) + hexset_h(a) {
+    for q in hexset_q0(a)..hexset_q0(a) + hexset_w(a) {
+      if hexset_get(a, q, r) {
+        for d in 0..6 {
+          nq = nb_q(q, r, d);
+          nr = nb_r(q, r, d);
+          if hexset_get(b, nq, nr) && edge_mat(e, q, r, nq, nr) != 0 { n = n + 1; }
+        }
+      }
+    }
+  }
+  n
+}
