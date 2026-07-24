@@ -1,7 +1,7 @@
 // houseshot — THE 12-ORIENTATION CONTACT SHEET.
 //
 // Draws the SAME house specification at all 12 orientations from the real data the
-// housedraw routines produce — floor cells, boundary edges, roof heights — and writes one
+// housedraw routines produce — floor cells, FITTED wall surfaces, roof heights — and writes one
 // PNG.  A contact sheet is the point: a single hero image cannot show a 1-in-12 defect,
 // but a regular grid makes one wrong tile obvious as a break in the sequence.
 //
@@ -9,7 +9,7 @@
 //
 // So a flip is the tile directly BELOW, and the eye compares them without arithmetic.
 //
-// THE WALLS ARE DRAWN AS THEY ARE STORED: one strip per boundary edge.  That is what
+// THE WALLS ARE DRAWN AS THEY ARE FITTED: one quad per side (`G2`), not per stored edge.  What
 // makes the zigzag visible — a straight run of hex boundary alternates between exactly
 // TWO of the three edge directions, so the run is 2/sqrt(3) = 15.5% longer than the wall
 // line it stands on.  Nothing here fits or straightens it; this sheet is the evidence
@@ -19,6 +19,7 @@ use hex_field;
 use hexway;
 use hexroof;
 use housedraw;
+use hexsurf;
 
 const Q0 = -16;
 const R0 = -16;
@@ -120,34 +121,24 @@ fn main() {
         }
       }
 
-      // the walls, one strip per stored boundary edge
-      for wr in R0..R0 + GH {
-        for wq in Q0..Q0 + GW {
-          if hexset_get(cells, wq, wr) {
-            for d in 0..6 {
-              nq = nb_q(wq, wr, d);
-              nr = nb_r(wq, wr, d);
-              if edge_mat(edges, wq, wr, nq, nr) != 0 {
-                ax = cell_x(wq, wr);
-                ay = cell_y(wq, wr);
-                bx = cell_x(nq, nr);
-                by = cell_y(nq, nr);
-                mx = (ax + bx) * 0.5;
-                my = (ay + by) * 0.5;
-                ex = bx - ax;
-                ey = by - ay;
-                el = sqrt(ex * ex + ey * ey) ?? 0.0;
-                // the edge itself is perpendicular to the centre-to-centre line,
-                // half a unit each way: one hex edge = 1.0 unit = 0.87 m
-                ux = -ey / el * 0.5 ?? 0.0;
-                uy = ex / el * 0.5 ?? 0.0;
-                col = wall_col;
-                sf = edge_mat(edges, wq, wr, nq, nr);
-                if sf == OPEN_DOOR { col = door_col; }
-                if sf == OPEN_WINDOW { col = win_col; }
-                strip(cv, mx - ux, my - uy, mx + ux, my + uy, ox, oy, 0.24, col);
-              }
-            }
+      // THE WALLS, AS G2 REQUIRES: one flat quad per side — its analytic surface — not one
+      // strip per stored edge.  The surface is exact (`X47`) and `surface_span` gives its extent,
+      // so the zigzag the strip used to draw never reaches the picture: 38 stored edges become 4
+      // quads, at `eave_spread(fitted) = 0`.
+      //
+      // A feature is then what `FEATURES` says it is — an INTERVAL on that surface — drawn as a
+      // sub-span of the same line rather than as the edge it happens to be stored on.
+      for gside in 0..4 {
+        (sx0, sy0, sx1, sy1) = surface_span(p, cells, gside);
+        strip(cv, sx0, sy0, sx1, sy1, ox, oy, 0.24, wall_col);
+        gsr = side_edges(p, cells, gside);
+        for gi in 0..side_run_len(gsr) {
+          gm = surface_edge_mat(p, cells, edges, gside, gi);
+          if gm == OPEN_DOOR || gm == OPEN_WINDOW {
+            (fx0, fy0, fx1, fy1) = surface_edge_span(p, cells, gside, gi);
+            gcol = door_col;
+            if gm == OPEN_WINDOW { gcol = win_col; }
+            strip(cv, fx0, fy0, fx1, fy1, ox, oy, 0.26, gcol);
           }
         }
       }

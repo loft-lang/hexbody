@@ -282,6 +282,44 @@ fn main() {
   println("   => a feature is a MATERIAL, never a hole: the run stays closed, and the");
   println("      doored-tower defect cannot arise from this path.");
 
+  // ── 8. G2 — EVERY WALL RENDERS AS *ONE* FLAT QUAD ─────────────────────────
+  //
+  // `G2`: *"every wall renders as one flat quad (its analytic surface), not the strip"*, checked by
+  // `eave_spread(fitted) = 0`.  The surface was already exact (§1–§5); what G2 needs is its EXTENT,
+  // so the renderer can emit the segment instead of one strip per stored edge.
+  //
+  // The control is the thing being replaced: the strip's own corners spread by the band `X47`
+  // measured.  If that were 0 too, the fit would be removing nothing and G2 would be vacuous.
+  println("");
+  println("8. G2 — the wall as ONE quad: eave_spread(fitted) = 0");
+  println("   side  edges  strip quads  fitted quads   band(strip)  spread(fitted)");
+  g2edges = 0; g2quads = 0; g2bad = 0; g2flat = 0;
+  for gs in 0..4 {
+    gsr = side_edges(fpl, fcells, gs);
+    gn = side_run_len(gsr);
+    gband = surface_band_corners(fpl, fcells, gs);
+    gspread = surface_fitted_spread(fpl, fcells, gs);
+    g2edges = g2edges + gn;
+    g2quads = g2quads + 1;
+    if gspread != 0.0 { g2bad = g2bad + 1; }
+    if gband <= 0.0 { g2flat = g2flat + 1; }
+    println("     {gs}   {gn:>4}   {gn:>10}   {1:>11}   {gband:10.4}   {gspread:10.4}");
+  }
+  println("   the house: {g2edges} stored edges -> {g2edges} strip quads, or {g2quads} fitted quads");
+  if g2bad != 0 {
+    println("  FAIL: a fitted quad's corners are not on its own surface — eave_spread(fitted) != 0");
+    ok = false;
+  }
+  if g2quads >= g2edges {
+    println("  FAIL: the fit did not reduce the wall to one quad per side"); ok = false;
+  }
+  // CONTROL: the strip must actually wobble, or the fit removes nothing
+  println("   CONTROL the strip's own band is non-zero on every side: {g2flat == 0}");
+  if g2flat != 0 {
+    println("  FAIL: control did not fire — the strip does not wobble, so fitting it removes"
+            + " nothing and G2 is vacuous"); ok = false;
+  }
+
   println("");
   if ok { println("=== SURFACE OK ==="); }
   else { println("=== surface test FAILED ==="); }

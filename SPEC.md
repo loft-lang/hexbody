@@ -25,7 +25,7 @@ check is not in the spec. `IDs are stable`; cite them in a plan's Blueprint gate
 |---|---|---|
 | **G0** ✅ | `housedraw`: floor/walls/openings/roof at all 12 orientations, cells **and** edges equivariant | `tests/house.loft` green |
 | **G1** | moving body: a part on a revolute joint moves by derived motion; wheel angle `= travel/radius`; each part carries a bounded proxy | `bodytest` |
-| **G2** | the fit: every wall renders as **one** flat quad (its analytic surface), not the strip | `eave_spread(fitted)=0` + `make shot` straightens |
+| **G2** ◑ | the fit: every wall renders as **one** flat quad (its analytic surface), not the strip | **`eave_spread(fitted)=0` GATED** (`X61`, `tests/surface.loft` §8): 38 stored edges → **4** fitted quads, spread exactly 0, control = the strip's own band is non-zero. **`make shot` straightens** — it now draws the fitted quad, features as intervals on it. ⚠ Remaining: adjacent quads do not **miter**, so a rotated house shows corner gaps — `I-CORNER` parts 2/4, the `SURFACE_LANDED` tripwire |
 | **G3** | interaction: two bodies of different scale interact iff swept volumes cross, at any `dt` | interaction gate |
 | **G4** | the train: a coupled car+wagon follows a curve, wheels `= travel/radius`, wagon in line, detaches on decouple | vehicle gates |
 | **G5** ◑ | editor: a building in every orientation from **one authoring pass**, seated on terrain, residual flagged | editor + placement gates. **The seating half is gated** (`X59`, `tests/terrain.loft`): the `height` slot is orthogonal to the footprint so the round trip is untouched, and the residual is **returned**, not absorbed — control: a seating that clips the footprint breaks the trip |

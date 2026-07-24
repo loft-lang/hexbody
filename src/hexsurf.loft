@@ -153,6 +153,108 @@ pub fn surface_band_corners(p: Plan, cells: HexSet, side: integer) -> float {
   hi - lo
 }
 
+// ── G2: THE WALL AS *ONE* QUAD ─────────────────────────────────────────────
+//
+// `G2` asks that every wall render as **one flat quad — its analytic surface — not the strip**.
+// Today the shot draws the wall *as it is stored*: one strip per boundary edge, so a side that is
+// nine edges long is nine quads that zigzag by the band `X47` measured.  The surface is already
+// exact (direction exactly a heading, position an exact rational); what was missing is its EXTENT,
+// so a renderer can emit the segment instead of the strip.
+//
+// The span is the run's corners **projected onto the mean line**, taking the extremes.  The two
+// points returned lie ON the line by construction, so the quad the renderer builds from them has
+// perpendicular spread exactly **0** — which is `G2`'s check — while the strip it replaces spreads
+// by `surface_band_corners`.
+pub fn surface_span(p: Plan, cells: HexSet, side: integer) -> (float, float, float, float) {
+  w = surface_of(p, cells, side);
+  sr = side_edges(p, cells, side);
+  dx = (w.ws_dk as float) * 0.8660254037844386;
+  dy = (w.ws_dm as float) * 0.5;
+  dl = sqrt(dx * dx + dy * dy) ?? 1.0;
+  ux = (dx / dl) ?? 1.0;
+  uy = (dy / dl) ?? 0.0;
+  cx = surface_mean_x(w);
+  cy = surface_mean_y(w);
+  lo = 1.0e9;
+  hi = -1.0e9;
+  for si in 0..side_run_len(sr) {
+    qa = sr.sr_qa[si] ?? 0;
+    ra = sr.sr_ra[si] ?? 0;
+    (c1, c2) = edge_corners_of(qa, ra, sr.sr_qb[si] ?? 0, sr.sr_rb[si] ?? 0);
+    for sj in 0..2 {
+      cc = c1;
+      if sj == 1 { cc = c2; }
+      ex = ((lattice_k(qa, ra) + corner_k(cc)) as float) * 0.8660254037844386;
+      ey = ((lattice_m(qa, ra) + corner_m(cc)) as float) * 0.5;
+      tv = (ex - cx) * ux + (ey - cy) * uy;
+      if tv < lo { lo = tv; }
+      if tv > hi { hi = tv; }
+    }
+  }
+  (cx + lo * ux, cy + lo * uy, cx + hi * ux, cy + hi * uy)
+}
+
+// The perpendicular spread of the FITTED quad's own corners about its line — `G2`'s check.  Both
+// endpoints come off the line, so this is exactly 0 and is the number `eave_spread(fitted) = 0`
+// names.  Measured rather than asserted, so that if the span ever stops lying on the line the gate
+// says so.
+pub fn surface_fitted_spread(p: Plan, cells: HexSet, side: integer) -> float {
+  w = surface_of(p, cells, side);
+  (sx0, sy0, sx1, sy1) = surface_span(p, cells, side);
+  px = perp_x(w);
+  py = perp_y(w);
+  cx = surface_mean_x(w);
+  cy = surface_mean_y(w);
+  e0 = (sx0 - cx) * px + (sy0 - cy) * py;
+  e1 = (sx1 - cx) * px + (sy1 - cy) * py;
+  lo = e0;
+  hi = e0;
+  if e1 < lo { lo = e1; }
+  if e1 > hi { hi = e1; }
+  hi - lo
+}
+
+// One stored edge's INTERVAL along the fitted line — where edge `i` of the run projects onto the
+// surface.  This is what makes a feature renderable as `FEATURES` describes it: *"a door is
+// `[s0,s1]` along an exact straight or arc"*, an interval on the analytic surface rather than a
+// stored edge.  The renderer draws the wall as one quad (`surface_span`) and each feature as a
+// sub-interval of it, so the zigzag never reaches the picture.
+pub fn surface_edge_span(p: Plan, cells: HexSet, side: integer, i: integer)
+                         -> (float, float, float, float) {
+  w = surface_of(p, cells, side);
+  sr = side_edges(p, cells, side);
+  dx = (w.ws_dk as float) * 0.8660254037844386;
+  dy = (w.ws_dm as float) * 0.5;
+  dl = sqrt(dx * dx + dy * dy) ?? 1.0;
+  ux = (dx / dl) ?? 1.0;
+  uy = (dy / dl) ?? 0.0;
+  cx = surface_mean_x(w);
+  cy = surface_mean_y(w);
+  qa = sr.sr_qa[i] ?? 0;
+  ra = sr.sr_ra[i] ?? 0;
+  (c1, c2) = edge_corners_of(qa, ra, sr.sr_qb[i] ?? 0, sr.sr_rb[i] ?? 0);
+  lo = 1.0e9;
+  hi = -1.0e9;
+  for ej in 0..2 {
+    cc = c1;
+    if ej == 1 { cc = c2; }
+    ex = ((lattice_k(qa, ra) + corner_k(cc)) as float) * 0.8660254037844386;
+    ey = ((lattice_m(qa, ra) + corner_m(cc)) as float) * 0.5;
+    tv = (ex - cx) * ux + (ey - cy) * uy;
+    if tv < lo { lo = tv; }
+    if tv > hi { hi = tv; }
+  }
+  (cx + lo * ux, cy + lo * uy, cx + hi * ux, cy + hi * uy)
+}
+
+// The material on stored edge `i` of a side — so the renderer can find the features on a run
+// without re-deriving the run's order.
+pub fn surface_edge_mat(p: Plan, cells: HexSet, edges: EdgeSet, side: integer,
+                        i: integer) -> integer {
+  sr = side_edges(p, cells, side);
+  edge_mat(edges, sr.sr_qa[i] ?? 0, sr.sr_ra[i] ?? 0, sr.sr_qb[i] ?? 0, sr.sr_rb[i] ?? 0)
+}
+
 // The perpendicular extent of the MIDPOINTS about the mean line.  Not in §6.2, and it is not the
 // same as the corner band: on the east family the midpoints are exactly COLINEAR (0), while on the
 // north family they span the full band — the row stagger, which the corners hide.
