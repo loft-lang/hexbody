@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // box — THE GATE FOR hexbox.  Every check has a control that must fire.
 //
 //   1  a box fills in all 24 orientations (12 rotations x the flip), none empty

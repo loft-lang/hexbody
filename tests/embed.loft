@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // embed — CAN A STENCIL CARRY A WALL IN AN IN-BETWEEN DIRECTION? (`OD-13`, the load-bearing half).
 // Every check has a control that must fire.
 //

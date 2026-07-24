@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // hexcombine — TWO STENCILS ADJACENT: WHO OWNS THE SHARED EDGE? (rung A8, the combination rung).
 //
 // The rung the single-object census cannot see: where things that work ALONE stop working TOGETHER.

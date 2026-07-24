@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // hexfit — THE DOORSTEP, for the parameters `draft_fits` does not cover.
 //
 // `SPEC` **K-FIT**: *"`fits?(m)` and `snap(m)` are ONE chokepoint, consulted by the round-trip gate

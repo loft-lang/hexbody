@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // housedraw — DRAW A BUILDING IN ANY OF THE 12 ORIENTATIONS.
 //
 // The field primitives all exist already (hex_field: HexSet/Labels/EdgeSet/Heights;

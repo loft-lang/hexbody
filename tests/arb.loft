@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // arb — THE GATE FOR cut_arb: OVERLAP ARBITRATION BY NEAREST SURFACE (rung A8, last axis).
 // Every check has a control that must fire.
 //

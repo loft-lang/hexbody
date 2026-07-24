@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // seam — THE GATE FOR hexframe: the FRAME SEAM (rung A8, posed bodies).  Laws K₁ (I-FSEAM) and
 // K₂ (I-ARBIT).  Every check has a control that must fire.  This is the FIRST measurement of the
 // two constants DESIGN §7 left OPEN: `ε_seam` and the `κ ≥ 3` rate.

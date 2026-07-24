@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // joint — THE FORWARD GATE FOR `SPEC` **I6**, AND IT IS RED ON PURPOSE.
 //
 // `I6`: *a part's pose is a **pure function** of its joint values; wheel angle `= travel/radius`.*

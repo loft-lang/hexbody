@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // wall — THE GATE FOR hexwall.  Every check has a control that must fire.
 //
 //   1   the 24 directions exist, and exactly 12 are exact

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // scope — THE GATE FOR `SPEC` **L6**, the seam.  Every check has a control that must fire.
 //
 // L6: *hexbody owns the geometry/body/seating MECHANISM; the world/consumer owns placement and

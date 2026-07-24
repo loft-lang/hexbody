@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // scale — THE GATE FOR `SPEC` **L8**, the scale contract.  Every check has a control that fires.
 //
 // L8 says *1 hex step = 1.5 m, 1 world unit = 0.866 m, and every new length is stated in metres*,

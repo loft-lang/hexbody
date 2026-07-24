@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // censusb — THE GATE FOR THE DOMAIN-B CENSUS (`rt_census_b`, the `period` cost table).
 // Every check has a control that must fire.
 //

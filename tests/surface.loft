@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // surface — THE GATE FOR hexsurf, STEP S4b.  Every check has a control that must fire.
 //
 //   1  the mean DIRECTION is exactly PARALLEL to one of the 12 headings — zero cross product

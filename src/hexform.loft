@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // hexform — THE 12 HEADINGS OF H12, AS EXACT LATTICE STEPS.
 //
 // A stencil side runs in one of 12 headings, 30 degrees apart (ROUNDTRIP.md §2.1).  This

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // formtext — THE CANONICAL TEXT `𝕋` FOR A CYCLE FORM, AND ITS PARSER.
 //
 // `write` and `read` for the S1 cycle form only: `stencil / h0 / side len turn`. Rules **C1–C5**

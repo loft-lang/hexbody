@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // palette — THE VOCABULARY SEAM, and the last T4 block (`X12`, `X13`, `X14`'s range).
 //
 // `X63` moved the foxel's *mechanism* to T1 and deliberately left the **palette** at T4: the

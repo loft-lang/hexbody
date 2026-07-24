@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // corpusgen — WRITE THE LEVEL-1 CORPUS ONCE.  Run by hand, committed, never re-run in a gate.
 //
 // `DESIGN.md` §8.0: the entries ARE the deliverable, and they are kept rather than regenerated.

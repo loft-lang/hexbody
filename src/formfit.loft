@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // formfit — `rebuild` : 𝔽 → 𝕄*, LEVEL 1.  REGIME R1, SO IT IS A MATCH AND NOT A FIT.
 //
 // `ROUNDTRIP` §6: for a stencil WE AUTHORED the grammar is the prior, and it constrains the answer

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // terrain — SEATING A STENCIL ON TERRAIN (rung A8, `OD-4`'s open half).
 // Every check has a control that must fire.
 //

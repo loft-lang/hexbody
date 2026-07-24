@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // text — THE GATE FOR formtext, STEP S6 (`rt_canon`).  Every check has a control that must fire.
 //
 //   1  write/read round-trips BYTE-FOR-BYTE over every form the S5 census admits

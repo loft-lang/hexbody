@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
 // hexframe — THE FRAME SEAM: a POSED body against the world (DESIGN §6; laws K₁, K₂).
 //
 // Collision reads several presentations at once — the world (identity frame) plus every posed body.
