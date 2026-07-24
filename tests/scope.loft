@@ -1,0 +1,265 @@
+// scope — THE GATE FOR `SPEC` **L6**, the seam.  Every check has a control that must fire.
+//
+// L6: *hexbody owns the geometry/body/seating MECHANISM; the world/consumer owns placement and
+// content; the seam runs one way.*  Violated by *"settlement/world/placement logic inside
+// hexbody"*.  `SPEC`'s coverage ledger listed L6 as checkable-today-and-unchecked — a boundary
+// with nothing defending it, which is how a boundary erodes without anyone deciding to cross it.
+//
+// The gate reads `src/` as TEXT and imports nothing, deliberately: L6 is a claim about what
+// hexbody DECLARES and DEPENDS ON, and both are properties of the source, not of a running field.
+// (It also means this gate keeps working when a library's native build is down.)
+//
+//   1  THE DEPENDENCY EDGE RUNS ONE WAY.  Every `use` in `src/` names a shared lattice library or
+//      another hexbody module — never a consumer.  hexbody may be consumed by crawler and moros;
+//      it may not consume them.  The module list is READ from `src/`, never hardcoded, so adding
+//      a module cannot silently widen the allowance.
+//      CONTROL: a planted `use moros_map;` must be rejected by the same checker.
+//
+//   2  NO CONTENT OR PLACEMENT VOCABULARY IS DECLARED IN `src/`.  hexbody may say HOW a stencil
+//      is combined, seated and cut; it may not say WHERE a village goes or WHAT lives in it.
+//      ⚠ Matched on `_`-separated SEGMENTS, not substrings: `city` occurs inside `mat_opacity`,
+//      and a substring scanner reports that as a settlement verb.  A false positive here would
+//      be worse than no gate, because the fix would be to rename innocent code.
+//      CONTROL: a planted `fn choose_village_site(` must be caught — and the scanner must find
+//      the real declarations, or "0 violations" is a statement about an empty set.
+//
+//   3  `src/` NEVER REACHES OUTSIDE THE REPO.  `tests/palette.loft` reads moros's source, and
+//      that is the ONE permitted contact — an instrument for `L13`, in `tests/`, not a dependency.
+//      A `../..` path in `src/` would make the seam two-way at runtime.
+//      CONTROL: a planted cross-repo path must be caught.
+
+fn src_dir() -> text { "{source_dir()}/../src" }
+
+// The lattice libraries hexbody is allowed to consume.  These are LIBRARIES (`SPEC` L11 — the
+// library owns the shared table), never applications.
+fn shared_libs() -> vector<text> { ["hex_field", "hex_grid", "graphics"] }
+
+// The content/placement vocabulary L6 keeps out.  Whole `_`-separated segments, singular and
+// plural.  Note what is NOT here: `place`, `site`, `combine`, `seat` — hexbody legitimately owns
+// `place_opening` and `seat`, because those are MECHANISM.  The line is between "how to put a
+// thing somewhere" (ours) and "which thing goes where, and why" (the consumer's).
+fn content_words() -> vector<text> {
+  ["village", "villages", "town", "towns", "city", "cities", "settlement", "settlements",
+   "hamlet", "hamlets", "district", "districts", "population", "inhabitant", "inhabitants",
+   "spawn", "biome", "biomes", "climate", "quest", "quests", "faction", "factions", "npc",
+   "economy", "zoning", "citizen", "citizens"]
+}
+
+fn src_names() -> vector<text> {
+  names = list_dir(src_dir());
+  out: vector<text> = [];
+  for ni in 0..len(names) {
+    nm = names[ni] ?? "";
+    if nm.ends_with(".loft") { out += [nm]; }
+  }
+  out
+}
+
+fn in_list(v: vector<text>, s: text) -> boolean {
+  for ii in 0..len(v) { if (v[ii] ?? "") == s { return true; } }
+  false
+}
+
+// The libraries one source text imports.  `use lib;` and `use lib::name;` both yield `lib`.
+fn imports_of(src: text) -> vector<text> {
+  out: vector<text> = [];
+  lines = src.split('\n');
+  for li in 0..len(lines) {
+    ln = (lines[li] ?? "").trim();
+    w = ln.split(' ');
+    if (w[0] ?? "") == "use" {
+      nm = (w[1] ?? "").trim();
+      nm = (nm.split(';')[0] ?? "").trim();
+      nm = (nm.split(':')[0] ?? "").trim();
+      if nm.len() > 0 { out += [nm]; }
+    }
+  }
+  out
+}
+
+// Every name DECLARED by one source text — functions, structs and constants.  A declaration is a
+// line whose first word (after an optional `pub`) is the keyword, so the word `fn` inside a
+// comment or a string never counts.
+fn declared_names(src: text) -> vector<text> {
+  out: vector<text> = [];
+  lines = src.split('\n');
+  for lj in 0..len(lines) {
+    ln = (lines[lj] ?? "").trim();
+    w = ln.split(' ');
+    kw = w[0] ?? "";
+    nm = w[1] ?? "";
+    if kw == "pub" {
+      kw = w[1] ?? "";
+      nm = w[2] ?? "";
+    }
+    if kw == "fn" || kw == "struct" || kw == "const" || kw == "enum" {
+      nm = (nm.split('(')[0] ?? "").trim();
+      nm = (nm.split(':')[0] ?? "").trim();
+      if nm.len() > 0 { out += [nm]; }
+    }
+  }
+  out
+}
+
+// Does an identifier carry a forbidden word as a whole `_`-separated segment?  Substring matching
+// is WRONG here and the gate says so: `mat_opacity` contains "city".
+fn names_content(id: text) -> boolean {
+  words = content_words();
+  segs = id.split('_');
+  for si in 0..len(segs) {
+    sg = (segs[si] ?? "").trim();
+    if in_list(words, sg) { return true; }
+  }
+  false
+}
+
+fn main() {
+  ok = true;
+  println("=== scope — SPEC L6: the seam runs one way ===");
+
+  files = src_names();
+  own: vector<text> = [];
+  for oi in 0..len(files) {
+    own += [(files[oi] ?? "").replace(".loft", "")];
+  }
+  nmod = len(own);
+  println("");
+  println("   {nmod} modules in src/, read as the allowance (never hardcoded)");
+  if nmod <= 0 {
+    println("  FAIL: no modules found — the gate is not reading src/ and every count below is a"
+            + " statement about an empty set"); ok = false;
+  }
+
+  // ── 1. THE DEPENDENCY EDGE RUNS ONE WAY ───────────────────────────────────
+  println("");
+  println("1. DEPENDENCIES — every `use` in src/ is a shared lattice library or a hexbody module");
+  libs = shared_libs();
+  nuse = 0;
+  nforeign = 0;
+  for fi in 0..len(files) {
+    nm1 = files[fi] ?? "";
+    ims = imports_of(file("{src_dir()}/{nm1}").content());
+    for ui in 0..len(ims) {
+      im = ims[ui] ?? "";
+      nuse = nuse + 1;
+      if !in_list(libs, im) && !in_list(own, im) {
+        println("   FOREIGN {im} used by {nm1} — hexbody is consumed by crawler and moros, it"
+                + " does not consume them (SPEC L6)");
+        nforeign = nforeign + 1;
+      }
+    }
+  }
+  println("   {nuse} imports across {nmod} modules, {nforeign} foreign");
+  if nforeign != 0 {
+    println("  FAIL: src/ depends on something outside the lattice libraries and hexbody itself,"
+            + " so the seam now runs both ways"); ok = false;
+  }
+  if nuse <= 0 {
+    println("  FAIL: no imports found at all — the import scanner is blind"); ok = false;
+  }
+  // CONTROL — a consumer import must be rejected by the SAME checker.
+  // The third line checks the other half: a `use` inside a COMMENT is not an import, so a
+  // scanner counting mentions rather than declarations would see three and reject two.
+  planted1 = imports_of("use hex_field;\nuse moros_map;\n"
+                        + "// use crawler_sim; written in a comment must not count\n");
+  pf = 0;
+  for pi in 0..len(planted1) {
+    pm = planted1[pi] ?? "";
+    if !in_list(libs, pm) && !in_list(own, pm) { pf = pf + 1; }
+  }
+  np1 = len(planted1);
+  c1 = np1 == 2 && pf == 1;
+  println("   CONTROL a planted `use moros_map;` is 1 of {np1} imports and is the only one"
+          + " rejected: {c1}");
+  if !c1 {
+    println("  FAIL: the control did not fire — the allowance either admits a consumer module,"
+            + " or counts a `use` mentioned in a comment as an import"); ok = false;
+  }
+
+  // ── 2. NO CONTENT OR PLACEMENT VOCABULARY ─────────────────────────────────
+  println("");
+  println("2. VOCABULARY — no declared name in src/ says WHERE a settlement goes or WHAT is in it");
+  ndecl = 0;
+  nbad = 0;
+  for gi in 0..len(files) {
+    nm2 = files[gi] ?? "";
+    ds = declared_names(file("{src_dir()}/{nm2}").content());
+    for di in 0..len(ds) {
+      dn = ds[di] ?? "";
+      ndecl = ndecl + 1;
+      if names_content(dn) {
+        println("   CONTENT {dn} in {nm2} — that is the consumer's to decide (SPEC L6)");
+        nbad = nbad + 1;
+      }
+    }
+  }
+  println("   {ndecl} declared names scanned, {nbad} in the content vocabulary");
+  if nbad != 0 {
+    println("  FAIL: hexbody declares placement or content logic — L6 says the mechanism is ours"
+            + " and the decision is the world's"); ok = false;
+  }
+  // CONTROL A — the scanner must not be blind.  hexbody had ~450 declarations when this was
+  // written; 200 is a floor that catches a broken scanner without breaking on ordinary growth.
+  if ndecl < 200 {
+    println("  FAIL: only {ndecl} declarations found, far below the ~450 that exist — the"
+            + " declaration scanner is not reading src/, so `0 violations` means nothing");
+    ok = false;
+  }
+  // CONTROL B — a planted settlement verb must be caught.
+  planted2 = declared_names("pub fn choose_village_site(q: integer) -> integer\n");
+  p2 = planted2[0] ?? "";
+  c2 = len(planted2) == 1 && names_content(p2);
+  println("   CONTROL a planted `fn choose_village_site` is caught: {c2}");
+  if !c2 {
+    println("  FAIL: the control did not fire — the vocabulary check admits settlement logic");
+    ok = false;
+  }
+  // CONTROL C — and it must NOT fire on the innocent name that broke the first attempt.  A gate
+  // that renames honest code is worse than no gate (the `X66` rule, in a different domain).
+  c3 = !names_content("mat_opacity") && !names_content("place_opening") && !names_content("seat");
+  println("   CONTROL `mat_opacity`, `place_opening`, `seat` are NOT flagged: {c3}"
+          + "   (substring matching reports mat_opacity as a city)");
+  if !c3 {
+    println("  FAIL: the vocabulary check has false positives — it is matching substrings rather"
+            + " than whole segments, and would demand innocent code be renamed"); ok = false;
+  }
+
+  // ── 3. NO CROSS-REPO REACH FROM src/ ──────────────────────────────────────
+  println("");
+  println("3. REACH — src/ never reads or writes outside the repo");
+  nreach = 0;
+  for hi in 0..len(files) {
+    nm3 = files[hi] ?? "";
+    body3 = file("{src_dir()}/{nm3}").content();
+    lines3 = body3.split('\n');
+    for lm in 0..len(lines3) {
+      lv = lines3[lm] ?? "";
+      if lv.contains("../..") {
+        shown = lv.trim();
+        println("   REACH {nm3}: {shown}");
+        nreach = nreach + 1;
+      }
+    }
+  }
+  println("   {nreach} cross-repo paths in src/");
+  if nreach != 0 {
+    println("  FAIL: src/ reaches outside the repo. tests/palette.loft does this deliberately as"
+            + " L13's instrument, but a module doing it makes the seam two-way at runtime");
+    ok = false;
+  }
+  // CONTROL — the scanner must see one when it is there.
+  ctl = 0;
+  ctll = "  body = file(\"../../moros/lib/x.loft\").content();".split('\n');
+  for lo in 0..len(ctll) {
+    if (ctll[lo] ?? "").contains("../..") { ctl = ctl + 1; }
+  }
+  println("   CONTROL a planted ../../moros path is caught: {ctl == 1}");
+  if ctl != 1 {
+    println("  FAIL: the control did not fire — the reach scanner cannot see a cross-repo path");
+    ok = false;
+  }
+
+  println("");
+  if ok { println("=== SCOPE OK ==="); }
+  else { println("=== SCOPE BROKEN ==="); }
+}

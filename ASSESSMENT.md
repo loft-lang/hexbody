@@ -217,13 +217,20 @@ storage/doorstep/vocabulary stack is now gated or schema-checked.*
 ### The coverage ledger, and what it says
 
 **[G] Measured 2026-07-24 by applying `SPEC`'s own rule** (*a gate defending no spec item, or a spec
-item no gate defends, is the thing to fix*) — the count now lives in [`SPEC.md`](SPEC.md) beside the
-gate map: **56 spec items defined, 33 defended, 23 not.** Of the 23, **21 are unbuilt on purpose**
-(the body half, plus limits that are not yet violable because there is no simulation to overreach).
-Only **two are checkable today and unchecked**: `L6` (the seam — no settlement/placement logic in
-`src/`, a grep-shaped gate) and `L8` (scale — `HEIGHT_SCALE` is single-sourced in `hexfit`, but
-`√3/2 = 0.8660254037844386` is an unnamed literal ~20 times across `hexsurf`/`hexroof`/`hexway`,
-which is the `L11` hazard class in miniature).
+item no gate defends, is the thing to fix*) — the count lives in [`SPEC.md`](SPEC.md) beside the
+gate map. First pass: **56 spec items defined, 33 defended, 23 not**, of which **21 were unbuilt on
+purpose** (the body half, plus limits not yet violable because there is no simulation to overreach)
+and exactly **two were checkable today and unchecked** — `L6` (the seam) and `L8` (scale).
+
+**[G] Both are now gated** — `tests/scope.loft` and `tests/scale.loft`, four and five controls
+respectively. **56 defined, 35 defended, 21 not, and the checkable-but-unchecked column is empty.**
+
+**[G] Each found something.** `L8`'s ladder is exact — a hex step is `3/2` m, `WALL_W` is `1/4` m,
+`BAND_SIDES` is `3/4` m, all within **1 ulp** — but the figure `SPEC` L8 *prints*, `0.866`, misses
+by 4.4e-5, nearly **2e11 ulps**: the doc's three-decimal value is for reading and must never be
+computed with. And `L6`'s first scanner reported a violation in `mat_opacity`, because *"city"* is
+a substring of *"opacity"*; matching whole `_`-segments fixed it, and a control now pins that a
+rename of innocent code is never demanded.
 
 **[J] That ratio is the honest headline of this file.** Nothing load-bearing that *could* be gated
 is ungated. The gap is entirely "not built yet", which is a schedule, not a debt.

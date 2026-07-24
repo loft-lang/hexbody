@@ -1,0 +1,299 @@
+// scale — THE GATE FOR `SPEC` **L8**, the scale contract.  Every check has a control that fires.
+//
+// L8 says *1 hex step = 1.5 m, 1 world unit = 0.866 m, and every new length is stated in metres*,
+// and it is violated by *"an unconverted threshold (it cannot be checked)"*.  Until now L8 was a
+// convention with nothing behind it — `SPEC`'s coverage ledger listed it as checkable-today-and-
+// unchecked, and *partly slipping*.
+//
+// The gate reads `src/` as TEXT and imports nothing.  That is not a workaround: L8 is a claim
+// about what the source DECLARES, so reading the declaration is the right instrument — importing
+// would prove only that a compiled value matches itself.  (It also means this gate keeps working
+// when a library's native build is down.)
+//
+//   1  THE LADDER IS EXACT.  The three lengths with exact rational targets — a hex step (3/2 m),
+//      the wall's width (1/4 m) and the north band (3/4 m) — all land within **1 ulp**.
+//      CONTROL: the value `SPEC` L8 itself PRINTS, 0.866, misses 1.5 m by 4.4e-5, nearly
+//      **2e11 ulps**.  So "within 1 ulp" is a result, and the doc's three-decimal figure is for
+//      READING, never for computing.  The ulp bound is NOT a `P4` tolerance: these are irrational
+//      constants in f64, the residual is inherent, and the control leaves eleven orders of
+//      magnitude of headroom.  It is not a knob.
+//
+//   2  THE REGISTER IS COMPLETE.  Every float `const` in `src/` is classified here as a LENGTH
+//      (whose metres this gate prints), a RATIO or an EPSILON.  A constant that is none of those
+//      fails the gate until someone classifies it — which IS *"every new length is stated in
+//      metres"*, enforced instead of trusted.
+//      CONTROL: a planted constant belongs to no class and must be caught; and a `const` written
+//      in a COMMENT is not a declaration.
+//
+//   3  NO TRUNCATED COPY.  `sqrt(3)/2` is written across eight modules under three different
+//      private names (`SQ3_2`, `SQ3_2B`, `BAND_SIDES`).  Duplication is not the danger — a copy
+//      that DIFFERS is, and a truncated one moves geometry with no diff anywhere downstream.
+//      The gate does NOT demand a rename: each private name carries a local meaning, and `L11`
+//      asks that the copies AGREE, not that they merge.
+//      CONTROL: a truncated literal must be caught by the same scanner.
+
+// `SPEC` L8's ladder, in code.  hexbody's own source carries metres only in comments — every
+// length in `src/` is in world units — so this gate is the one place the conversion exists.
+// 1 wu = sqrt(3)/2 m, hence a hex step (sqrt(3) wu) is exactly 3/2 m.
+const M_PER_WU = 0.8660254037844386;
+// ulp(1.5) = 2.220446049250313e-16.  1.5 is the largest target in the table, so its ulp is the
+// coarsest, and using it for all three targets is the conservative choice.
+const ULP_MAX = 0.0000000000000002220446049250313;
+
+const CANON_S3  = "1.7320508075688772";
+const CANON_S32 = "0.8660254037844386";
+
+struct FConst {
+  fc_name: text,
+  fc_val: float,
+  fc_file: text,
+}
+
+fn fabs(x: float) -> float { if x < 0.0 { 0.0 - x } else { x } }
+
+fn src_dir() -> text { "{source_dir()}/../src" }
+
+fn src_names() -> vector<text> {
+  names = list_dir(src_dir());
+  out: vector<text> = [];
+  for ni in 0..len(names) {
+    nm = names[ni] ?? "";
+    if nm.ends_with(".loft") { out += [nm]; }
+  }
+  out
+}
+
+// The float `const`s declared in one source text.  A declaration is a line whose FIRST word is
+// `const` (or `pub const`), so a `const` mentioned in a comment is never picked up — and the
+// value is cut at the `;` BEFORE testing for a decimal point, or `const N = 5;  // 1.5 m` would
+// read as a float because of the comment.
+fn float_consts(src: text, where: text) -> vector<FConst> {
+  out: vector<FConst> = [];
+  lines = src.split('\n');
+  for li in 0..len(lines) {
+    ln = (lines[li] ?? "").trim();
+    w = ln.split(' ');
+    kw = w[0] ?? "";
+    nm = w[1] ?? "";
+    if kw == "pub" {
+      kw = w[1] ?? "";
+      nm = w[2] ?? "";
+    }
+    if kw == "const" && ln.contains(" = ") {
+      raw = ln.split('=')[1] ?? "";
+      vt = (raw.split(';')[0] ?? "").trim();
+      if vt.contains(".") {
+        out += [FConst { fc_name: nm, fc_val: vt as float ?? 0.0, fc_file: where }];
+      }
+    }
+  }
+  out
+}
+
+// The CODE part of a line — everything before the first `//`.  loft's `split` takes a character,
+// so the comment marker is turned into a newline and the first piece taken.
+//
+// ⚠ COMMENTS ARE EXCLUDED ON PURPOSE, and the first run of this gate is why.  It reported three
+// "truncated copies"; all three were `0.866`/`1.732` written as PROSE in a comment — the rounded
+// figure §1 explicitly blesses for reading.  L8's hazard is a truncated literal in an EXPRESSION,
+// where it silently moves geometry; a rounded one in a sentence is the doc doing its job.  Fixing
+// the instrument rather than the source is this project's own rule, earned five times over.
+// (A `//` inside a string literal would truncate that line early — a false negative, never a
+// false positive, which is the safe direction for a scanner nobody reads the output of.)
+fn code_of(ln: text) -> text {
+  (ln.replace("//", "\n").split('\n')[0] ?? "")
+}
+
+// How many CODE lines carry a `0.866…`/`1.732…` that is NOT the canonical full-precision
+// spelling.  The canonical ones are removed first — repeatedly, so the answer does not depend on
+// whether loft's `replace` is first-only or global — and any prefix that survives is an altered
+// copy.
+fn bad_spellings(src: text, canon: text, prefix: text) -> integer {
+  n = 0;
+  lines = src.split('\n');
+  for lj in 0..len(lines) {
+    rest = code_of(lines[lj] ?? "");
+    for ri in 0..8 { rest = rest.replace(canon, ""); }
+    if rest.contains(prefix) { n = n + 1; }
+  }
+  n
+}
+
+fn in_list(v: vector<text>, s: text) -> boolean {
+  for ii in 0..len(v) { if (v[ii] ?? "") == s { return true; } }
+  false
+}
+
+fn val_of(cs: vector<FConst>, name: text) -> float {
+  for ci in 0..len(cs) {
+    c = cs[ci];
+    if c.fc_name == name { return c.fc_val; }
+  }
+  0.0
+}
+
+fn main() {
+  ok = true;
+  println("=== scale — SPEC L8: the ladder, the register, and no truncated copy ===");
+
+  // Read every float const in src/ ONCE; all three sections work off this one scan.
+  files = src_names();
+  all: vector<FConst> = [];
+  for fi in 0..len(files) {
+    nm1 = files[fi] ?? "";
+    all += float_consts(file("{src_dir()}/{nm1}").content(), nm1);
+  }
+  nmod = len(files);
+  nfound = len(all);
+  println("");
+  println("   {nmod} modules scanned, {nfound} float consts declared in src/");
+
+  // ── 1. THE LADDER IS EXACT ────────────────────────────────────────────────
+  println("");
+  println("1. THE LADDER — the three lengths with exact rational targets, in metres");
+
+  lnames = ["HEX_LEN", "WALL_W", "BAND_SIDES"];
+  ltgt   = [1.5, 0.25, 0.75];
+  worst = 0.0;
+  for ki in 0..3 {
+    nm2 = lnames[ki] ?? "";
+    tgt = ltgt[ki] ?? 0.0;
+    wu = val_of(all, nm2);
+    got = wu * M_PER_WU;
+    d = fabs(got - tgt);
+    u = d / ULP_MAX;
+    if d > worst { worst = d; }
+    println("   {nm2}  {wu} wu  ->  {got} m   target {tgt}   ({u} ulps off)");
+    if wu <= 0.0 {
+      println("  FAIL: {nm2} was not found in src/ at all — the ladder's constant has been"
+              + " renamed or removed, and this gate no longer measures what it names"); ok = false;
+    }
+    if d > ULP_MAX {
+      println("  FAIL: {nm2} is more than 1 ulp off its exact target — the ladder has drifted,"
+              + " or the constant was retyped at lower precision"); ok = false;
+    }
+  }
+  println("   worst residual {worst}, bound 1 ulp = {ULP_MAX}");
+
+  // CONTROL — the ROUNDED value the spec PRINTS must NOT reproduce the ladder.  Without this the
+  // ulp bound would be indistinguishable from a loose tolerance that accepts anything.
+  rough = 0.866 * val_of(all, "HEX_LEN");
+  rd = fabs(rough - 1.5);
+  rulps = rd / ULP_MAX;
+  println("   CONTROL SPEC L8's printed 0.866 gives {rough} m, off by {rd} = {rulps} ulps");
+  if rd <= ULP_MAX {
+    println("  FAIL: the control did not fire — 0.866 reproduced the ladder, so the check above"
+            + " cannot tell an exact constant from a three-decimal one"); ok = false;
+  }
+  println("   => the doc's 0.866 is for READING. Computing with it puts a hex step 44 um out.");
+
+  // ── 2. THE REGISTER IS COMPLETE ───────────────────────────────────────────
+  //
+  // L8's violation is an UNCONVERTED THRESHOLD.  The enforceable form of "every new length is
+  // stated in metres" is that no float constant escapes classification: a new one fails this gate
+  // until it is registered as a length (with its metres), a ratio or an epsilon.
+  println("");
+  println("2. THE REGISTER — every float const in src/ is a LENGTH, a RATIO or an EPSILON");
+
+  lengths  = ["WALL_W", "HEX_LEN", "BAND_TOPS", "BAND_SIDES", "WIDEN_TOTAL", "WIDEN_FACE",
+              "HEIGHT_SCALE"];
+  ratios   = ["SQ3_2", "SQ3_2B", "BAND_RATIO", "INV_SQ3", "SCALE"];
+  epsilons = ["BOX_EPS", "EPS", "WALL_EPS"];
+
+  println("   the LENGTHS, and what each one is in metres:");
+  for mi in 0..len(lengths) {
+    nm3 = lengths[mi] ?? "";
+    wv = val_of(all, nm3);
+    mv = wv * M_PER_WU;
+    println("     {nm3}  {wv} wu = {mv} m");
+  }
+
+  nunclassified = 0;
+  for ci in 0..len(all) {
+    c = all[ci];
+    cn = c.fc_name;
+    if !in_list(lengths, cn) && !in_list(ratios, cn) && !in_list(epsilons, cn) {
+      println("   UNCLASSIFIED {cn} in {c.fc_file} — register it as a LENGTH (with its metres),"
+              + " a RATIO or an EPSILON");
+      nunclassified = nunclassified + 1;
+    }
+  }
+  println("   {nfound} float consts, {nunclassified} unclassified");
+  if nunclassified != 0 {
+    println("  FAIL: a float constant in src/ is not registered, so its unit is unstated and"
+            + " SPEC L8 cannot be checked against it"); ok = false;
+  }
+  // The instrument must not be blind: a scanner that reads nothing also reports 0 unclassified.
+  nknown = len(lengths) + len(epsilons);
+  if nfound < nknown {
+    println("  FAIL: the scanner found {nfound} float consts, fewer than the {nknown} lengths and"
+            + " epsilons already known to exist — it is not reading src/"); ok = false;
+  }
+
+  // CONTROL — a constant belonging to no class must be caught by the SAME classifier, and the
+  // second line checks the other half: a `const` inside a COMMENT is not a declaration.
+  planted = float_consts("pub const SNEAKY_GAP = 0.3;\n"
+                         + "// a comment saying const NOT_A_DECL = 9.9 must be ignored\n", "plant");
+  pn = len(planted);
+  p0 = planted[0];
+  p0n = p0.fc_name;
+  pcaught = pn == 1 && !in_list(lengths, p0n) && !in_list(ratios, p0n) && !in_list(epsilons, p0n)
+            && p0.fc_val > 0.29 && p0.fc_val < 0.31;
+  println("   CONTROL a planted `const SNEAKY_GAP = 0.3` is the only decl found ({pn}), parses to"
+          + " {p0.fc_val}, and is unclassified: {pcaught}");
+  if !pcaught {
+    println("  FAIL: the control did not fire — the classifier admits anything, mis-parses the"
+            + " value, or counts a `const` mentioned in a comment as a declaration"); ok = false;
+  }
+
+  // ── 3. NO TRUNCATED COPY ──────────────────────────────────────────────────
+  println("");
+  println("3. NO TRUNCATED COPY — every 0.866…/1.732… in src/ is the full-precision spelling");
+  n866 = 0;
+  n1732 = 0;
+  bad = 0;
+  for gi in 0..len(files) {
+    nm4 = files[gi] ?? "";
+    body = file("{src_dir()}/{nm4}").content();
+    bad = bad + bad_spellings(body, CANON_S32, "0.866");
+    bad = bad + bad_spellings(body, CANON_S3, "1.732");
+    lines2 = body.split('\n');
+    for lk in 0..len(lines2) {
+      lv = code_of(lines2[lk] ?? "");
+      if lv.contains(CANON_S32) { n866 = n866 + 1; }
+      if lv.contains(CANON_S3) { n1732 = n1732 + 1; }
+    }
+  }
+  println("   canonical sqrt(3)/2 on {n866} lines, sqrt(3) on {n1732} lines; non-canonical {bad}");
+  if bad != 0 {
+    println("  FAIL: a 0.866…/1.732… literal in src/ is not the canonical spelling — a truncated"
+            + " copy changes geometry silently and no gate downstream would show a diff");
+    ok = false;
+  }
+  if n866 <= 0 {
+    println("  FAIL: no canonical sqrt(3)/2 found at all, so the scanner is not reading src/");
+    ok = false;
+  }
+  // CONTROL A — a truncated literal in CODE must be caught.
+  ctl = bad_spellings("  x = q * 0.8660254;\n", CANON_S32, "0.866");
+  println("   CONTROL a truncated 0.8660254 in code is caught: {ctl == 1}");
+  if ctl != 1 {
+    println("  FAIL: the control did not fire — the scanner cannot see a truncated copy");
+    ok = false;
+  }
+  // CONTROL B — and the same value in a COMMENT must NOT be.  This is the pair: without A the
+  // gate is blind, without B it demands the docs stop writing readable numbers.  Three real
+  // comments in src/ say "0.866"/"1.732" as prose, and they are correct to.
+  ctlc = bad_spellings("  // a hex inradius is sqrt(3)/2 = 0.866, so consecutive steps\n",
+                       CANON_S32, "0.866");
+  println("   CONTROL the same 0.866 written in a comment is NOT flagged: {ctlc == 0}");
+  if ctlc != 0 {
+    println("  FAIL: the scanner reads comments — it would flag the rounded figure section 1"
+            + " blesses for reading, and the fix would be to make the docs less readable");
+    ok = false;
+  }
+
+  println("");
+  if ok { println("=== SCALE OK ==="); }
+  else { println("=== SCALE BROKEN ==="); }
+}

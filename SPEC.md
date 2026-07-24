@@ -138,6 +138,8 @@ items marked ⚠ below depend on one.
    | `foxel.loft` | **G-FOXEL**, **L12** — the schema as a storage format (`X63`, `X64`) |
    | `fit.loft` | **K-FIT**, **I-QUANT** — the doorstep accepts exactly what recovers (`X65`, `X66`) |
    | `palette.loft` | **L13**, **I1** — moros's schema checked every run; an opening is never "no wall" (`X69`, `X70`) |
+   | `scope.loft` | **L6** — the seam runs one way: every `use` in `src/` is a shared lattice library or a hexbody module (never a consumer), no declared name carries the content/placement vocabulary, and `src/` never reaches outside the repo. Controls: a planted `use moros_map;` is rejected, a planted `fn choose_village_site` is caught, and `mat_opacity` / `place_opening` / `seat` are **not** — the vocabulary matches whole `_`-segments, because substring matching reads `mat_opacity` as a settlement |
+   | `scale.loft` | **L8** — the ladder is exact (hex step → 3/2 m, `WALL_W` → 1/4 m, `BAND_SIDES` → 3/4 m, all ≤ 1 ulp), every float `const` in `src/` is registered as a LENGTH / RATIO / EPSILON, and no `0.866…`/`1.732…` in **code** is a truncated copy. Controls: the spec's own printed `0.866` misses the ladder by ~2e11 ulps; an unregistered constant is caught; a truncated literal in code is caught **and** the same figure in a comment is not |
    | `surface.loft` §6–§7 | **I1**, **I2**, **K-FIT** — a feature is a material at an edge centre; deleting an edge fragments the run (`X48`) |
    | `arc.loft` §1–§4 | **I-QUANT**, **K-FIT** — centre exact, radius quantised to a shell (`X49`, `X50`) |
    | `arc.loft` §5 | **I1**, **I-RT** — the doored tower: a door is a material annotation, so it round-trips as **one** arc; deleting fragments it (`X51`) |
@@ -165,13 +167,17 @@ items marked ⚠ below depend on one.
 4. **Gaps are visible:** an unstarted `G*` with no gate, an `L*` with no enforcing check, is
    open work — not silently assumed done. **Visible means counted**, so the ledger is below.
 
-### The coverage ledger *(2026-07-24 — 56 items defined, 33 defended by a gate, 23 not)*
+### The coverage ledger *(2026-07-24 — 56 items defined, 35 defended by a gate, 21 not)*
 
 Recount it whenever a gate or an item is added; a stale ledger is worse than none. The split
 that matters is **unbuilt** (nothing to check yet) versus **checkable today and unchecked** — only
 the second is a defect.
 
-| the 23 undefended | why | verdict |
+> **The second column is now EMPTY.** `L6` and `L8` were the only two items that could have been
+> gated and were not; `tests/scope.loft` and `tests/scale.loft` close them. Every remaining gap is
+> *nothing to check yet* — which is a schedule, not a debt.
+
+| the 21 undefended | why | verdict |
 |---|---|---|
 | `G1` `G3` `G4` `G6` `G★` `G✦` | the **body** half — no code exists (`PLAN.md` M1–M7) | **unbuilt**, on plan |
 | `I4` `I5` `I6` `I7` `I9` `I10` `I11` | the same: proxy containment, swept volumes, joints, re-derivation, replay, couplings | **unbuilt** — each is `G1`–`G6`'s invariant |
@@ -179,6 +185,11 @@ the second is a defect.
 | `L1` `L2` `L5` | dynamics scope and the compute boundary | **not yet violable** — there is no simulation to overreach |
 | `L3` `L14` | the layer split, and the mortal side table | **not yet violable** — no layer-2 structure is persisted because none is built |
 | `L7` | determinism, *"built from line one"* | **not yet violable**, but it is the one to arm early: `I9`'s replay gate is writable **before** the body, as `rt_trip` was written before `rebuild` |
-| `L6` | the seam — no settlement/placement logic inside hexbody | **checkable today** — a grep-shaped gate (no world/settlement symbol in `src/`) would keep it honest as the body lands |
-| `L8` | scale — every new length stated in metres | **checkable today, and partly slipping**: `HEIGHT_SCALE` is single-sourced in `hexfit`, but `√3/2 = 0.8660254037844386` is an unnamed literal ~20 times across `hexsurf` / `hexroof` / `hexway`. Same class as `L11` |
 | `L9` | validation ≠ golden | **procedural** — enforced by where a file lives (`plans/*/shots/` vs a gate's own baseline), not by a check |
+
+*(`L6` and `L8` were here until `tests/scope.loft` and `tests/scale.loft` landed. `L8`'s
+"partly slipping" note was right about the symptom and wrong about the fix: `√3/2` really is
+written 28 times in code under three private names, but the answer is **not** a rename — each
+name carries a local meaning, and `L11` asks that copies AGREE, not that they merge. The gate
+therefore checks that every copy is byte-identical to the canonical spelling, which catches the
+failure that actually hurts — a truncated one — at zero refactor risk.)*

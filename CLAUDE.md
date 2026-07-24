@@ -140,14 +140,23 @@ a file in `tests/` cannot `use` a module in `src/` (*"Library 'hexform' not foun
 ## Run
 
 ```sh
-make test    # all 21 gates, ~4 min (the table is tools/run_tests.sh; wall alone is ~3 min)
+make test    # all 23 gates, ~4 min (the table is tools/run_tests.sh; wall alone is ~3 min)
 make shot    # contact sheet -> /tmp/house12.png
 ```
 
-**THREE SIBLING WORKING TREES FEED THE GATES, AND NONE IS PINNED** — `../loft` (`--path`),
-`../loft-libs-world` (`--lib`) and **`../moros`**, whose *source* `tests/palette.loft` reads
-because `L13` makes it the schema of record. `loft.lock` pins only the registry packages
-(`graphics`/`glb`/`mesh3d`). So:
+**THE TOOLCHAIN IS THE *INSTALLED* LOFT — `--path /usr/local/share/loft/`, NEVER `../loft`.**
+`--path` is not just a search path: loft reads its **codegen support** from it, while the code it
+generates links the **installed** `libloft.rlib`. Pointing it at the `../loft` working tree pairs a
+live source with a stale rlib, and they drift the moment loft is edited without being reinstalled.
+On 2026-07-24 that killed every gate touching `hex_field` in rustc (*"cannot find function
+`op_eq_text`"*) — including gates nobody had touched — and a cached `.so` had been masking it until
+a new gate forced a rebuild. **hexbody is a consumer of loft; it tracks loft's releases, not its
+desk.** To test against an unreleased toolchain, reinstall it first, then
+`make test LOFT_PATH=../loft/`.
+
+**TWO SIBLING WORKING TREES STILL FEED THE GATES, AND NEITHER IS PINNED** — `../loft-libs-world`
+(`--lib`) and **`../moros`**, whose *source* `tests/palette.loft` reads because `L13` makes it the
+schema of record. `loft.lock` pins only the registry packages (`graphics`/`glb`/`mesh3d`). So:
 
 - **`--lib` reads the WORKING TREE** — check `loft-libs-world` is on branch `dev` before debugging
   anything strange.
@@ -158,11 +167,11 @@ because `L13` makes it the schema of record. `loft.lock` pins only the registry 
 ## State (2026-07-24)
 
 > **`M0` IS CLOSED** — the round trip, `G2`, the foxel as a storage format, the doorstep and the
-> palette. **21 green gates, ~4 min**, every one carrying a control that fires.
+> palette. **23 green gates, ~4 min**, every one carrying a control that fires.
 >
 > **This section deliberately does not restate them.** For where the project stands against its
 > goals and what to do next, read **[`ASSESSMENT.md`](ASSESSMENT.md)** (with its coverage ledger:
-> 56 spec items, 33 defended, and only **two** checkable-today-and-unchecked). For what is gated,
+> 56 spec items, 35 defended, and **zero** checkable-today-and-unchecked). For what is gated,
 > **[`ROUNDTRIP.md`](ROUNDTRIP.md) §7** — `X1`–`X70` with trust tiers, 55 at T1, and the 15 below
 > the line **all inherited** from crawler or moros. For the gate↔spec map, **[`SPEC.md`](SPEC.md)**.
 >
@@ -198,8 +207,10 @@ A measurement cannot overturn any of these. They bound the design.
 
 ### Facts about THIS TREE that the formal docs do not carry
 
-- **`make test` needs three sibling working trees and pins none** — see *Run* above. `../moros` is
-  the one easy to forget, because `L13` made it the schema of record rather than background reading.
+- **`make test` runs on the INSTALLED loft and two unpinned sibling trees** — see *Run* above.
+  `../moros` is the one easy to forget, because `L13` made it the schema of record rather than
+  background reading. `../loft` was a third until it broke the suite; it is now consumed as a
+  release, which is what a consumer-only dependency should always have been.
 - **`src/corpusgen.loft` is NOT in `make test`, by design** — a gate that regenerates its own
   baseline always passes (`X15`). It also **refuses to overwrite a level that already has entries**,
   so never-regenerate is enforced rather than trusted. Bump `LEVEL`, run once, commit. Re-running it

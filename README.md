@@ -118,16 +118,21 @@ Seeded from crawler's plan-#11 P5 geometry work, verified running standalone her
 ## Run
 
 ```sh
-make test    # all 21 headless gates in tests/, ~4 min — the table is tools/run_tests.sh
+make test    # all 23 headless gates in tests/, ~4 min — the table is tools/run_tests.sh
 make shot    # render the contact sheet -> /tmp/house12.png
 ```
 
 Gates live in **`tests/`**, modules in `src/`; the `Makefile` passes `--lib src/` so a gate can
 `use` them.
 
-**Three sibling working trees feed the gates and none is pinned:** the loft toolchain at
-`../loft`, the `hex_field` family at `../loft-libs-world`, and **`../moros`** — whose source
-`tests/palette.loft` reads directly, because `SPEC` **L13** makes moros's voxel the storage of
-record. `--lib` reads the **working tree**, so confirm `loft-libs-world` is on branch `dev` before
-debugging anything strange; the palette gate prints which moros revision it read, but cannot see
-whether that tree is dirty.
+**The toolchain is the *installed* loft** (`--path /usr/local/share/loft/`), not the `../loft`
+working tree: loft reads its codegen support from `--path` while the code it generates links the
+*installed* rlib, so aiming it at a live tree pairs a new source with a stale library — which broke
+every `hex_field` gate on 2026-07-24. hexbody consumes loft releases, not loft's desk. Override
+with `make test LOFT_PATH=../loft/` after reinstalling, if you mean to test an unreleased one.
+
+**Two sibling working trees still feed the gates and neither is pinned:** the `hex_field` family at
+`../loft-libs-world`, and **`../moros`** — whose source `tests/palette.loft` reads directly, because
+`SPEC` **L13** makes moros's voxel the storage of record. `--lib` reads the **working tree**, so
+confirm `loft-libs-world` is on branch `dev` before debugging anything strange; the palette gate
+prints which moros revision it read, but cannot see whether that tree is dirty.
