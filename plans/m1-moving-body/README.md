@@ -5,16 +5,17 @@ when one exists)* · **Value:** `F` · **Effort:** `MH`
 
 ## Status
 
-**Nothing is built.** `G1`, `G3`, `G4`, `G6` are unstarted and the body half of "hexbody" does not
-exist — `ASSESSMENT.md` §1 names this as the gap. What *does* exist is the shape of the answer:
-four user decisions on 2026-07-24 settled what a body **is**, and one forward gate is armed and
-red against the first of them.
+**The first brick is in.** `src/hexjoint.loft` (`G1`): a pose is a **pure function of joint values**
+(`I6`), a wheel's angle is `travel/radius`, and a joint value refuses-with-an-offer at its limits.
+`tests/joint.loft` — red since morning by design — is **green** (gate 23 of 24). `G3`/`G4`/`G6`
+remain unstarted.
 
 | | |
 |---|---|
-| **armed** | [`../../tests/joint.loft`](../../tests/joint.loft) — `SPEC` **I6**, held red by `run_red` until `G1` lands. Fails if it prints `JOINT OK`; fails if red for any other reason; flips to `JOINT BLOCKED` the moment a body verb is declared in `src/` |
+| **done** | [`../../tests/joint.loft`](../../tests/joint.loft) ✅ — pose purity by two paths (byte-identical), the rolling identity (machine-ε), the joint doorstep. `src/hexjoint.loft` |
 | **decided** | a body is a **rig** (`⟨bones, joint limits⟩`, never a pose) · **flex is joints**, not deformation · the game's state is not the world's (`L15`) · **now** is the only tense |
-| **open** | do `G4`/`G★` remain hexbody's goals, or are they consumers? — [`DESIGN.md`](DESIGN.md) §3 |
+| **found by building** | the roll is **not bit-exact** — `travel → value → travel` is a float round-trip, so skid is machine-ε (the body's `ε_seam`), not the algebraic 0 the plan first claimed. Phase C, corrected |
+| **next** | the **rig canonical text** (phase A's other half) and the **proxy** (phase D) |
 
 **This plan exists because the in-flight tier had no file.** `m0-roundtrip/DESIGN.md` held M0's
 open decisions and M0 is closed, so the body's decisions were landing in `SPEC` rows and in
@@ -49,16 +50,19 @@ open decisions and M0 is closed, so the body's decisions were landing in `SPEC` 
   the joints now has smuggled in a future state.
 - **Control:** the spec's own — drive `θ` and `d` independently and require `skid > 0`; and an
   accumulating implementation (`pose += delta`) must fail the two-path purity check.
-- **Medium:** the real gate. [`../../tests/joint.loft`](../../tests/joint.loft) is already written
-  and red; landing `G1` means turning its §1 and §2 into checks against the real API.
+- **Medium:** the real gate. [`../../tests/joint.loft`](../../tests/joint.loft) — ✅ **green now**:
+  it was written red (`run_red`) before its subject, its tripwire fired the moment `src/hexjoint.loft`
+  landed, and its §1/§2 became real checks. Promoted from `run_red` into the runner's table (gate
+  23 of 24). `src/hexjoint.loft` is the workshop form; it ships as a `hex_*` library once `G1` is
+  complete, the way the geometry did.
 
 ## Phases
 
 | Phase | Effort | Verify | Status |
 |---|---|---|---|
-| **A** — the rig: `⟨bones, joint limits⟩`, its canonical text, its doorstep | M | `write(read(R)) = R` byte-for-byte; a joint value outside its limit is refused **with an offer** (`K-FIT`, and a joint value is *ordinal* so an offer is owed) | not started |
-| **B** — forward kinematics: pose from joints | M | `tests/joint.loft` §1 — purity by two paths; control: an accumulating pose fails | **gate armed, red** |
-| **C** — rolling: wheel angle `= travel/radius` | S | `tests/joint.loft` §2 — `skid = 0` exactly; control: spin off-travel → `skid > 0` | **gate armed, red** |
+| **A** — the rig: `⟨bones, joint limits⟩`, its canonical text, its doorstep | M | `write(read(R)) = R` byte-for-byte; a joint value outside its limit is refused **with an offer** (`K-FIT`, and a joint value is *ordinal* so an offer is owed) | ◑ **the DOORSTEP half is done** — `joint_fits`/`joint_offer`/`joint_residual` (`tests/joint.loft` §3): an ordinal joint value clamps to the nearest limit, offer itself admissible. The **rig canonical text** (`write(read(R)) = R`) is not built |
+| **B** — forward kinematics: pose from joints | M | `tests/joint.loft` §1 — purity by two paths; control: an accumulating pose fails | ✅ **DONE** — `pose_of` is a pure function; two paths to a value give a **byte-identical** pose, an accumulator differs (`src/hexjoint.loft`) |
+| **C** — rolling: wheel angle `= travel/radius` | S | `tests/joint.loft` §2 — skid bounded; control: spin off-travel → `skid > 0` | ✅ **DONE** — ⚠ **and it corrected the spec**: skid is **machine-ε, not exactly 0** — the roll is a float round-trip (`travel → value → travel`), so it is the body's **sole float step** (the wheel's `ε_seam`, `I-FSEAM`/`X53`), not a `P4`-exact integer quantity. Worst 1 ulp of travel; control skids by whole units |
 | **D** — the proxy: `proxy ⊇ footprint`, overshoot ≤ ε, 12 orientations | M | `I4`'s control: shrink the proxy below the footprint → a real overlap is missed | not started |
 
 Phase A is the one that inherits M0 wholesale: a rig is a **description**, the same kind of object

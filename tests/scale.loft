@@ -231,7 +231,7 @@ fn main() {
 
   lengths  = ["WALL_W", "HEX_LEN", "BAND_TOPS", "BAND_SIDES", "WIDEN_TOTAL", "WIDEN_FACE",
               "HEIGHT_SCALE"];
-  ratios   = ["SQ3_2", "SQ3_2B", "BAND_RATIO", "INV_SQ3", "SCALE"];
+  ratios   = ["SQ3_2", "SQ3_2B", "BAND_RATIO", "INV_SQ3", "SCALE", "TAU"];
   epsilons = ["BOX_EPS", "EPS", "WALL_EPS"];
 
   println("   the LENGTHS, and what each one is in metres:");

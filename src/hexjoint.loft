@@ -1,0 +1,91 @@
+// Copyright (c) 2026 Jurjen Stellingwerff
+// SPDX-License-Identifier: LGPL-3.0-or-later
+// hexjoint — THE MOVING BODY'S JOINT MECHANICS: a pose is a PURE FUNCTION of joint values.
+//
+// `G1`, the first brick of the body half (`plans/m1-moving-body/`).  The load-bearing decision,
+// from the user: **a body is a RIG — bones and the limits in the joints between them, never a
+// pose** (`SPEC` **I-POSE**).  So this module never stores a pose; it COMPUTES one from the current
+// joint values, and that computation is a **pure function** (`SPEC` **I6**).  Purity is not a
+// testability nicety here — it IS the scope boundary `L15` draws: hexbody answers *where a part is
+// NOW*, never *what it will do*, and a pose that depended on history would have smuggled in a
+// future.
+//
+// Re-measured from crawler's `hexwheel`/`wheeltest` (`T2 → T1`): the wheel's rolling identity holds
+// **by construction, not by tuning**, because the joint value is computed FROM travel rather than
+// accumulated.  Its own framing — *"phase is computed from the distance, so `Δφ·2πr = Δd` holds by
+// construction"* — is exactly `I6`.  ⚠ **Flex is joints, not deformation** (`I-POSE`): a part that
+// bends is more bones on more joints, so this survives a flexing wing unchanged and hexbody needs
+// no skinning.
+
+const TAU = 6.283185307179586;   // one turn, in radians
+
+fn fabs(x: float) -> float { if x < 0.0 { 0.0 - x } else { x } }
+
+// A REVOLUTE JOINT: its current value (in TURNS — a value of 1.0 is one revolution, the number a
+// contact point actually cares about) and its LIMITS.  The limits are the joint's `fits?` doorstep
+// (`K-FIT`): a joint value is ORDINAL, so a refusal owes an OFFER of the nearest admissible — unlike
+// a material id, which is nominal and offers nothing (`X68`).
+pub struct Joint {
+  jt_value: float,   // the joint value, in turns
+  jt_lo:    float,   // limit low  (turns)
+  jt_hi:    float,   // limit high (turns)
+}
+
+pub fn joint_new(value: float, lo: float, hi: float) -> Joint {
+  Joint { jt_value: value, jt_lo: lo, jt_hi: hi }
+}
+
+// FORWARD KINEMATICS (phase B): a point `(lx, ly)` in a part's LOCAL frame, posed by rotating it
+// through the joint's angle.  A PURE FUNCTION of `(value, lx, ly)` — it reads no stored state, no
+// elapsed time, no call count, and no previous value.  Two different paths to the same `value`
+// therefore give byte-identical output, which is `I6` and the precondition for `I9`'s replay.
+pub fn pose_of(value: float, lx: float, ly: float) -> (float, float) {
+  th = value * TAU;
+  c = cos(th);
+  s = sin(th);
+  (lx * c - ly * s, lx * s + ly * c)
+}
+
+// A WHEEL is a revolute joint whose value is DERIVED from how far it has travelled (phase C):
+// `value = travel / (2πr)`.  Because the value is a function of travel and not an accumulation of
+// steps, the no-slip identity is exact by construction.  `slip` is the deliberate defect knob —
+// 0 for a true roll; non-zero is a skid, and it is the control that keeps `wheel_skid` honest.
+pub fn wheel_value(travel: float, radius: float, slip: float) -> float {
+  if radius < 0.000000001 { return 0.0; }
+  (1.0 + slip) * (travel / (TAU * radius) ?? 0.0)
+}
+
+// The joint value as an ANGLE in radians.
+pub fn wheel_angle(value: float) -> float { value * TAU }
+
+// THE SKID — the contact point's slip, `|r·θ − travel|`.  For a value derived by `wheel_value`
+// with `slip = 0` this is **machine-ε, not algebraic zero** — and that distinction was measured,
+// not assumed: `travel → value → r·θ` is a float round-trip (a divide by `2πr` then a multiply by
+// it), which f64 does not close bit-for-bit, so the residual is ~1 ulp of `travel`.  This is the
+// BODY'S SOLE FLOAT STEP — the wheel's `ε_seam` (`SPEC` **I-FSEAM**, `X53`): the pose/roll
+// computation is exactly where imprecision is licensed, bounded by machine ε and nowhere else.
+// It is NOT a `P4` violation: `P4` governs the R1 geometry round trip, which is integer and exact;
+// a wheel's roll is kinematics, which is the float frame.  Drive `θ` independently of `travel` —
+// the spec's *"spin a wheel off-travel"* — and the skid is a real distance, orders of magnitude
+// above ε.
+pub fn wheel_skid(radius: float, value: float, travel: float) -> float {
+  fabs(radius * wheel_angle(value) - travel)
+}
+
+// THE DOORSTEP (`K-FIT` for a joint): a value inside the joint's limits fits.
+pub fn joint_fits(j: Joint, value: float) -> boolean {
+  value >= j.jt_lo && value <= j.jt_hi
+}
+
+// The OFFER a refusal owes — the nearest admissible value.  A joint value is ordinal, so clamping
+// to the limit is a real correction the editor can show, not a silent snap to a different thing.
+pub fn joint_offer(j: Joint, value: float) -> float {
+  if value < j.jt_lo { return j.jt_lo; }
+  if value > j.jt_hi { return j.jt_hi; }
+  value
+}
+
+// The residual an offer carries — how far the requested value was from admissible.
+pub fn joint_residual(j: Joint, value: float) -> float {
+  fabs(value - joint_offer(j, value))
+}

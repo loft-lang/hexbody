@@ -80,99 +80,125 @@
 // `BODY_LANDED`, and MOVE this row out of `run_red` into the runner's table. The runner enforces
 // the last step: while the row is in `run_red`, printing `JOINT OK` is itself a failure.
 
-// The switch. While this is false the gate is red by construction, which is the point.
-const BODY_LANDED = false;
+// ⚠ G1 HAS LANDED — this gate was RED (`run_red`) until `src/hexjoint.loft` existed; now it runs
+// the real §1/§2 checks and lives in the runner's table.  The tripwire it carried (scan `src/` for
+// a body verb) did its job: it fired the moment the body was declared, forcing these checks to be
+// written rather than left as a pending stub, exactly as designed above.  Its scaffolding
+// (`BODY_LANDED`, `body_verbs`, the src scan) is deleted — a landed subject needs a real gate, not
+// a tripwire.
+use hexjoint;
 
-// The verbs `G1` will introduce. If any of them is DECLARED in `src/`, the body has landed and
-// this gate is stale — the tripwire fires and demands the real checks, rather than sitting red
-// beside a subject that now exists. Same failure mode `SURFACE_LANDED` was built to catch.
-fn body_verbs() -> vector<text> {
-  ["joint_pose", "part_pose", "pose_of", "wheel_angle", "joint_value", "part_of",
-   "body_pose", "recover_joints", "joint_recover"]
-}
-
-fn src_dir() -> text { "{source_dir()}/../src" }
-
-fn in_list(v: vector<text>, s: text) -> boolean {
-  for ii in 0..len(v) { if (v[ii] ?? "") == s { return true; } }
-  false
-}
-
-// Every name declared by one source text. A declaration is a line whose first word (after an
-// optional `pub`) is the keyword, so the verb written in a comment never counts — the same
-// instrument `tests/scope.loft` uses, and for the same reason.
-fn declared_names(src: text) -> vector<text> {
-  out: vector<text> = [];
-  lines = src.split('\n');
-  for lj in 0..len(lines) {
-    ln = (lines[lj] ?? "").trim();
-    w = ln.split(' ');
-    kw = w[0] ?? "";
-    nm = w[1] ?? "";
-    if kw == "pub" {
-      kw = w[1] ?? "";
-      nm = w[2] ?? "";
-    }
-    if kw == "fn" || kw == "struct" || kw == "const" || kw == "enum" {
-      nm = (nm.split('(')[0] ?? "").trim();
-      nm = (nm.split(':')[0] ?? "").trim();
-      if nm.len() > 0 { out += [nm]; }
-    }
-  }
-  out
-}
+const TAU = 6.283185307179586;
+fn fabs(x: float) -> float { if x < 0.0 { 0.0 - x } else { x } }
 
 fn main() {
-  println("=== joint — SPEC I6, the forward gate: pose is a pure function of the joints ===");
-  println("");
-  println("This gate is RED ON PURPOSE and asserts nothing yet. It is written before its subject,");
-  println("the way rt_trip was written before rebuild (DESIGN.md 8.0), so that the requirement is");
-  println("in the tree while the body is still being designed rather than after.");
-  println("");
-  println("WHAT IT WILL ASSERT WHEN G1 LANDS:");
-  println("  1  PURITY   same joint vector by two DIFFERENT paths -> byte-identical pose.");
-  println("              CONTROL: an accumulating pose (pose += delta) must fail the two-path");
-  println("              check. One call always equals itself, so one path proves nothing.");
-  println("  2  ROLLING  wheel angle = travel/radius, and skid = |r*theta - d| is EXACTLY 0.");
-  println("              CONTROL: drive theta and d independently (SPEC I6's own 'spin a wheel");
-  println("              off-travel') and require skid > 0.");
-  println("  3  ---      the joint ROUND TRIP is DISSOLVED, not answered, and is not asserted:");
-  println("              an authored body is a RIG (bones + joint limits) and never a pose, so");
-  println("              the trip is write(read(rig)) = rig and nothing recovers joints FROM a");
-  println("              pose. That recovery is IK, and the design never asks for it.");
-  println("");
+  ok = true;
+  println("=== joint — SPEC I6: a pose is a PURE FUNCTION of joint values (G1) ===");
 
-  // ── THE TRIPWIRE — has the body landed while this gate slept? ─────────────
-  names: vector<text> = list_dir(src_dir()) ?? [];
-  verbs = body_verbs();
-  found: vector<text> = [];
-  for ni in 0..len(names) {
-    nm = names[ni] ?? "";
-    if nm.ends_with(".loft") {
-      ds = declared_names(file("{src_dir()}/{nm}").content() ?? "");
-      for di in 0..len(ds) {
-        dn = ds[di] ?? "";
-        if in_list(verbs, dn) { found += ["{dn} in {nm}"]; }
-      }
-    }
-  }
-  nfound = len(found);
-  nmod = len(names);
-  println("TRIPWIRE — is G1 here yet? scanned {nmod} entries in src/ for the body's verbs");
-  for fi in 0..nfound { println("   FOUND {found[fi] ?? \"\"}"); }
-
-  if nfound > 0 || BODY_LANDED {
-    println("");
-    println("JOINT BLOCKED: the body has landed ({nfound} verb(s) declared, BODY_LANDED"
-            + " {BODY_LANDED}) but this gate still asserts nothing.");
-    println("   Write sections 1 and 2 against the real API, flip BODY_LANDED, and move this row");
-    println("   out of run_red into the runner's table. Until then the suite fails HERE, on");
-    println("   purpose: a forward gate that outlives its subject is worse than none, because it");
-    println("   reads as coverage while measuring nothing.");
-    return;
+  // ── 1. PURITY — pose depends on the CURRENT joint value alone, not on the path to it ──
+  //
+  // Reach the same joint value two ways: directly, and after visiting other values.  `pose_of` is
+  // stateless, so both give a BYTE-IDENTICAL pose (`==`, no tolerance — `I6` is exact, `P4`).  And
+  // calling it twice changes nothing.
+  println("");
+  println("1. PURITY — same joint value by two DIFFERENT paths -> byte-identical pose");
+  vgoal = 0.37;
+  lx = 1.4;
+  ly = -0.6;
+  (ax, ay) = pose_of(vgoal, lx, ly);                 // path A: set the value directly
+  // path B: "visit" 0.1, then 0.62, then land on vgoal.  A pure pose reads only the last value.
+  pose_of(0.1, lx, ly);
+  pose_of(0.62, lx, ly);
+  (bx, by) = pose_of(vgoal, lx, ly);
+  path_eq = ax == bx && ay == by;
+  (cx, cy) = pose_of(vgoal, lx, ly);                 // and again — idempotent
+  idem = cx == ax && cy == ay;
+  println("   path A -> ({ax}, {ay})");
+  println("   path B -> ({bx}, {by})   byte-identical: {path_eq}");
+  println("   called twice, unchanged: {idem}");
+  if !path_eq || !idem {
+    println("  FAIL: pose depends on the path or the call count — it is not a pure function of the"
+            + " joint value, and I9's byte-identical replay is then unreachable"); ok = false;
   }
 
-  println("   0 body verbs declared — G1 is unbuilt, as expected");
+  // CONTROL — an ACCUMULATING pose (the tempting stateful implementation) must FAIL the two-path
+  // check, or "path-independent" is vacuous: one call always equals itself.
+  accA = wheel_angle(vgoal);                          // path A: one step to vgoal
+  accB = wheel_angle(0.1) + wheel_angle(0.62) + wheel_angle(vgoal);  // path B: summed visits
+  println("   CONTROL an accumulating pose differs by path: accA {accA} vs accB {accB}"
+          + " -> {accA != accB}");
+  if accA == accB {
+    println("  FAIL: the control did not fire — even an accumulator agreed across the two paths,"
+            + " so the purity check above proves nothing"); ok = false;
+  }
+
+  // ── 2. ROLLING — wheel angle = travel/radius, and the slip is MACHINE-ε, not a tuned bound ──
+  //
+  // The joint value is DERIVED from travel (`value = travel/(2πr)`), so the no-slip identity holds
+  // by construction.  ⚠ But it holds in ℝ, not bit-for-bit in f64: `travel → value → r·θ` is a
+  // float round-trip, so `skid` is ~1 ulp of `travel`, not 0.  This is the BODY'S SOLE FLOAT STEP —
+  // the wheel's `ε_seam` (`I-FSEAM`, `X53`) — not a `P4` violation (P4 governs the integer R1
+  // geometry trip; kinematics is the float frame).  The bound below is machine ε, and the control
+  // shows it is a real bound and not vacuous: an off-travel spin skids by whole units.
   println("");
-  println("JOINT RED: the body is absent (G1 unbuilt) — this gate asserts nothing yet");
+  println("2. ROLLING — wheel angle = travel/radius, skid is machine-eps (the body's sole float step)");
+  radius = 2.5;
+  worst = 0.0;
+  npt = 0;
+  for i in 0..41 {
+    travel = (i as float) * 0.37;                    // 41 points along the roll
+    v = wheel_value(travel, radius, 0.0);
+    sk = wheel_skid(radius, v, travel);
+    if sk > worst { worst = sk; }
+    npt = npt + 1;
+  }
+  // ~1 ulp of the largest travel (14.8) is ~1.8e-15; a bound of 1e-12 is machine ε with headroom,
+  // and 12+ orders of magnitude below the control's whole-unit skid — so it is a bound, not a knob.
+  const EPS_ROLL = 0.000000000001;
+  println("   {npt} points along the roll: worst skid = {worst}  (bound {EPS_ROLL}, machine eps)");
+  if worst > EPS_ROLL {
+    println("  FAIL: a derived wheel value slipped beyond machine eps — the roll is not deriving"
+            + " the angle from the travel"); ok = false;
+  }
+
+  // CONTROL — drive theta INDEPENDENTLY of travel (SPEC I6's own "spin a wheel off-travel"): a
+  // value that does not come from this travel must skid.
+  offv = wheel_value(10.0, radius, 0.0);             // the value for travel 10 ...
+  offskid = wheel_skid(radius, offv, 3.0);           // ... but applied at travel 3
+  println("   CONTROL spin off-travel (value for d=10, applied at d=3): skid = {offskid}"
+          + " -> {offskid > 0.0}");
+  if offskid <= 0.0 {
+    println("  FAIL: the control did not fire — an off-travel spin did not skid, so skid=0 above"
+            + " is not measuring the rolling constraint"); ok = false;
+  }
+
+  // ── 3. THE DOORSTEP — a joint value fits within its limits, and a refusal OFFERS ──
+  //
+  // `K-FIT` for a joint.  Unlike a nominal material id (`X68`), a joint value is ORDINAL, so a
+  // refusal owes an OFFER of the nearest admissible value, with its residual.
+  println("");
+  println("3. THE DOORSTEP — a joint value fits within its limits; a refusal offers the nearest");
+  hinge = joint_new(0.0, -0.25, 0.25);               // a hinge limited to +-1/4 turn
+  inlim = joint_fits(hinge, 0.1);
+  over = joint_fits(hinge, 0.9);
+  offer = joint_offer(hinge, 0.9);
+  resid = joint_residual(hinge, 0.9);
+  println("   0.1 within +-0.25: {inlim}   0.9 within: {over}   offer {offer} residual {resid}");
+  if !inlim || over {
+    println("  FAIL: the limit does not distinguish in-range from out-of-range"); ok = false;
+  }
+  if !joint_fits(hinge, offer) || offer != 0.25 {
+    println("  FAIL: the offer is not itself admissible, or not the nearest limit"); ok = false;
+  }
+
+  // ── 4. THE JOINT ROUND TRIP IS DISSOLVED, not asserted ────────────────────
+  println("");
+  println("4. the joint ROUND TRIP is DISSOLVED (I-POSE), and this gate asserts nothing about it:");
+  println("   an authored body is a RIG (bones + joint limits) and never a pose, so nothing");
+  println("   recovers joints FROM a pose -- that is inverse kinematics, and the design never");
+  println("   asks for it. The trip is on the rig text, phase A of plans/m1-moving-body.");
+
+  println("");
+  if ok { println("=== JOINT OK ==="); }
+  else { println("=== JOINT BROKEN ==="); }
 }
