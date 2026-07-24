@@ -41,15 +41,23 @@
 //      require `skid > 0`. A zero skid on a wheel that was never turned is not a result.
 //      ⚠ `r` is a length: state it in metres and register it (`SPEC` **L8**, `tests/scale.loft`).
 //
-//   3  THE JOINT ROUND TRIP — PROPOSED, NOT `I6`. **Do not assert this until it is decided.**
-//      `I6` says pose is a *function* of the joints; it does NOT say the function is injective,
-//      and `recover_joints(pose(j)) = j` needs injectivity. A revolute joint at `θ` and `θ + 2π`
-//      is the obvious collision, so the answer is probably "injective on a stated domain" rather
-//      than "injective" — which is exactly the shape `X38`'s census settled for `draw`.
-//      **Recorded as an open decision in `ASSESSMENT.md` §5** — `m0-roundtrip`'s `DESIGN.md` is
-//      the wrong home, that plan is closed. If it is admitted, its
-//      control is `M0`'s: a pose produced by something OTHER than a joint value must land in the
-//      body's `R2` with a residual, never silently in `R1`.
+//   3  THE JOINT ROUND TRIP — **DISSOLVED, not answered.** ⚠ It was listed here as an open
+//      question (is `joints → pose` injective?). The user's decision of 2026-07-24 removed the
+//      question rather than settling it: *"treat bodies we compose like meshes, so we define the
+//      bones and the limitations in the joints between the bones, never the actual pose."*
+//
+//      An authored body is therefore a **RIG** — `⟨bones, joint limits⟩` — and a pose is never
+//      authored. So the body's round trip is on the **rig text**, `write(read(R)) = R`, the same
+//      shape as a stencil's; nothing ever needs to recover joints FROM a pose. That recovery is
+//      inverse kinematics, which is non-unique by nature, and the design simply never asks for it.
+//
+//      **This is the project's own pattern, a fifth time** (`X51` door, `X58` level, `X59`
+//      terrain, `X60` run): *the round trip survives a new feature exactly when that feature
+//      lands in a slot the recovery does not read.* Here the feature is MOTION, and it lands
+//      outside the authored model entirely.
+//
+//      What survives from this section is the load-bearing half, and it is §1: forward kinematics
+//      must be a **pure function**, or `I9`'s byte-identical replay is unreachable.
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // HOW TO TURN IT GREEN. Land `G1`, write §1 and §2 as real checks against the real API, flip
@@ -112,9 +120,10 @@ fn main() {
   println("  2  ROLLING  wheel angle = travel/radius, and skid = |r*theta - d| is EXACTLY 0.");
   println("              CONTROL: drive theta and d independently (SPEC I6's own 'spin a wheel");
   println("              off-travel') and require skid > 0.");
-  println("  3  ---      the joint ROUND TRIP is PROPOSED, not I6, and is not asserted here:");
-  println("              I6 gives a function, not an injective one, and theta vs theta+2pi is");
-  println("              the obvious collision. ASSESSMENT.md 5 carries it; decide before any gate asserts it.");
+  println("  3  ---      the joint ROUND TRIP is DISSOLVED, not answered, and is not asserted:");
+  println("              an authored body is a RIG (bones + joint limits) and never a pose, so");
+  println("              the trip is write(read(rig)) = rig and nothing recovers joints FROM a");
+  println("              pose. That recovery is IK, and the design never asks for it.");
   println("");
 
   // ── THE TRIPWIRE — has the body landed while this gate slept? ─────────────

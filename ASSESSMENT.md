@@ -246,13 +246,30 @@ is ungated. The gap is entirely "not built yet", which is a schedule, not a debt
 - **Where a door's OPEN/CLOSED state lives** (`DESIGN.md` §10.28) — two wall ids (**recommended**:
   free, round-trips today, collider derived at layer 2) vs an `L14` overlay. No round-trip
   consequence either way, which is why it can wait.
-- **Is the joint→pose map INJECTIVE, and on what domain?** *(raised by `tests/joint.loft`, 2026-07-24;
-  the body's first open decision, and the one that decides whether M0's method transfers.)* `I6`
-  gives a **function**; a round trip needs an **injective** one, and a revolute joint at `θ` and
-  `θ + 2π` collides. Likely answer: injective on a stated domain — the same shape `X38` settled for
-  `draw`, where the census decided level 1 finite and injective and *licensed* exact recovery.
-  **Decide before writing the check, not after**: the forward gate deliberately asserts purity and
-  rolling only, and leaves this out.
+- ~~**Is the joint→pose map INJECTIVE, and on what domain?**~~ **DISSOLVED the same day, by a user
+  decision that removed the question rather than settling it.** *"Treat bodies we compose like
+  meshes, so we define the bones and the limitations in the joints between the bones, never the
+  actual pose."* An authored body is a **rig** — `⟨bones, joint limits⟩` — so the body's round trip
+  is on the **rig text** (`write(read(R)) = R`, a stencil's shape) and nothing ever recovers joints
+  *from* a pose. That recovery is inverse kinematics, non-unique by nature, and the design simply
+  never asks for it. **[J] Fifth instance of the project's own pattern** (`X51`, `X58`, `X59`,
+  `X60`): the round trip survives a new feature exactly when the feature lands in a slot the
+  recovery does not read — here the feature is *motion*, landing outside the authored model
+  entirely. It also confirms **`K-JOINT`** rather than extending it, and makes the **joint limit**
+  the body's `fits?` doorstep.
+- ~~**Does a saved world persist a pose?**~~ **ANSWERED the same day, and again by dissolving the
+  fork** (`SPEC` **L15**): *"there is a separation here between the world and the game. The game
+  will have a bigger state than the world alone… we do not make that part of the world — however
+  we can aid the game with structures to efficiently store their information about the world, and
+  even make routines that act on these structures (opt-in)."* So a body's pose is **game state**,
+  like an NPC's position or the weather. `L13` never had to hold it, the world *is* reconstructable
+  from the voxels alone, and the storage question I was circling was the wrong one — the boundary
+  is **world vs game**, not *which table*.
+  **[G] And the limit arrived already defended**: `tests/scope.loft`'s content vocabulary refuses
+  `npc`, `quest`, `faction`, `biome`, `climate` as declared names in `src/`, which is exactly
+  `L15`'s violation condition. hexbody may offer the container; naming the payload is the crossing.
+  ⚠ The **opt-in** half is *not* yet checkable — it needs an offered structure to exist before
+  "nothing on the geometry path depends on it" can be measured.
 - **OD-1** the morph — narrowed to *probably unnecessary* by free poses.
 - **OD-5** is the flip exact — `X2` and `X57` both say yes at T1. **[J] closeable by inspection
   rather than new work.**

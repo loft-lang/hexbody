@@ -6,11 +6,20 @@ the geometry itself**. Split out of `crawler` 2026-07-23; `crawler` is its first
 
 ## Working with me — read this first
 
+- **ASK ABOUT THE PRODUCT, NOT THE MECHANISM.** *(User, 2026-07-24: "this is what I always do —
+  when you ask me a technical question I state what I want from the product, not how you should
+  reach that technically.")* So a menu of implementations is the wrong question, every time: the
+  answer will not be on it. Ask what the thing must **do**, or how it must **behave for someone
+  using it**, and then derive the mechanism yourself — that is the job, not the question.
+  Worked example, 2026-07-24: asked *"L14 overlay, a third store, or derived?"* about a body's
+  pose; the answer was *"treat bodies like meshes — bones and joint limits, never the pose"*,
+  which **dissolved** the fork instead of picking from it. That is the normal outcome, not a
+  surprise.
 - **Ask questions as plain text, never with a question UI.** The widget's fixed option list is
   too narrow for this project's decisions, which are usually design forks with real trade-offs
-  and answers that are often *"none of those, because…"*. State the fork in prose — the options,
-  what each costs, a recommendation — and let the reply go wherever it goes. Several open
-  questions in one message is fine.
+  and answers that are often *"none of those, because…"*. State the fork in prose — what is at
+  stake for the product, and a recommendation — and let the reply go wherever it goes. Several
+  open questions in one message is fine.
 - **Keep working while a question is open.** Do everything that does not depend on the answer,
   and record the fork where it belongs (`plans/m0-roundtrip/DESIGN.md` §10 is the pattern) rather than
   stalling on it or quietly picking one.
@@ -202,6 +211,27 @@ A measurement cannot overturn any of these. They bound the design.
   rationale is what makes it structural rather than stylistic: *"a gap/door will never be rendered
   as a missing wall, there will be something like a door-frame or ragged stone opening there."*
   **An opening has geometry of its own** — a frame, a lintel, a ragged jamb. Absence has none.
+- **THE GAME'S STATE IS NOT THE WORLD'S** (2026-07-24 → `SPEC` **L15**). *"There is a separation
+  here between the world and the game. The game will have a bigger state than the world alone:
+  where are NPCs, how is the weather, what are the quests and goals of NPCs. We do not make that
+  part of the world — however we can aid the game with structures to efficiently store their
+  information about the world, and even make routines that act on these structures (opt-in if they
+  need those)."* A **fourth category** beside `L3`'s two and `L14`'s overlay, and it settles what
+  `L13` could not: a body's pose, an NPC, the weather are **game state**, so the voxel never had to
+  hold them and **the world stays reconstructable from the voxels alone**. hexbody may offer the
+  **container and routines over it** — keyed by world location, blind to the payload — and may
+  never name the payload. ⚠ **The seam is the NAME**: a structure that could hold anything is ours;
+  one called `npc_*` is the crossing, and `tests/scope.loft` already refuses it.
+- **A BODY IS A RIG, AND A POSE IS NEVER AUTHORED** (2026-07-24 → `SPEC` **I-POSE**, **K-JOINT**).
+  *"I want to treat bodies we compose like meshes, so we define the bones and the limitations in
+  the joints between the bones, never the actual pose."* So the authored body is
+  **⟨bones, joint limits⟩** — a static description in the shape of a stencil's `Form`, with a
+  canonical text and a doorstep — and the pose belongs to a *running world*, never to an author.
+  Two consequences fall straight out: the **joint limit IS `fits?` for bodies** (and a joint value
+  is **ordinal**, so a refusal owes an offer, unlike `X68`'s material id); and **the body's round
+  trip is on the RIG TEXT**, so nothing ever recovers joints *from* a pose — that is inverse
+  kinematics, non-unique by nature, and the design never asks for it. **Fifth instance of the slot
+  pattern** (`X51`/`X58`/`X59`/`X60`): motion lands outside the authored model entirely.
 - **THE IN-BETWEEN 12 MUST BE FIRST CLASS** (→ `DESIGN.md` §10, `OD-13`). *"the normal 12 directions
   are fine but a city/castle needs more directions to be believable so the other 12 need to be first
   class."* A **requirement**, not an open question — and it contradicts `ROUNDTRIP` §2.2, which is
