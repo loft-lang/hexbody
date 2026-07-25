@@ -231,7 +231,8 @@ schema of record. `loft.lock` pins only the registry packages (`graphics`/`glb`/
 > `tests/joint.loft` (gate 23 of 24): a pose is a **pure function** of joint values (`I6`), a
 > wheel's angle is `travel/radius` (skid machine-ε — the body's `ε_seam`, not algebraic 0), a rig
 > round-trips as canonical text, and a bone carries a **derived proxy ⊇ its shape** (`I4`). It
-> defends `G1`/`I6`/`I4`/`I-POSE`/`K-FIT`; workshop form, ships as a `hex_*` library next.
+> defends `G1`/`I6`/`I4`/`I-POSE`/`K-FIT`, and is **published as `hex_body` 0.1.0** — hexbody's
+> own body model, part of the `hex_*` family (computed joint restrictions, not a generic rig).
 > **The frontier is now `G3` (interaction) and `I9` (replay)** — [`plans/m1-moving-body/`](plans/m1-moving-body/).
 >
 > **This section deliberately does not restate them.** For where the project stands against its

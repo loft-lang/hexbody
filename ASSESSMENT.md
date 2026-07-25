@@ -101,7 +101,7 @@ That is more than most pipelines can say.
 
 | missing | status |
 |---|---|
-| ~~**`G1` moving body**~~ | ✅ **BUILT 2026-07-25** (`src/hexjoint.loft`, `tests/joint.loft`) — pure pose (`I6`), wheel angle = travel/radius (skid machine-ε, the body's float step), the rig canonical text, and a **derived proxy ⊇ its shape** (`I4`). Workshop form; ships as a `hex_*` library next. `plans/m1-moving-body/` |
+| ~~**`G1` moving body**~~ | ✅ **BUILT & SHIPPED 2026-07-25** — pure pose (`I6`), wheel angle = travel/radius (skid machine-ε, the body's float step), the rig canonical text, and a **derived proxy ⊇ its shape** (`I4`). Gated by `tests/joint.loft`; **published as `hex_body` 0.1.0** on the registry — hexbody's own body model, part of the `hex_*` family. `plans/m1-moving-body/` |
 | **`G3` interaction** (swept volumes, `dt`-independent, `I5`) | **not built** — the next body milestone (M2, the chokepoint) |
 | **`G6` destruction** (ruins, crumble, wall-becomes-floor, `I7`) | **not built** |
 | **`G4` train · `G★` demo · `G✦` colossus** | **not hexbody's to build** — Use cases now (`SPEC`), requirement sources; a consumer builds them |

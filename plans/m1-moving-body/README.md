@@ -15,7 +15,7 @@ remain unstarted.
 | **done** | [`../../tests/joint.loft`](../../tests/joint.loft) ✅ — pose purity by two paths (byte-identical), the rolling identity (machine-ε), the joint doorstep. `src/hexjoint.loft` |
 | **decided** | a body is a **rig** (`⟨bones, joint limits⟩`, never a pose) · **flex is joints**, not deformation · the game's state is not the world's (`L15`) · **now** is the only tense |
 | **found by building** | the roll is **not bit-exact** — `travel → value → travel` is a float round-trip, so skid is machine-ε (the body's `ε_seam`), not the algebraic 0 the plan first claimed. Phase C, corrected |
-| **all four phases DONE** | rig text (A), pure pose (B), rolling (C), derived proxy (D). `G1` is complete; next is to **ship it as a `hex_*` library** the way the geometry did |
+| **all four phases DONE, and SHIPPED** | rig text (A), pure pose (B), rolling (C), derived proxy (D) — `G1` complete, and **published as [`hex_body`](../../../loft-libs-world/hex_body) 0.1.0** on the registry. hexbody's own body model (computed joint restrictions), part of the `hex_*` family. Frontier moves to `G3` |
 
 **This plan exists because the in-flight tier had no file.** `m0-roundtrip/DESIGN.md` held M0's
 open decisions and M0 is closed, so the body's decisions were landing in `SPEC` rows and in
