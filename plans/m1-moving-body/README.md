@@ -5,14 +5,14 @@ when one exists)* · **Value:** `F` · **Effort:** `MH`
 
 ## Status
 
-**The first brick is in.** `src/hexjoint.loft` (`G1`): a pose is a **pure function of joint values**
+**G1 is complete and shipped.** The `hex_body` library (`G1`): a pose is a **pure function of joint values**
 (`I6`), a wheel's angle is `travel/radius`, and a joint value refuses-with-an-offer at its limits.
 `tests/joint.loft` — red since morning by design — is **green** (gate 23 of 24). `G3`/`G4`/`G6`
 remain unstarted.
 
 | | |
 |---|---|
-| **done** | [`../../tests/joint.loft`](../../tests/joint.loft) ✅ — pose purity by two paths (byte-identical), the rolling identity (machine-ε), the joint doorstep. `src/hexjoint.loft` |
+| **done** | [`../../tests/joint.loft`](../../tests/joint.loft) ✅ — pose purity, the rolling identity, the joint doorstep, the rig text, the proxy. Shipped as `hex_body` 0.1.0 |
 | **decided** | a body is a **rig** (`⟨bones, joint limits⟩`, never a pose) · **flex is joints**, not deformation · the game's state is not the world's (`L15`) · **now** is the only tense |
 | **found by building** | the roll is **not bit-exact** — `travel → value → travel` is a float round-trip, so skid is machine-ε (the body's `ε_seam`), not the algebraic 0 the plan first claimed. Phase C, corrected |
 | **all four phases DONE, and SHIPPED** | rig text (A), pure pose (B), rolling (C), derived proxy (D) — `G1` complete, and **published as [`hex_body`](../../../loft-libs-world/hex_body) 0.1.0** on the registry. hexbody's own body model (computed joint restrictions), part of the `hex_*` family. Frontier moves to `G3` |
@@ -51,9 +51,9 @@ open decisions and M0 is closed, so the body's decisions were landing in `SPEC` 
 - **Control:** the spec's own — drive `θ` and `d` independently and require `skid > 0`; and an
   accumulating implementation (`pose += delta`) must fail the two-path purity check.
 - **Medium:** the real gate. [`../../tests/joint.loft`](../../tests/joint.loft) — ✅ **green now**:
-  it was written red (`run_red`) before its subject, its tripwire fired the moment `src/hexjoint.loft`
+  it was written red (`run_red`) before its subject, its tripwire fired the moment the body module
   landed, and its §1/§2 became real checks. Promoted from `run_red` into the runner's table (gate
-  23 of 24). `src/hexjoint.loft` is the workshop form; it ships as a `hex_*` library once `G1` is
+  23 of 24). G1 was built in the workshop and has SHIPPED as the `hex_body` library, once it was
   complete, the way the geometry did.
 
 ## Phases

@@ -227,7 +227,7 @@ schema of record. `loft.lock` pins only the registry packages (`graphics`/`glb`/
 > `../loft-libs-world`. Details: [`plans/lib-split/`](plans/lib-split/). ⚠ Deps live in the registry
 > **index**, not the manifest (`H8`, `../crawler/LOFT-HANDOFF.md`).
 >
-> **AND `G1` IS BUILT — the body half has started** (2026-07-25). `src/hexjoint.loft`,
+> **AND `G1` IS BUILT — the body half has started** (2026-07-25). Gated by
 > `tests/joint.loft` (gate 23 of 24): a pose is a **pure function** of joint values (`I6`), a
 > wheel's angle is `travel/radius` (skid machine-ε — the body's `ε_seam`, not algebraic 0), a rig
 > round-trips as canonical text, and a bone carries a **derived proxy ⊇ its shape** (`I4`). It
@@ -393,7 +393,7 @@ A measurement cannot overturn any of these. They bound the design.
 - **The tripwire beats both a permanently red suite and a forgotten TODO.** `SURFACE_LANDED` sat
   `false` from S4 to `G2`, printing PENDING, and fired on exactly the step it was aimed at (`X62`).
   Use it for the next requirement that outruns its machinery. **Vindicated a second time by `G1`:**
-  `tests/joint.loft` was written red (`run_red`) before `src/hexjoint.loft` existed; its tripwire
+  `tests/joint.loft` was written red (`run_red`) before the body module existed; its tripwire
   would have flipped it to `JOINT BLOCKED` the moment a body verb landed, forcing the real checks;
   it fired on exactly that step and was then promoted into the table (gate 23 of 24). The next one
   to arm this way is `I9`'s byte-identical replay — now that `G1` produced animate state to replay.

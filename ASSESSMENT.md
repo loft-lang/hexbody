@@ -33,7 +33,7 @@ orientation, and refusal-with-an-offer all fall out of it.
 
 The **body** half of "hexbody" has now **started**: `G1` (the moving body) is built and gated
 2026-07-25 — a pure pose, a rolling wheel, a rig that round-trips, and a collision proxy derived
-from the geometry (`src/hexjoint.loft`, `tests/joint.loft`). What is *still* unbuilt is the rest of
+from the geometry (`tests/joint.loft`, shipped as `hex_body`). What is *still* unbuilt is the rest of
 it — **`G3` interaction** and **`G6` destruction** — while `G4`/`G★`/`G✦` moved to Use cases (a
 consumer's, not hexbody's). So "assets in a game" is no longer only *static*: a body can be
 authored, saved, posed and collision-checked. What is missing is bodies *interacting* and *breaking*.
@@ -212,7 +212,7 @@ storage/doorstep/vocabulary stack is now gated or schema-checked.*
    **function**, not an injective one, and `θ` vs `θ + 2π` is the obvious collision — so
    `recover_joints(pose(j)) = j` needs a stated domain, which is a `DESIGN.md` §10 decision before
    it is any gate's assertion. Same shape `X38`'s census settled for `draw`.
-1. ~~**Start the body** (`G1`)~~ **DONE 2026-07-25** — `src/hexjoint.loft`, `tests/joint.loft`, all
+1. ~~**Start the body** (`G1`)~~ **DONE 2026-07-25** — gated by `tests/joint.loft`, shipped as `hex_body`, all
    four M1 phases: the rig canonical text (A), the pure pose (B), the rolling wheel (C), the derived
    proxy (D). **[G]** gates `I6`, `I4`, `I-POSE`, `K-FIT`. It confirmed the fear in item 0 was
    right — M0's byte-diff method does *not* transfer to motion, so the body's checks are purity,
