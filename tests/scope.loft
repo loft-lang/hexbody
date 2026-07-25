@@ -41,7 +41,7 @@ fn src_dir() -> text { "{source_dir()}/../src" }
 fn lib_root() -> text { "{source_dir()}/../../loft-libs-world" }
 fn owned_libs() -> vector<text> {
   ["hex_form", "hex_shape", "hex_draw", "hex_recover", "hex_fit", "hex_place",
-   "hex_edge", "hex_way", "hex_roof", "body"]
+   "hex_edge", "hex_way", "hex_roof", "hex_body"]
 }
 
 // The lattice libraries hexbody is allowed to consume.  These are LIBRARIES (`SPEC` L11 — the
@@ -52,7 +52,7 @@ fn shared_libs() -> vector<text> {
   // the shared table; they had been byte-identical copies of crawler's).  This gate caught that
   // change the moment it happened, which is what it is for: a new name outside `src/` is a new
   // dependency edge, and the seam only runs one way if every edge on it was decided deliberately.
-  ["hex_field", "hex_grid", "hex_edge", "hex_way", "hex_roof", "body", "graphics"]
+  ["hex_field", "hex_grid", "hex_edge", "hex_way", "hex_roof", "hex_body", "graphics"]
 }
 
 // The vocabulary the seam keeps out, in two families.  Whole `_`-separated segments, singular and
