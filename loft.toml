@@ -1,6 +1,8 @@
 [package]
 name = "hexbody"
 version = "0.0.1"
+api_compatible_with  = "0.0.1"   # oldest own release this is a drop-in for
+data_compatible_with = "0.0.1"   # oldest own release whose stored data this reads
 description = "Movable, breakable geometry bodies with collision proxies derived from the geometry — a system-prototyping harness."
 
 # hex_field (the exact-integer field core) is consumed from the sibling working
