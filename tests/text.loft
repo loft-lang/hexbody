@@ -107,8 +107,8 @@ fn main() {
       st0 = t0s[ci] ?? 0;
       st1 = t1s[ci] ?? 0;
       st2 = t2s[ci] ?? 0;
-      if cs == 1 { sf = form_new(sh, [1, 1, 1], [st1, st2, st0]); }
-      else { sf = form_new(sh, [1, 1, 1], [st2, st0, st1]); }
+      sf = if cs == 1 { form_new(sh, [1, 1, 1], [st1, st2, st0]) }
+           else { form_new(sh, [1, 1, 1], [st2, st0, st1]) };
       if form_canon_text(sf, "c") != base { nresp = nresp + 1; }
     }
   }
