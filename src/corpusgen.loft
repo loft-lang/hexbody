@@ -24,7 +24,7 @@
 //          src/corpusgen.loft
 use hex_field::*;
 use hex_form::*;
-use hex_recover::*;
+use hex_recover::(field_exact_text, forms_a3, forms_at_level);  // not `*`: hex_recover exports a `LEVEL` of its own
 
 const W = 61;
 const H = 61;
