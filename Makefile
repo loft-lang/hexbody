@@ -16,21 +16,22 @@
 # Override for a deliberate test against an unreleased toolchain, and expect to reinstall first:
 #   make test LOFT_PATH=../loft/
 #
-# TWO SIBLING WORKING TREES STILL FEED THE GATES, and neither is pinned:
-#   ../loft-libs-world   the hex_field family (--lib) — check it is on the shared `dev` branch
-#                        before debugging anything strange
+# The hex_* family is COMPILED from the registry (loft.toml + loft.lock, like graphics).
+# TWO SIBLING WORKING TREES STILL FEED THE GATES as data, and neither is pinned:
+#   ../loft-libs-world   READ as source by tests/scale.loft and tests/scope.loft (the constant
+#                        register and the seam scan) — keep it on `main`, at the locked releases
 #   ../moros             the STORAGE OF RECORD (SPEC L13). tests/palette.loft reads four of its
 #                        source files directly, so an uncommitted edit there moves the limit on
 #                        M* with no trace in hexbody's history. The gate PRINTS moros's revision
 #                        so a green is attributable; it cannot see whether that tree is dirty.
 #
-# loft.lock pins the registry packages (graphics/glb/mesh3d) and nothing else.
+# loft.lock pins the registry packages (the hex_* family, graphics/glb/mesh3d) and nothing else.
 
 LOFT      ?= loft
 LOFT_PATH ?= /usr/local/share/loft/
 # --lib src/ lets tests/ live outside src/ and still `use` the modules there.  ../loft/lib is NOT
 # on the path: nothing in src/ or tests/ imports from it (tests/scope.loft gates exactly that).
-FLAGS  := --path $(LOFT_PATH) --lib ../loft-libs-world/ --lib src/
+FLAGS  := --path $(LOFT_PATH) --lib src/
 
 .PHONY: test shot help
 
