@@ -130,8 +130,8 @@ working tree: loft reads its codegen support from `--path` while the code it gen
 every `hex_field` gate on 2026-07-24. hexbody consumes loft releases, not loft's desk. Override
 with `make test LOFT_PATH=../loft/` after reinstalling, if you mean to test an unreleased one.
 
-**Two sibling working trees still feed the gates and neither is pinned:** the `hex_field` family at
-`../loft-libs-world`, and **`../moros`** — whose source `tests/palette.loft` reads directly, because
-`SPEC` **L13** makes moros's voxel the storage of record. `--lib` reads the **working tree**, so
-confirm `loft-libs-world` is on branch `dev` before debugging anything strange; the palette gate
-prints which moros revision it read, but cannot see whether that tree is dirty.
+The `hex_*` family compiles from the registry (`loft.toml` + `loft.lock`). **Two sibling working
+trees still feed the gates as data, and neither is pinned:** `../loft-libs-world`, whose source
+`tests/scale.loft` and `tests/scope.loft` scan (keep it on `main`, at the locked releases), and
+**`../moros`** — whose source `tests/palette.loft` reads directly, because `SPEC` **L13** makes
+moros's voxel the storage of record. The palette gate prints which moros revision it read, but cannot see whether that tree is dirty.

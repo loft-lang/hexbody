@@ -20,7 +20,7 @@
 // move is to look at the diff and decide whether the change is intended — not to regenerate and
 // move on. That is the whole value of the corpus.
 //
-//     loft --interpret --path ../loft/ --lib ../loft/lib/ --lib ../loft-libs-world/ --lib src/ \
+//     loft --interpret --path ../loft/ --lib ../loft/lib/ --lib src/ \
 //          src/corpusgen.loft
 use hex_field::*;
 use hex_form::*;
