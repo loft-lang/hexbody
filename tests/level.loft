@@ -17,10 +17,10 @@
 //   2  different levels — no fusion, no contention, at either sheet
 //   3  level 0 costs nothing: the level-aware path is byte-identical to the level-blind one
 //   4  CONTROL — flattening the levels restores fusion and contention
-use hex_field;
-use hex_form;
-use hex_draw;
-use hex_place;
+use hex_field::*;
+use hex_form::*;
+use hex_draw::*;
+use hex_place::*;
 
 const W = 20;
 const H = 20;

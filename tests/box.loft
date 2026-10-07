@@ -12,11 +12,11 @@
 //   5  the THICK wall — a ring of whole cells — HOLDS: flooding from outside never
 //      reaches the courtyard.  Control: punch one hole and it does.
 //   6  a thick LINE is a connected chain exactly one hex wide
-use hex_field;
-use hex_grid;
-use hex_form;
-use hex_draw;
-use hex_shape;
+use hex_field::*;
+use hex_grid::*;
+use hex_form::*;
+use hex_draw::*;
+use hex_shape::*;
 
 const W = 41;
 const H = 41;

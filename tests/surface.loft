@@ -12,11 +12,11 @@
 //
 // NO TOLERANCE APPEARS IN ANY OF THIS.  Every constant is exact in Q(sqrt3); the comparisons below
 // use 1e-12 only to compare two floats that are algebraically identical, not to admit a range.
-use hex_field;
-use hex_grid;
-use hex_form;
-use hex_draw;
-use hex_shape;
+use hex_field::*;
+use hex_grid::*;
+use hex_form::*;
+use hex_draw::*;
+use hex_shape::*;
 
 const W = 61;
 const H = 61;

@@ -16,11 +16,11 @@
 // TWO of the three edge directions, so the run is 2/sqrt(3) = 15.5% longer than the wall
 // line it stands on.  Nothing here fits or straightens it; this sheet is the evidence
 // for why the fit is needed downstream.
-use graphics;
-use hex_field;
-use hex_way;
-use hex_roof;
-use hex_draw;
+use graphics::*;
+use hex_field::*;
+use hex_way::*;
+use hex_roof::*;
+use hex_draw::*;
 
 const Q0 = -16;
 const R0 = -16;

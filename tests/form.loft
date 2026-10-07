@@ -23,10 +23,10 @@
 //  15  S4: band vs boundary I3's control — a band wall eats the floor it should enclose
 //  16  S4: side runs        the four runs PARTITION the boundary (corner part 3)
 //  17  S4: corner 2 and 4   written now as a tripwire, enforced when the surface lands (S8)
-use hex_field;
-use hex_grid;
-use hex_form;
-use hex_draw;
+use hex_field::*;
+use hex_grid::*;
+use hex_form::*;
+use hex_draw::*;
 
 // The doubled-coordinate delta from (q,r) to its neighbour in direction d.
 fn iabs2(v: integer) -> integer { if v < 0 { -v } else { v } }

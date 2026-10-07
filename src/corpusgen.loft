@@ -22,9 +22,9 @@
 //
 //     loft --interpret --path ../loft/ --lib ../loft/lib/ --lib ../loft-libs-world/ --lib src/ \
 //          src/corpusgen.loft
-use hex_field;
-use hex_form;
-use hex_recover;
+use hex_field::*;
+use hex_form::*;
+use hex_recover::*;
 
 const W = 61;
 const H = 61;

@@ -8,9 +8,9 @@
 //   3  after canonicalisation the only multiplicity left is h0 — orientation, which placement
 //      carries; that closes the loop with S5
 //   4  controls: reorder a field, emit a default, or feed a non-canonical spelling -> diff
-use hex_field;
-use hex_form;
-use hex_recover;
+use hex_field::*;
+use hex_form::*;
+use hex_recover::*;
 
 const W = 61;
 const H = 61;
