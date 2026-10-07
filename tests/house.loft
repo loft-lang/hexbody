@@ -14,6 +14,7 @@ use hex_field::*;
 use hex_way::*;
 use hex_roof::*;
 use hex_draw::*;
+use hex_form::*;
 
 const Q0 = -20;
 const R0 = -20;

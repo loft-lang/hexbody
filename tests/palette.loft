@@ -21,6 +21,9 @@
 //   6  ROOFS ARE MATERIALS (`X13`) — and hexbody writes only the height
 use hex_field::*;
 use hex_draw::*;
+use hex_grid::*;
+use hex_shape::*;
+use hex_form::*;
 use hex_fit::*;
 
 const W  = 41;

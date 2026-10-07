@@ -24,6 +24,7 @@
 //   6  MATERIAL IDS — hexbody's wall slot is narrower than moros's, and overflow ERASES a wall
 use hex_field::*;
 use hex_draw::*;
+use hex_form::*;
 use hex_shape::*;
 use hex_fit::*;
 use hex_place::*;
