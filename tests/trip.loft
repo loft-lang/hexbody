@@ -18,9 +18,9 @@
 //   2  draw(read(T)) still digests to the committed .f — the regression anchor
 //   3  law F over the corpus: no two entries share a field
 //   4  the full trip — needs `rebuild`, so RED until S8
-use hex_field;
-use hex_form;
-use hex_recover;
+use hex_field::*;
+use hex_form::*;
+use hex_recover::*;
 
 const W = 61;
 const H = 61;

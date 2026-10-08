@@ -10,10 +10,11 @@
 // EVERY GATE HERE HAS A CONTROL THAT MUST FIRE.  A gate without a demonstrated failure
 // mode does not count — and two of the obvious ones cannot see the fault they sit next
 // to (see gates 2 and 5).
-use hex_field;
-use hex_way;
-use hex_roof;
-use hex_draw;
+use hex_field::*;
+use hex_way::*;
+use hex_roof::*;
+use hex_draw::*;
+use hex_form::*;
 
 const Q0 = -20;
 const R0 = -20;

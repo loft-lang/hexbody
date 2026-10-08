@@ -15,7 +15,7 @@
 // multiple of a direction's period is an admissible run (δ = 0) or one in three lands on a hex
 // CENTRE and is refused (δ ≠ 0) — and, because a house wall can leave you on either vertex class,
 // it decides whether world linework links to the house angles unconditionally or conditionally.
-use hex_shape;
+use hex_shape::*;
 
 const DEG = 57.29577951308232;
 const SQ3 = 1.7320508075688772;

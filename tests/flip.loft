@@ -18,10 +18,10 @@
 // Exact integer arithmetic throughout: an edge is keyed by its two **triangle-lattice corners**, and
 // the orientations are exact integer maps on those — `(a,b) → (−b, a+b)` for 60°, `(a,b) → (−a, a+b)`
 // for the mirror.  No world coordinates, no tolerance, so a mismatch is a real mismatch.
-use hex_field;
-use hex_grid;
-use hex_edge;
-use hex_shape;
+use hex_field::*;
+use hex_grid::*;
+use hex_edge::*;
+use hex_shape::*;
 
 const Q0 = -16;
 const R0 = -16;

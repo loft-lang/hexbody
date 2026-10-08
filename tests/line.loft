@@ -23,11 +23,11 @@
 // gated elsewhere: the 24 directions and the wall's exactness (`X26`–`X32`), the averaged surface
 // (`X47`), and the line doorstep — endpoints on hex vertices a whole number of periods apart
 // (`tests/wall.loft` §8).
-use hex_field;
-use hex_form;
-use hex_shape;
-use hex_edge;
-use hex_way;
+use hex_field::*;
+use hex_form::*;
+use hex_shape::*;
+use hex_edge::*;
+use hex_way::*;
 
 const W = 61;
 const H = 41;

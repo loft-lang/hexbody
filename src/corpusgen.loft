@@ -20,11 +20,11 @@
 // move is to look at the diff and decide whether the change is intended — not to regenerate and
 // move on. That is the whole value of the corpus.
 //
-//     loft --interpret --path ../loft/ --lib ../loft/lib/ --lib ../loft-libs-world/ --lib src/ \
+//     loft --interpret --path ../loft/ --lib ../loft/lib/ --lib src/ \
 //          src/corpusgen.loft
-use hex_field;
-use hex_form;
-use hex_recover;
+use hex_field::*;
+use hex_form::*;
+use hex_recover::(field_exact_text, forms_a3, forms_at_level);  // not `*`: hex_recover exports a `LEVEL` of its own
 
 const W = 61;
 const H = 61;

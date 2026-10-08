@@ -86,7 +86,7 @@
 // written rather than left as a pending stub, exactly as designed above.  Its scaffolding
 // (`BODY_LANDED`, `body_verbs`, the src scan) is deleted — a landed subject needs a real gate, not
 // a tripwire.
-use hex_body;
+use hex_body::*;
 
 const TAU = 6.283185307179586;
 fn fabs(x: float) -> float { if x < 0.0 { 0.0 - x } else { x } }

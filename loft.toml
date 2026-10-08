@@ -5,9 +5,21 @@ api_compatible_with  = "0.0.1"   # oldest own release this is a drop-in for
 data_compatible_with = "0.0.1"   # oldest own release whose stored data this reads
 description = "Movable, breakable geometry bodies with collision proxies derived from the geometry — a system-prototyping harness."
 
-# hex_field (the exact-integer field core) is consumed from the sibling working
-# tree via --lib in the Makefile, matching how crawler consumes it today. When the
-# stack stabilises this becomes a { path = "../loft-libs-world/hex_field" } dep
-# (loft#337 is fixed, so path deps work). graphics resolves from the registry.
+# The hex_* family resolves from the REGISTRY, like graphics.  Each floor is that library's first
+# release that marks `pub` the fields its other files read (loft C140), so a lock can never take a
+# release whose own code the compiler refuses.  (Until 2026-10 the family came from a sibling
+# working tree via --lib; an unpinned tree is not attributable — see the Makefile.)
 [dependencies]
-graphics = ">=0.5.0"
+graphics    = ">=0.5.0"
+hex_body    = ">=0.3.6"
+hex_draw    = ">=0.1.4"
+hex_edge    = ">=0.2.5"
+hex_field   = ">=0.1.7"
+hex_fit     = ">=0.1.5"
+hex_form    = ">=0.1.7"
+hex_grid    = ">=0.1.4"
+hex_place   = ">=0.1.2"
+hex_recover = ">=0.1.6"
+hex_roof    = ">=0.1.9"
+hex_shape   = ">=0.1.7"
+hex_way     = ">=0.1.6"

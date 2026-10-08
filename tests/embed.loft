@@ -29,13 +29,13 @@
 // of the field.  Three reader instruments were tried and all three were wrong (see `STEPS.md`), so
 // nothing about recovery is asserted — only that the chain the reader will consume is well-formed
 // by the already-gated `X32` measure.  `OD-13` is NOT closed by this gate.
-use hex_field;
-use hex_form;
-use hex_recover;
-use hex_draw;
-use hex_grid;
-use hex_shape;
-use hex_fit;
+use hex_field::*;
+use hex_form::*;
+use hex_recover::*;
+use hex_draw::*;
+use hex_grid::*;
+use hex_shape::*;
+use hex_fit::*;
 
 const W = 41;
 const H = 41;

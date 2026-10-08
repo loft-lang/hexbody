@@ -204,12 +204,14 @@ a new gate forced a rebuild. **hexbody is a consumer of loft; it tracks loft's r
 desk.** To test against an unreleased toolchain, reinstall it first, then
 `make test LOFT_PATH=../loft/`.
 
-**TWO SIBLING WORKING TREES STILL FEED THE GATES, AND NEITHER IS PINNED** — `../loft-libs-world`
-(`--lib`) and **`../moros`**, whose *source* `tests/palette.loft` reads because `L13` makes it the
-schema of record. `loft.lock` pins only the registry packages (`graphics`/`glb`/`mesh3d`). So:
+**THE `hex_*` FAMILY COMPILES FROM THE REGISTRY** — `loft.toml` declares each library at its first
+`pub` release (loft C140) and `loft.lock` pins it, like `graphics`/`glb`/`mesh3d`.  **Two sibling
+working trees still feed the gates as DATA, and neither is pinned:** `../loft-libs-world`, whose
+*source* `tests/scale.loft` and `tests/scope.loft` scan, and **`../moros`**, whose *source*
+`tests/palette.loft` reads because `L13` makes it the schema of record. So:
 
-- **`--lib` reads the WORKING TREE** — check `loft-libs-world` is on branch `dev` before debugging
-  anything strange.
+- **keep `../loft-libs-world` on `main`, at the locked releases** — the scans read that tree, not
+  the registry copy the gates run.
 - **An uncommitted edit in `../moros` moves the limit on `𝕄*` with no trace in hexbody's history.**
   The palette gate **prints moros's revision** so a green is attributable; it cannot see whether
   that tree is dirty, so check `git -C ../moros status` before trusting a surprising palette result.

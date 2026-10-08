@@ -15,11 +15,11 @@
 //   4  the tie-break is the LOWER id — duplicate surfaces resolve to the lower every time
 //
 // The scene: two overlapping tower disks (A6 arcs), their rims splitting the union boundary.
-use hex_field;
-use hex_form;
-use hex_shape;
-use hex_edge;
-use hex_way;
+use hex_field::*;
+use hex_form::*;
+use hex_shape::*;
+use hex_edge::*;
+use hex_way::*;
 
 const W = 41;
 const H = 41;
